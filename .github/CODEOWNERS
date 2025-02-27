@@ -2,7 +2,7 @@
 ##### Global Protection Rule ######
 ###################################
 # NOTE: This rule is overriden by the more specific rules below. This is the catch-all rule for all files not covered by the more specific rules below.
-*                                               @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+*                                               @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
 
 #########################
 #####  Core Files  ######
@@ -11,37 +11,37 @@
 # NOTE: Must be placed last to ensure enforcement over all other rules
 
 # Protection Rules for Github Configuration Files and Actions Workflows
-/.github/                                       @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/platform-ci
-/.github/dependabot.yml                         @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera @hashgraph/platform-ci
-/.github/workflows/                             @hashgraph/platform-ci @hashgraph/platform-ci-committers @hashgraph/release-engineering-managers @hashgraph/release-engineering 
+/.github/                                       @hiero-ledger/github-committers @hiero-ledger/github-maintainers
+/.github/dependabot.yml                         @hiero-ledger/github-committers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers @hiero-ledger/github-maintainers
+/.github/workflows/                             @hiero-ledger/github-maintainers @hiero-ledger/github-committers
 
 # Legacy Maven project files
-**/pom.xml                                      @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+**/pom.xml                                      @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
 
 # Cargo project files and inline plugins
-Cargo.lock                                      @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
-Cargo.toml                                      @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
-rustfmt.toml                                    @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
-rust-toolchain.toml                             @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+Cargo.lock                                      @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+Cargo.toml                                      @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+rustfmt.toml                                    @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+rust-toolchain.toml                             @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
 
 # Codacy Tool Configurations
-/config/                                        @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
-.remarkrc                                       @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+/config/                                        @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+.remarkrc                                       @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
 
 # Self-protection for root CODEOWNERS files (this file should not exist and should definitely require approval)
-/CODEOWNERS                                      @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+/CODEOWNERS                                     @hiero-ledger/github-maintainers
 
 # Protect the repository root files
-/README.md                                      @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
-**/LICENSE                                      @hashgraph/release-engineering @hashgraph/release-engineering-managers
+/README.md                                      @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+**/LICENSE                                      @hiero-ledger/github-maintainers
 
 # CodeCov configuration
-**/codecov.yml                                  @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+**/codecov.yml                                  @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
 
 # Git Ignore definitions
-**/.gitignore                                   @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
-**/.gitignore.*                                 @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+**/.gitignore                                   @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+**/.gitignore.*                                 @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
 
 # Legacy CircleCI configuration
-.circleci.settings.xml                          @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
-/.circleci/                                     @hashgraph/release-engineering @hashgraph/release-engineering-managers @hashgraph/hedera-sdk @hashgraph/hedera-sdk-rust-contributors @hashgraph/launchbadge-hedera
+.circleci.settings.xml                          @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+/.circleci/                                     @hiero-ledger/github-committers @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
