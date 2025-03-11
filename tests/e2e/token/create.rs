@@ -664,7 +664,6 @@ async fn autoset_auto_renew_account() -> anyhow::Result<()> {
         .unwrap();
 
     let info = TokenInfoQuery::new().token_id(token_id).execute(&client).await?;
-
     // auto renew account should be set to operator account
     assert_eq!(info.auto_renew_account.unwrap(), client.get_operator_account_id().unwrap());
     Ok(())
