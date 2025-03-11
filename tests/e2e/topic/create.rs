@@ -50,7 +50,6 @@ async fn fieldless() -> anyhow::Result<()> {
         .await?
         .topic_id
         .unwrap();
-
     Ok(())
 }
 
@@ -73,6 +72,5 @@ async fn autoset_auto_renew_account() -> anyhow::Result<()> {
     let info = TopicInfoQuery::new().topic_id(topic_id).execute(&client).await?;
 
     assert_eq!(info.auto_renew_account_id.unwrap(), client.get_operator_account_id().unwrap());
-
     Ok(())
 }

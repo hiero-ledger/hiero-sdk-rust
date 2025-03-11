@@ -188,7 +188,6 @@ impl ToTransactionDataProtobuf for TopicCreateTransactionData {
             let operator_id = chunk_info.current_transaction_id.account_id;
             protobuf_data.auto_renew_account = Some(operator_id.to_protobuf());
         }
- 
         services::transaction_body::Data::ConsensusCreateTopic(protobuf_data)
     }
 }

@@ -639,7 +639,6 @@ async fn auto_renew_account() -> anyhow::Result<()> {
 
     // auto renew account should be set to operator account
     assert_eq!(info.auto_renew_account.unwrap(), account.id);
-
     Ok(())
 }
 
@@ -668,6 +667,5 @@ async fn autoset_auto_renew_account() -> anyhow::Result<()> {
 
     // auto renew account should be set to operator account
     assert_eq!(info.auto_renew_account.unwrap(), client.get_operator_account_id().unwrap());
-
     Ok(())
 }
