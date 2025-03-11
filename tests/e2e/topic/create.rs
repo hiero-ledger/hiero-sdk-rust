@@ -1,6 +1,6 @@
 use hedera::{
     TopicCreateTransaction,
-    TopicInfoQuery
+    TopicInfoQuery,
 };
 
 use crate::common::{

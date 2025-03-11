@@ -13,7 +13,7 @@ use hedera::{
     TokenCreateTransaction,
     TokenId,
     TokenInfoQuery,
-    TokenType
+    TokenType,
 };
 use time::{
     Duration,
@@ -671,4 +671,3 @@ async fn autoset_auto_renew_account() -> anyhow::Result<()> {
 
     Ok(())
 }
-
