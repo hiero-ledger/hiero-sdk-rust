@@ -95,15 +95,8 @@ impl AccountId {
     ///
     /// Accepts "0x___" Ethereum public address.
     #[must_use]
-    pub fn from_evm_address(address: &EvmAddress) -> Self {
-        Self {
-            shard: 0,
-            realm: 0,
-            num: 0,
-            alias: None,
-            evm_address: Some(*address),
-            checksum: None,
-        }
+    pub fn from_evm_address(address: &EvmAddress, shard: u64, realm: u64) -> Self {
+        Self { shard, realm, num: 0, alias: None, evm_address: Some(*address), checksum: None }
     }
 
     /// Convert `self` to a protobuf-encoded [`Vec<u8>`].
@@ -249,7 +242,7 @@ impl FromStr for AccountId {
 
             // 0x<evm_address>
             PartialEntityId::ShortOther(evm_address) => {
-                Ok(Self::from_evm_address(&evm_address.parse()?))
+                Ok(Self::from_evm_address(&evm_address.parse()?, 0, 0))
             }
 
             // <shard>.<realm>.<alias>
@@ -509,7 +502,7 @@ mod tests {
         let evm_address =
             EvmAddress::from_str("0x302a300506032b6570032100114e6abc371b82da").unwrap();
 
-        let id = AccountId::from_evm_address(&evm_address);
+        let id = AccountId::from_evm_address(&evm_address, 0, 0);
 
         expect_test::expect!["0x302a300506032b6570032100114e6abc371b82da"]
             .assert_eq(&id.to_string());
