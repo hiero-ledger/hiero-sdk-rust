@@ -31,7 +31,6 @@ mod account_info;
 pub mod account_info_flow;
 mod account_info_query;
 mod account_records_query;
-mod account_stakers_query;
 mod account_update_transaction;
 mod proxy_staker;
 
@@ -52,8 +51,6 @@ pub use account_info_query::AccountInfoQuery;
 pub(crate) use account_info_query::AccountInfoQueryData;
 pub use account_records_query::AccountRecordsQuery;
 pub(crate) use account_records_query::AccountRecordsQueryData;
-pub use account_stakers_query::AccountStakersQuery;
-pub(crate) use account_stakers_query::AccountStakersQueryData;
 pub use account_update_transaction::AccountUpdateTransaction;
 pub(crate) use account_update_transaction::AccountUpdateTransactionData;
 pub use proxy_staker::{

@@ -178,7 +178,6 @@ pub use account::{
     AccountInfo,
     AccountInfoQuery,
     AccountRecordsQuery,
-    AccountStakersQuery,
     AccountUpdateTransaction,
     AllProxyStakers,
     ProxyStaker,
