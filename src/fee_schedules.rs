@@ -430,15 +430,6 @@ pub enum RequestType {
 
     /// Cancel airdrop tokens.
     TokenCancelAirdrop,
-
-    /// Submit a vote as part of the Threshold Signature Scheme (TSS) processing.
-    TssMessage,
-
-    /// Submit a vote as part of the Threshold Signature Scheme (TSS) processing.
-    TssVote,
-
-    /// Submit a node signature as part of the Threshold Signature Scheme (TSS) processing.
-    TssShareSignature,
 }
 
 impl FromProtobuf<services::HederaFunctionality> for RequestType {
@@ -527,9 +518,7 @@ impl FromProtobuf<services::HederaFunctionality> for RequestType {
             HederaFunctionality::TokenAirdrop => Self::TokenAirdrop,
             HederaFunctionality::TokenClaimAirdrop => Self::TokenClaimAirdrop,
             HederaFunctionality::TokenCancelAirdrop => Self::TokenCancelAirdrop,
-            HederaFunctionality::TssMessage => Self::TssMessage,
-            HederaFunctionality::TssVote => Self::TssVote,
-            HederaFunctionality::TssShareSignature => Self::TssShareSignature,
+            _ => todo!(),
         };
 
         Ok(value)
@@ -624,9 +613,6 @@ impl ToProtobuf for RequestType {
             Self::TokenAirdrop => HederaFunctionality::TokenAirdrop,
             Self::TokenClaimAirdrop => HederaFunctionality::TokenClaimAirdrop,
             Self::TokenCancelAirdrop => HederaFunctionality::TokenCancelAirdrop,
-            Self::TssMessage => HederaFunctionality::TssMessage,
-            Self::TssVote => HederaFunctionality::TssVote,
-            Self::TssShareSignature => HederaFunctionality::TssShareSignature,
         }
     }
 }
@@ -805,6 +791,10 @@ pub enum FeeDataType {
     /// The resource prices are scoped to a [`ScheduleCreateTransaction`](crate::ScheduleCreateTransaction)
     /// containing a [`ContractExecuteTransaction`](crate::ContractExecuteTransaction).
     ScheduleCreateContractCall,
+
+    /// The resource prices are scoped to a [`TopicCreateTransaction`](crate::TopicCreateTransaction)
+    /// with a custom fee schedule.
+    TopicCreateWithCustomFees,
 }
 
 impl FromProtobuf<services::SubType> for FeeDataType {
@@ -819,6 +809,7 @@ impl FromProtobuf<services::SubType> for FeeDataType {
                 Self::TokenNonFungibleUniqueWithCustomFees
             }
             SubType::ScheduleCreateContractCall => Self::ScheduleCreateContractCall,
+            SubType::TopicCreateWithCustomFees => Self::TopicCreateWithCustomFees,
         };
 
         Ok(value)
@@ -839,6 +830,7 @@ impl ToProtobuf for FeeDataType {
                 SubType::TokenNonFungibleUniqueWithCustomFees
             }
             Self::ScheduleCreateContractCall => SubType::ScheduleCreateContractCall,
+            Self::TopicCreateWithCustomFees => SubType::TopicCreateWithCustomFees,
         }
     }
 }

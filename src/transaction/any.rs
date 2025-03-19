@@ -664,15 +664,6 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
             Data::TokenAirdrop(pb) => data::TokenAirdrop::from_protobuf(pb)?.into(),
             Data::TokenClaimAirdrop(pb) => data::TokenClaimAirdrop::from_protobuf(pb)?.into(),
             Data::TokenCancelAirdrop(pb) => data::TokenCancelAirdrop::from_protobuf(pb)?.into(),
-            Data::TssMessage(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssMessageTransaction`"))
-            }
-            Data::TssVote(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssVoteTransaction`"))
-            }
-            Data::TssShareSignature(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssShareSignature`"))
-            }
             Data::CryptoAddLiveHash(_) => {
                 return Err(Error::from_protobuf(
                     "unsupported transaction `AddLiveHashTransaction`",
@@ -1015,15 +1006,6 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
             Data::TokenAirdrop(it) => Self::TokenAirdrop(make_vec(it, len)),
             Data::TokenClaimAirdrop(it) => Self::TokenClaimAirdrop(make_vec(it, len)),
             Data::TokenCancelAirdrop(it) => Self::TokenCancelAirdrop(make_vec(it, len)),
-            Data::TssMessage(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssMessageTransaction`"))
-            }
-            Data::TssVote(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssVoteTransaction`"))
-            }
-            Data::TssShareSignature(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssShareSignature`"))
-            }
             Data::CryptoAddLiveHash(_) => {
                 return Err(Error::from_protobuf(
                     "unsupported transaction `AddLiveHashTransaction`",
