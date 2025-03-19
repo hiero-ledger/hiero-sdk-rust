@@ -87,6 +87,7 @@ impl SystemUndeleteTransaction {
 impl TransactionData for SystemUndeleteTransactionData {}
 
 impl TransactionExecute for SystemUndeleteTransactionData {
+    #[allow(deprecated)]
     fn execute(
         &self,
         channel: Channel,

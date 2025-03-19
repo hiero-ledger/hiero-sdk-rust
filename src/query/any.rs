@@ -26,7 +26,6 @@ use crate::account::{
     AccountBalanceQueryData,
     AccountInfoQueryData,
     AccountRecordsQueryData,
-    AccountStakersQueryData,
 };
 use crate::contract::{
     ContractBytecodeQueryData,
@@ -78,7 +77,6 @@ pub type AnyQuery = Query<AnyQueryData>;
 pub enum AnyQueryData {
     AccountBalance(AccountBalanceQueryData),
     AccountInfo(AccountInfoQueryData),
-    AccountStakers(AccountStakersQueryData),
     AccountRecords(AccountRecordsQueryData),
     TransactionReceipt(TransactionReceiptQueryData),
     TransactionRecord(TransactionRecordQueryData),
@@ -152,7 +150,6 @@ impl ToQueryProtobuf for AnyQueryData {
         match self {
             Self::AccountBalance(data) => data.to_query_protobuf(header),
             Self::AccountInfo(data) => data.to_query_protobuf(header),
-            Self::AccountStakers(data) => data.to_query_protobuf(header),
             Self::AccountRecords(data) => data.to_query_protobuf(header),
             Self::TransactionReceipt(data) => data.to_query_protobuf(header),
             Self::TransactionRecord(data) => data.to_query_protobuf(header),
@@ -177,7 +174,6 @@ impl QueryExecute for AnyQueryData {
         match self {
             Self::AccountInfo(query) => query.is_payment_required(),
             Self::AccountBalance(query) => query.is_payment_required(),
-            Self::AccountStakers(query) => query.is_payment_required(),
             Self::AccountRecords(query) => query.is_payment_required(),
             Self::TransactionReceipt(query) => query.is_payment_required(),
             Self::TransactionRecord(query) => query.is_payment_required(),
@@ -198,7 +194,6 @@ impl QueryExecute for AnyQueryData {
         match self {
             Self::AccountInfo(query) => query.map_cost(cost),
             Self::AccountBalance(query) => query.map_cost(cost),
-            Self::AccountStakers(query) => query.map_cost(cost),
             Self::AccountRecords(query) => query.map_cost(cost),
             Self::TransactionReceipt(query) => query.map_cost(cost),
             Self::TransactionRecord(query) => query.map_cost(cost),
@@ -223,7 +218,6 @@ impl QueryExecute for AnyQueryData {
         match self {
             Self::AccountInfo(query) => query.execute(channel, request),
             Self::AccountBalance(query) => query.execute(channel, request),
-            Self::AccountStakers(query) => query.execute(channel, request),
             Self::AccountRecords(query) => query.execute(channel, request),
             Self::TransactionReceipt(query) => query.execute(channel, request),
             Self::TransactionRecord(query) => query.execute(channel, request),
@@ -244,7 +238,6 @@ impl QueryExecute for AnyQueryData {
         match self {
             Self::AccountInfo(query) => query.should_retry_pre_check(status),
             Self::AccountBalance(query) => query.should_retry_pre_check(status),
-            Self::AccountStakers(query) => query.should_retry_pre_check(status),
             Self::AccountRecords(query) => query.should_retry_pre_check(status),
             Self::TransactionReceipt(query) => query.should_retry_pre_check(status),
             Self::TransactionRecord(query) => query.should_retry_pre_check(status),
@@ -265,7 +258,6 @@ impl QueryExecute for AnyQueryData {
         match self {
             Self::AccountInfo(query) => query.should_retry(response),
             Self::AccountBalance(query) => query.should_retry(response),
-            Self::AccountStakers(query) => query.should_retry(response),
             Self::AccountRecords(query) => query.should_retry(response),
             Self::TransactionReceipt(query) => query.should_retry(response),
             Self::TransactionRecord(query) => query.should_retry(response),
@@ -286,7 +278,6 @@ impl QueryExecute for AnyQueryData {
         match self {
             Self::AccountBalance(query) => query.transaction_id(),
             Self::AccountInfo(query) => query.transaction_id(),
-            Self::AccountStakers(query) => query.transaction_id(),
             Self::AccountRecords(query) => query.transaction_id(),
             Self::TransactionReceipt(query) => query.transaction_id(),
             Self::TransactionRecord(query) => query.transaction_id(),
@@ -313,9 +304,6 @@ impl QueryExecute for AnyQueryData {
             }
             Self::AccountInfo(query) => {
                 query.make_response(response).map(AnyQueryResponse::AccountInfo)
-            }
-            Self::AccountStakers(query) => {
-                query.make_response(response).map(AnyQueryResponse::AccountStakers)
             }
             Self::AccountRecords(query) => {
                 query.make_response(response).map(AnyQueryResponse::AccountRecords)
@@ -363,7 +351,6 @@ impl ValidateChecksums for AnyQueryData {
         match self {
             Self::AccountBalance(query) => query.validate_checksums(ledger_id),
             Self::AccountInfo(query) => query.validate_checksums(ledger_id),
-            Self::AccountStakers(query) => query.validate_checksums(ledger_id),
             Self::AccountRecords(query) => query.validate_checksums(ledger_id),
             Self::TransactionReceipt(query) => query.validate_checksums(ledger_id),
             Self::TransactionRecord(query) => query.validate_checksums(ledger_id),
