@@ -18,6 +18,8 @@
  * ‍
  */
 
+use std::num::NonZeroUsize;
+
 use hedera_proto::services;
 use hedera_proto::services::file_service_client::FileServiceClient;
 use time::{
@@ -34,7 +36,9 @@ use crate::protobuf::{
 };
 use crate::transaction::{
     AnyTransactionData,
+    ChunkData,    
     ChunkInfo,
+    ChunkedTransactionData,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
@@ -62,7 +66,7 @@ pub struct FileCreateTransactionData {
     keys: Option<KeyList>,
 
     /// The bytes that are to be the contents of the file.
-    contents: Option<Vec<u8>>,
+    contents: ChunkData,
 
     auto_renew_period: Option<Duration>,
 
@@ -77,7 +81,10 @@ impl Default for FileCreateTransactionData {
         Self {
             file_memo: String::new(),
             keys: None,
-            contents: None,
+            contents: ChunkData {
+                chunk_size: NonZeroUsize::new(4096).unwrap(),
+                ..Default::default()
+            },
             auto_renew_period: None,
             auto_renew_account_id: None,
             expiration_time: Some(OffsetDateTime::now_utc() + Duration::days(90)),
@@ -101,12 +108,12 @@ impl FileCreateTransaction {
     /// Returns the bytes that are to be the contents of the file.
     #[must_use]
     pub fn get_contents(&self) -> Option<&[u8]> {
-        self.data().contents.as_deref()
+        Some(self.data().contents.data.as_slice())
     }
 
     /// Sets the bytes that are to be the contents of the file.
     pub fn contents(&mut self, contents: impl Into<Vec<u8>>) -> &mut Self {
-        self.data_mut().contents = Some(contents.into());
+        self.data_mut().contents.data = contents.into();
         self
     }
 
@@ -182,6 +189,20 @@ impl TransactionData for FileCreateTransactionData {
     fn default_max_transaction_fee(&self) -> crate::Hbar {
         crate::Hbar::new(5)
     }
+
+    fn maybe_chunk_data(&self) -> Option<&ChunkData> {
+        Some(&self.contents)
+    }
+}
+
+impl ChunkedTransactionData for FileCreateTransactionData {
+    fn chunk_data(&self) -> &ChunkData {
+        &self.contents
+    }
+
+    fn chunk_data_mut(&mut self) -> &mut ChunkData {
+        &mut self.contents
+    }
 }
 
 impl TransactionExecute for FileCreateTransactionData {
@@ -207,9 +228,15 @@ impl ToTransactionDataProtobuf for FileCreateTransactionData {
         &self,
         chunk_info: &ChunkInfo,
     ) -> services::transaction_body::Data {
-        let _ = chunk_info.assert_single_transaction();
-
-        services::transaction_body::Data::FileCreate(self.to_protobuf())
+        services::transaction_body::Data::FileCreate(services::FileCreateTransactionBody {
+            expiration_time: self.expiration_time.to_protobuf(),
+            keys: self.keys.to_protobuf(),
+            contents: self.contents.message_chunk(chunk_info).to_vec(),
+            shard_id: None,
+            realm_id: None,
+            new_realm_admin_key: None,
+            memo: self.file_memo.clone(),
+        })
     }
 }
 
@@ -232,7 +259,10 @@ impl FromProtobuf<services::FileCreateTransactionBody> for FileCreateTransaction
         Ok(Self {
             file_memo: pb.memo,
             keys: Option::from_protobuf(pb.keys)?,
-            contents: Some(pb.contents),
+            contents: ChunkData {
+                data: pb.contents,
+                ..Default::default()
+            },
             auto_renew_period: None,
             auto_renew_account_id: None,
             expiration_time: pb.expiration_time.map(Into::into),
@@ -247,7 +277,7 @@ impl ToProtobuf for FileCreateTransactionData {
         services::FileCreateTransactionBody {
             expiration_time: self.expiration_time.to_protobuf(),
             keys: self.keys.to_protobuf(),
-            contents: self.contents.clone().unwrap_or_default(),
+            contents: self.contents.data.clone(),
             shard_id: None,
             realm_id: None,
             new_realm_admin_key: None,
@@ -271,6 +301,7 @@ mod tests {
     use crate::transaction::test_helpers::{
         check_body,
         transaction_body,
+        transaction_bodies,
         unused_private_key,
     };
     use crate::{
@@ -281,6 +312,7 @@ mod tests {
     };
 
     const CONTENTS: [u8; 4] = hex!("deadbeef");
+    const LARGE_CONTENTS: [u8; 8192] = [0xde; 8192];
 
     const EXPIRATION_TIME: OffsetDateTime = match OffsetDateTime::from_unix_timestamp(1554158728) {
         Ok(it) => it,
@@ -303,6 +335,17 @@ mod tests {
             .freeze()
             .unwrap();
 
+        tx
+    }
+
+    fn make_large_transaction() -> FileCreateTransaction {
+        let mut tx = FileCreateTransaction::new_for_tests();
+        tx.contents(LARGE_CONTENTS)
+            .expiration_time(EXPIRATION_TIME)
+            .keys(keys())
+            .file_memo(FILE_MEMO)
+            .freeze()
+            .unwrap();
         tx
     }
 
@@ -385,6 +428,41 @@ mod tests {
         .assert_debug_eq(&tx)
     }
 
+
+    #[test]
+    fn serialize_large_content() {
+        let tx = make_large_transaction();
+        let txs = transaction_bodies(tx);
+        
+        assert!(txs.len() > 1, "Large content should create multiple chunks");
+        
+        let first_chunk = check_body(txs[0].clone());
+        assert!(matches!(
+            first_chunk,
+            services::transaction_body::Data::FileCreate(_)
+        ));
+        
+        for chunk in txs.iter().skip(1) {
+            let chunk = check_body(chunk.clone());
+            assert!(matches!(
+                chunk,
+                services::transaction_body::Data::FileAppend(_)
+            ));
+        }
+        
+        let total_size: usize = txs
+            .iter()
+            .map(|tx| match &tx.data {
+                Some(services::transaction_body::Data::FileCreate(body)) => body.contents.len(),
+                Some(services::transaction_body::Data::FileAppend(body)) => body.contents.len(),
+                _ => 0,
+            })
+            .sum();
+            
+        assert_eq!(total_size, LARGE_CONTENTS.len());
+    }
+
+
     #[test]
     fn to_from_bytes() {
         let tx = make_transaction();
@@ -396,6 +474,35 @@ mod tests {
         let tx2 = transaction_body(tx2);
 
         assert_eq!(tx, tx2);
+    }
+
+
+    #[test]
+    fn to_from_bytes_large_content() {
+        let tx = make_large_transaction();
+        let tx2 = AnyTransaction::from_bytes(&tx.to_bytes().unwrap()).unwrap();
+
+        let tx_bodies = transaction_bodies(tx);
+        let tx2_bodies = transaction_bodies(tx2);
+
+        assert_eq!(tx_bodies.len(), tx2_bodies.len());
+        assert_eq!(tx_bodies, tx2_bodies);
+    }
+
+
+    #[test]
+    fn chunk_size_validation() {
+        let mut tx = FileCreateTransaction::new();
+        tx.contents(LARGE_CONTENTS);
+        
+        assert!(tx.data().contents.chunk_size.get() > 0);
+        
+        let chunked_size = tx.data().contents.chunk_size.get();
+        let expected_chunks = (LARGE_CONTENTS.len() + chunked_size - 1) / chunked_size;
+        
+        tx.freeze().unwrap();
+        let tx_bodies = transaction_bodies(tx);
+        assert_eq!(tx_bodies.len(), expected_chunks);
     }
 
     #[test]
@@ -412,7 +519,7 @@ mod tests {
 
         let tx = FileCreateTransactionData::from_protobuf(tx).unwrap();
 
-        assert_eq!(tx.contents.as_deref(), Some(CONTENTS.as_slice()));
+        assert_eq!(tx.contents.data, CONTENTS);
         assert_eq!(tx.expiration_time, Some(EXPIRATION_TIME));
         assert_eq!(tx.keys, Some(KeyList::from_iter(keys())));
         assert_eq!(tx.file_memo, FILE_MEMO);
