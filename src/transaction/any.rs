@@ -26,6 +26,7 @@ use super::{
     TransactionData,
     TransactionExecuteChunked,
 };
+use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
@@ -664,15 +665,6 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
             Data::TokenAirdrop(pb) => data::TokenAirdrop::from_protobuf(pb)?.into(),
             Data::TokenClaimAirdrop(pb) => data::TokenClaimAirdrop::from_protobuf(pb)?.into(),
             Data::TokenCancelAirdrop(pb) => data::TokenCancelAirdrop::from_protobuf(pb)?.into(),
-            Data::TssMessage(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssMessageTransaction`"))
-            }
-            Data::TssVote(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssVoteTransaction`"))
-            }
-            Data::TssShareSignature(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssShareSignature`"))
-            }
             Data::CryptoAddLiveHash(_) => {
                 return Err(Error::from_protobuf(
                     "unsupported transaction `AddLiveHashTransaction`",
@@ -885,6 +877,11 @@ impl AnyTransaction {
                 operator: None,
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),
+                custom_fee_limits: first_body
+                    .max_custom_fees
+                    .into_iter()
+                    .map(CustomFeeLimit::from_protobuf)
+                    .collect::<Result<Vec<_>, _>>()?,
             },
             signers: Vec::new(),
             sources: None,
@@ -1015,15 +1012,6 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
             Data::TokenAirdrop(it) => Self::TokenAirdrop(make_vec(it, len)),
             Data::TokenClaimAirdrop(it) => Self::TokenClaimAirdrop(make_vec(it, len)),
             Data::TokenCancelAirdrop(it) => Self::TokenCancelAirdrop(make_vec(it, len)),
-            Data::TssMessage(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssMessageTransaction`"))
-            }
-            Data::TssVote(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssVoteTransaction`"))
-            }
-            Data::TssShareSignature(_) => {
-                return Err(Error::from_protobuf("unsupported transaction `TssShareSignature`"))
-            }
             Data::CryptoAddLiveHash(_) => {
                 return Err(Error::from_protobuf(
                     "unsupported transaction `AddLiveHashTransaction`",
@@ -1153,6 +1141,7 @@ macro_rules! impl_cast_any {
                             operator: transaction.body.operator,
                             is_frozen: transaction.body.is_frozen,
                             regenerate_transaction_id: transaction.body.regenerate_transaction_id,
+                            custom_fee_limits: transaction.body.custom_fee_limits,
                         },
                         signers: transaction.signers,
                         sources: transaction.sources,
