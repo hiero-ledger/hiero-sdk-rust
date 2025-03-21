@@ -42,6 +42,7 @@ use crate::{
     BoxGrpcFuture,
     Client,
     Error,
+    Hbar,
     Key,
     Transaction,
     ValidateChecksums,
@@ -253,7 +254,11 @@ impl TopicCreateTransaction {
     }
 }
 
-impl TransactionData for TopicCreateTransactionData {}
+impl TransactionData for TopicCreateTransactionData {
+    fn default_max_transaction_fee(&self) -> Hbar {
+        Hbar::new(25)
+    }
+}
 
 impl TransactionExecute for TopicCreateTransactionData {
     fn execute(
