@@ -121,6 +121,8 @@ mod account;
 mod address_book;
 mod client;
 mod contract;
+mod custom_fee_limit;
+mod custom_fixed_fee;
 mod downcast;
 mod entity_id;
 mod error;
@@ -206,6 +208,7 @@ pub use contract::{
     ContractUpdateTransaction,
     DelegateContractId,
 };
+pub use custom_fixed_fee::CustomFixedFee;
 pub use entity_id::EntityId;
 pub(crate) use entity_id::ValidateChecksums;
 pub use error::{

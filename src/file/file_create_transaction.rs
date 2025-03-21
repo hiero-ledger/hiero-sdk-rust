@@ -243,6 +243,7 @@ impl FromProtobuf<services::FileCreateTransactionBody> for FileCreateTransaction
 impl ToProtobuf for FileCreateTransactionData {
     type Protobuf = services::FileCreateTransactionBody;
 
+    #[allow(deprecated)]
     fn to_protobuf(&self) -> Self::Protobuf {
         services::FileCreateTransactionBody {
             expiration_time: self.expiration_time.to_protobuf(),
@@ -400,6 +401,7 @@ mod tests {
 
     #[test]
     fn from_proto_body() {
+        #[allow(deprecated)]
         let tx = services::FileCreateTransactionBody {
             expiration_time: Some(EXPIRATION_TIME.to_protobuf()),
             keys: Some(KeyList::from_iter(keys()).to_protobuf()),

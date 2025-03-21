@@ -108,6 +108,7 @@ impl ScheduleInfo {
                 operator: None,
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),
+                custom_fee_limits: Vec::new(),
             },
             Vec::new(),
         ))

@@ -37,6 +37,7 @@ impl<D: Clone> CostTransaction<D> {
                 operator: transaction.body.operator,
                 is_frozen: transaction.body.is_frozen,
                 regenerate_transaction_id: transaction.body.regenerate_transaction_id,
+                custom_fee_limits: transaction.body.custom_fee_limits,
             },
             // cost transactions have no signers
             signers: Vec::new(),
