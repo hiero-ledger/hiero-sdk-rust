@@ -26,6 +26,7 @@ use super::{
     TransactionData,
     TransactionExecuteChunked,
 };
+use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
@@ -876,6 +877,11 @@ impl AnyTransaction {
                 operator: None,
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),
+                custom_fee_limits: first_body
+                    .max_custom_fees
+                    .into_iter()
+                    .map(CustomFeeLimit::from_protobuf)
+                    .collect::<Result<Vec<_>, _>>()?,
             },
             signers: Vec::new(),
             sources: None,
@@ -1135,6 +1141,7 @@ macro_rules! impl_cast_any {
                             operator: transaction.body.operator,
                             is_frozen: transaction.body.is_frozen,
                             regenerate_transaction_id: transaction.body.regenerate_transaction_id,
+                            custom_fee_limits: transaction.body.custom_fee_limits,
                         },
                         signers: transaction.signers,
                         sources: transaction.sources,

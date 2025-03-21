@@ -299,6 +299,7 @@ where
             node_account_id: Some(chunk_info.node_account_id.to_protobuf()),
             generate_record: false,
             transaction_fee,
+            max_custom_fees: vec![],
         }
     }
 }
