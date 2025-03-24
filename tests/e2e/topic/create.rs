@@ -427,7 +427,28 @@ async fn exempts_fee_exempt_keys_from_hbar_fees() -> anyhow::Result<()> {
     Ok(())
 }
 
+// Test temporarily taken out until can figure out a solution for a separate freeze
 #[tokio::test]
+#[ignore = "Not Supported. Apply test when 0.60.0 is released to networks (mainnet, testnet, previewnet)"]
+async fn automatically_assign_auto_renew_account_id_on_topic_create() -> anyhow::Result<()> {
+    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+        return Ok(());
+    };
+
+    let topic_receipt =
+        TopicCreateTransaction::new().execute(&client).await?.get_receipt(&client).await?;
+
+    let topic_id = topic_receipt.topic_id.unwrap();
+
+    let info = TopicInfoQuery::new().topic_id(topic_id).execute(&client).await?;
+
+    assert!(info.auto_renew_account_id.is_some());
+
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "Not Supported. Apply test when 0.60.0 is released to networks (mainnet, testnet, previewnet)"]
 async fn create_with_transaction_id_assigns_auto_renew_account_id_to_transaction_id_account_id(
 ) -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
@@ -449,7 +470,7 @@ async fn create_with_transaction_id_assigns_auto_renew_account_id_to_transaction
 
     let topic_receipt = TopicCreateTransaction::new()
         .transaction_id(TransactionId::generate(account_id))
-        .freeze_topic_with(&client)?
+        .freeze_with(&client)?
         .sign(private_key)
         .execute(&client)
         .await?
