@@ -270,6 +270,10 @@ fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
     contents = contents.replace("/// *\n", "");
     contents = contents.replace("/// UNDOCUMENTED", "");
 
+    // Remove code examples in comments
+    let re = regex::Regex::new(r"/// ```[\s\S]*?/// ```\n").unwrap();
+    contents = re.replace_all(&contents, "").to_string();
+
     fs::write(path, contents)?;
 
     Ok(())
