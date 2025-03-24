@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use hedera_proto::services;
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
@@ -40,8 +22,8 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
-    Client,
     Error,
+    Hbar,
     Key,
     Transaction,
     ValidateChecksums,
@@ -227,33 +209,13 @@ impl TopicCreateTransaction {
         self.data_mut().custom_fees.push(fee);
         self
     }
-
-    /// Freeze the topic create transaction
-    pub fn freeze_topic_with<'a>(
-        &mut self,
-        client: impl Into<Option<&'a Client>>,
-    ) -> crate::Result<&mut Self> {
-        let client: Option<&Client> = client.into();
-
-        if let Some(client) = client {
-            if let Some(operator_account_id) = client.get_operator_account_id() {
-                if self.get_auto_renew_account_id().is_none() {
-                    if let Some(tx_id) = self.get_transaction_id() {
-                        self.auto_renew_account_id(tx_id.account_id);
-                    } else {
-                        self.auto_renew_account_id(operator_account_id);
-                    }
-                }
-            }
-        }
-
-        self.freeze_with(client)?;
-
-        Ok(self)
-    }
 }
 
-impl TransactionData for TopicCreateTransactionData {}
+impl TransactionData for TopicCreateTransactionData {
+    fn default_max_transaction_fee(&self) -> Hbar {
+        Hbar::new(25)
+    }
+}
 
 impl TransactionExecute for TopicCreateTransactionData {
     fn execute(
