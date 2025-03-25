@@ -4,7 +4,7 @@ license = "Apache-2.0"
 name = "hedera-proto"
 description = "Protobufs for the Hedera™ Hashgraph SDK"
 repository = "https://github.com/hashgraph/hedera-sdk-rust"
-version = "0.15.0"
+version = "0.16.0"
 
 [features]
 
