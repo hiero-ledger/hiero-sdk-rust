@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "hedera"
 readme = "README.md"
 repository = "https://github.com/hashgraph/hedera-sdk-rust"
-version = "0.31.0"
+version = "0.32.0"
 
 [lib]
 bench = false
@@ -27,7 +27,7 @@ fraction = { version = "0.15.1", default-features = false }
 futures-core = "0.3.21"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.6"
-hedera-proto = { path = "./protobufs", version = "0.15.0", features = [
+hedera-proto = { path = "./protobufs", version = "0.16.0", features = [
   "time_0_3",
   "fraction",
 ] }

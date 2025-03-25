@@ -15,7 +15,7 @@ async-trait = "0.1.77"
 hyper = "0.14.20"
 tower-http = { version = "0.5.2", features = ["full"] }
 hedera = { path = "../." }
-hedera-proto = { path = "../protobufs", version = "0.15.0", features = [
+hedera-proto = { path = "../protobufs", version = "0.16.0", features = [
   "time_0_3",
   "fraction",
 ] }
