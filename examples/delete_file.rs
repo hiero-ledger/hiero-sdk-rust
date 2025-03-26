@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
     let receipt = FileCreateTransaction::new()
-        .contents(&b"Hedera Hashgraph is great!"[..])
+        .contents(&b"Hiero is great!"[..])
         .keys(iter::once(args.operator_key.public_key()))
         .execute(&client)
         .await?

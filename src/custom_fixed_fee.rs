@@ -13,7 +13,7 @@ use crate::{
 
 /// A custom fee definition for a consensus topic.
 ///
-/// This fee definition is specific to an Hedera Consensus Service (HCS) topic
+/// This fee definition is specific to an Hiero Consensus Service (HCS) topic
 /// and SHOULD NOT be used in any other context.
 ///
 /// All fields for this message are REQUIRED.

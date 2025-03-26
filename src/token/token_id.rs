@@ -23,7 +23,7 @@ use crate::{
     ToProtobuf,
 };
 
-/// The unique identifier for a token on Hedera.
+/// The unique identifier for a token on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct TokenId {
     /// A non-negative number identifying the shard containing this token.

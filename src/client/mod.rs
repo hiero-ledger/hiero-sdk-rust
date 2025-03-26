@@ -155,7 +155,7 @@ struct ClientInner {
     backoff: RwLock<ClientBackoff>,
 }
 
-/// Managed client for use on the Hedera network.
+/// Managed client for use on the Hiero network.
 #[derive(Clone)]
 pub struct Client(Arc<ClientInner>);
 
@@ -288,19 +288,19 @@ impl Client {
         Ok(client)
     }
 
-    /// Construct a Hedera client pre-configured for mainnet access.
+    /// Construct a Hiero client pre-configured for mainnet access.
     #[must_use]
     pub fn for_mainnet() -> Self {
         ClientBuilder::new(ManagedNetwork::mainnet()).ledger_id(Some(LedgerId::mainnet())).build()
     }
 
-    /// Construct a Hedera client pre-configured for testnet access.
+    /// Construct a Hiero client pre-configured for testnet access.
     #[must_use]
     pub fn for_testnet() -> Self {
         ClientBuilder::new(ManagedNetwork::testnet()).ledger_id(Some(LedgerId::testnet())).build()
     }
 
-    /// Construct a Hedera client pre-configured for previewnet access.
+    /// Construct a Hiero client pre-configured for previewnet access.
     #[must_use]
     pub fn for_previewnet() -> Self {
         ClientBuilder::new(ManagedNetwork::previewnet())

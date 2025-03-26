@@ -23,7 +23,7 @@ use crate::{
     ToProtobuf,
 };
 
-/// The unique identifier for a file on Hedera.
+/// The unique identifier for a file on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct FileId {
     /// The shard number.

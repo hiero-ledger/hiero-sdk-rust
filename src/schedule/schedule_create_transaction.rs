@@ -134,13 +134,13 @@ impl ScheduleCreateTransaction {
         self
     }
 
-    /// Returns the Hedera key which can be used to sign a `ScheduleDelete` and remove the schedule.
+    /// Returns the Hiero key which can be used to sign a `ScheduleDelete` and remove the schedule.
     #[must_use]
     pub fn get_admin_key(&self) -> Option<&Key> {
         self.data().admin_key.as_ref()
     }
 
-    /// Sets the Hedera key which can be used to sign a `ScheduleDelete` and remove the schedule.
+    /// Sets the Hiero key which can be used to sign a `ScheduleDelete` and remove the schedule.
     pub fn admin_key(&mut self, key: impl Into<Key>) -> &mut Self {
         self.data_mut().admin_key = Some(key.into());
         self

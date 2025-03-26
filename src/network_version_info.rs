@@ -8,13 +8,13 @@ use crate::{
     ToProtobuf,
 };
 
-/// Versions of Hedera Services, and the protobuf schema.
+/// Versions of Hiero Services, and the protobuf schema.
 #[derive(Debug, Clone)]
 pub struct NetworkVersionInfo {
     /// Version of the protobuf schema in use by the network.
     pub protobuf_version: SemanticVersion,
 
-    /// Version of the Hedera services in use by the network.
+    /// Version of the Hiero services in use by the network.
     pub services_version: SemanticVersion,
 }
 

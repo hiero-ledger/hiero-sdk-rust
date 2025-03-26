@@ -23,7 +23,7 @@ use crate::{
     ToProtobuf,
 };
 
-/// The unique identifier for a scheduled transaction on Hedera.
+/// The unique identifier for a scheduled transaction on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 #[repr(C)]
 pub struct ScheduleId {

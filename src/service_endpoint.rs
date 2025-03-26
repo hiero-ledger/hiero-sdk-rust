@@ -47,7 +47,7 @@ fn validate_domain_name(domain_name: String) -> crate::Result<()> {
 }
 
 /// Contains the IP address, the port, and the domain name representing a service endpoint of
-/// a Node in a network. Used to reach the Hedera API and submit transactions
+/// a Node in a network. Used to reach the Hiero API and submit transactions
 /// to the network.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ServiceEndpoint {

@@ -26,12 +26,12 @@ async fn main() -> anyhow::Result<()> {
 
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
-    // Hedera supports a form of auto account creation.
+    // Hiero supports a form of auto account creation.
     //
     // You can "create" an account by generating a private key, and then deriving the public key,
-    // without any need to interact with the Hedera network.  The public key more or less acts as the user's
+    // without any need to interact with the Hiero network.  The public key more or less acts as the user's
     // account ID.  This public key is an account's alias_key: a public key that aliases (or will eventually alias)
-    // to a Hedera account.
+    // to a Hiero account.
     //
     // An AccountId takes one of two forms: a normal `AccountId` with no `alias_key` takes the form 0.0.123,
     // while an account ID with an `alias_key` takes the form
@@ -43,9 +43,9 @@ async fn main() -> anyhow::Result<()> {
     // transactions, however most queries and transactions involving such an AccountId won't work until Hbar has
     // been transferred to the alias_key account.
     //
-    // There is no record in the Hedera network of an account associated with a given `alias_key`
+    // There is no record in the Hiero network of an account associated with a given `alias_key`
     // until an amount of Hbar is transferred to the account.  The moment that Hbar is transferred to that `alias_key`
-    // AccountId is the moment that that account actually begins to exist in the Hedera ledger.
+    // AccountId is the moment that that account actually begins to exist in the Hiero ledger.
 
     println!(r#""Creating" a new account"#);
 

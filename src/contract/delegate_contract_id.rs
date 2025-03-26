@@ -19,7 +19,7 @@ use crate::{
     Error,
 };
 
-/// A unique identifier for a smart contract on Hedera.
+/// A unique identifier for a smart contract on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct DelegateContractId {
     /// A non-negative number identifying the shard containing this contract instance.

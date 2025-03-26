@@ -129,7 +129,7 @@ impl<D> QueryCost<'_, D>
 where
     D: QueryExecute,
 {
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     pub(crate) async fn execute(
         &mut self,
         client: &Client,

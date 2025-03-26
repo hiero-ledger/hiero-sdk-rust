@@ -20,7 +20,7 @@ use crate::{
 pub enum TokenType {
     /// Interchangeable value with one another, where any quantity of them has the same value as
     /// another equal quantity if they are in the same class.  Share a single set of properties, not
-    /// distinct from one another. Simply represented as a balance or quantity to a given Hedera
+    /// distinct from one another. Simply represented as a balance or quantity to a given Hiero
     /// account.
     FungibleCommon = 0,
 

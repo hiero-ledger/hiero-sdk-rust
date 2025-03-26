@@ -160,7 +160,7 @@ pub struct Eip1559EthereumData {
     pub nonce: Vec<u8>,
 
     /// An 'optional' additional fee in Ethereum that is paid directly to miners in order to incentivize
-    /// them to include your transaction in a block. Not used in Hedera.
+    /// them to include your transaction in a block. Not used in Hiero.
     pub max_priority_gas: Vec<u8>,
 
     /// The maximum amount, in tinybars, that the payer of the hedera transaction

@@ -8,9 +8,9 @@ use crate::protobuf::{
 
 /// Contains the current and next [`FeeSchedule`]s.
 ///
-/// See the [Hedera documentation]
+/// See the [Hiero documentation]
 ///
-/// [Hedera documentation]: https://docs.hedera.com/guides/docs/hedera-api/basic-types/currentandnextfeeschedule
+/// [Hiero documentation]: https://docs.hedera.com/guides/docs/hedera-api/basic-types/currentandnextfeeschedule
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FeeSchedules {
     /// The current fee schedule.
@@ -59,9 +59,9 @@ impl ToProtobuf for FeeSchedules {
 
 /// The fee schedules for hedera functionality and the time at which this fee schedule will expire.
 ///
-/// See the [Hedera documentation].
+/// See the [Hiero documentation].
 ///
-/// [Hedera documentation]: https://docs.hedera.com/guides/docs/hedera-api/basic-types/feeschedule
+/// [Hiero documentation]: https://docs.hedera.com/guides/docs/hedera-api/basic-types/feeschedule
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FeeSchedule {
     /// The fee schedules per specific piece of functionality.
@@ -110,9 +110,9 @@ impl ToProtobuf for FeeSchedule {
 
 /// The fees for a specific transaction or query based on the fee data.
 ///
-/// See the [Hedera documentation].
+/// See the [Hiero documentation].
 ///
-/// [Hedera documentation]: https://docs.hedera.com/guides/docs/hedera-api/basic-types/transactionfeeschedule
+/// [Hiero documentation]: https://docs.hedera.com/guides/docs/hedera-api/basic-types/transactionfeeschedule
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TransactionFeeSchedule {
     /// The request type that this fee schedule applies to.
@@ -169,7 +169,7 @@ impl ToProtobuf for TransactionFeeSchedule {
     }
 }
 
-/// The functionality provided by Hedera.
+/// The functionality provided by Hiero.
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum RequestType {
@@ -624,10 +624,10 @@ pub struct FeeData {
     /// Fee charged by the node for this functionality.
     pub node: FeeComponents,
 
-    /// Fee charged by Hedera for network operations.
+    /// Fee charged by Hiero for network operations.
     pub network: FeeComponents,
 
-    /// Fee charged by Hedera for providing the service.
+    /// Fee charged by Hiero for providing the service.
     pub service: FeeComponents,
 
     /// A subtype distinguishing between different types of fee data

@@ -21,7 +21,7 @@ impl<D> MirrorQuery<D>
 where
     D: MirrorQueryExecute,
 {
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute(&mut self, client: &Client) -> crate::Result<D::Response> {
@@ -36,7 +36,7 @@ where
         self.data.execute_with_optional_timeout(&self.common, client, timeout).await
     }
 
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     ///
     /// Note that `timeout` is the connection timeout.
     // todo:
@@ -49,12 +49,12 @@ where
         self.execute_with_optional_timeout(client, Some(timeout)).await
     }
 
-    /// Subscribe to this query with the provided client of the Hedera network.
+    /// Subscribe to this query with the provided client of the Hiero network.
     pub fn subscribe<'a>(&self, client: &'a Client) -> D::ItemStream<'a> {
         self.subscribe_with_optional_timeout(client, None)
     }
 
-    /// Subscribe to this query with the provided client of the Hedera network.
+    /// Subscribe to this query with the provided client of the Hiero network.
     ///
     /// Note that `timeout` is the connection timeout.
     pub fn subscribe_with_timeout<'a>(

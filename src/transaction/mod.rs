@@ -63,7 +63,7 @@ pub(crate) use source::TransactionSources;
 
 const DEFAULT_TRANSACTION_VALID_DURATION: Duration = Duration::seconds(120);
 
-/// A transaction that can be executed on the Hedera network.
+/// A transaction that can be executed on the Hiero network.
 #[derive(Clone)]
 pub struct Transaction<D> {
     body: TransactionBody<D>,
@@ -718,7 +718,7 @@ where
 
         match result {
             Ok(response) => {
-                // unexpected response from Hedera, expecting to receive an `InsufficientTxFee` but received `Ok`
+                // unexpected response from Hiero, expecting to receive an `InsufficientTxFee` but received `Ok`
                 return Err(Error::TransactionPreCheckStatus {
                     cost: None,
                     status: services::ResponseCodeEnum::Ok,
@@ -736,7 +736,7 @@ where
         }
     }
 
-    /// Execute this transaction against the provided client of the Hedera network.
+    /// Execute this transaction against the provided client of the Hiero network.
     pub async fn execute(&mut self, client: &Client) -> crate::Result<TransactionResponse> {
         self.execute_with_optional_timeout(client, None).await
     }
@@ -835,7 +835,7 @@ where
         Ok(responses)
     }
 
-    /// Execute this transaction against the provided client of the Hedera network.
+    /// Execute this transaction against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute_with_timeout(
@@ -852,7 +852,7 @@ impl<D> Transaction<D>
 where
     D: TransactionExecuteChunked,
 {
-    /// Execute all transactions against the provided client of the Hedera network.
+    /// Execute all transactions against the provided client of the Hiero network.
     pub async fn execute_all(
         &mut self,
         client: &Client,

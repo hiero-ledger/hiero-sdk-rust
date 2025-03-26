@@ -22,7 +22,7 @@ use crate::{
     TransactionId,
 };
 
-/// Describes a specific query that can be executed on the Hedera network.
+/// Describes a specific query that can be executed on the Hiero network.
 pub trait QueryExecute:
     Sync + Send + Into<AnyQueryData> + Clone + Debug + ToQueryProtobuf + ValidateChecksums
 {

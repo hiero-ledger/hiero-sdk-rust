@@ -52,7 +52,7 @@ use crate::{
     TransactionRecordQueryData,
 };
 
-/// Any possible query that may be executed on the Hedera network.
+/// Any possible query that may be executed on the Hiero network.
 pub type AnyQuery = Query<AnyQueryData>;
 
 #[derive(Debug, Clone)]

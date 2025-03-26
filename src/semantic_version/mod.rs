@@ -14,7 +14,7 @@ use crate::Error;
 #[cfg(test)]
 mod tests;
 
-/// Hedera follows [semantic versioning](https://semver.org) for both the HAPI protobufs and
+/// Hiero follows [semantic versioning](https://semver.org) for both the HAPI protobufs and
 /// the Services software.
 #[derive(Debug, Clone)]
 pub struct SemanticVersion {
@@ -121,7 +121,7 @@ fn parse_build(s: &str) -> crate::Result<String> {
 impl FromStr for SemanticVersion {
     type Err = Error;
 
-    // its probably useless doing strict parsing when Hedera probably accepts loose parsing anyway, but lets at least *try* not to make it worse.
+    // its probably useless doing strict parsing when Hiero probably accepts loose parsing anyway, but lets at least *try* not to make it worse.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.splitn(3, '.').collect();
 

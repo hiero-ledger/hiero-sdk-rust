@@ -65,7 +65,7 @@ pub struct TokenInfo {
     /// The default Freeze status (not applicable, frozen or unfrozen)
     pub default_freeze_status: Option<bool>,
 
-    /// The default KYC status (KycNotApplicable or Revoked) of Hedera accounts relative to this token.
+    /// The default KYC status (KycNotApplicable or Revoked) of Hiero accounts relative to this token.
     pub default_kyc_status: Option<bool>,
 
     /// Specifies whether the token was deleted or not.

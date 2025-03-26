@@ -30,7 +30,7 @@ use crate::{
     ValidateChecksums,
 };
 
-/// Create a new Hedera™ account.
+/// Create a new Hiero™ account.
 pub type AccountCreateTransaction = Transaction<AccountCreateTransactionData>;
 
 // TODO: shard_id: Option<ShardId>

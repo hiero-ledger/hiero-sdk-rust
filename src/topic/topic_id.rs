@@ -22,7 +22,7 @@ use crate::{
     ToProtobuf,
 };
 
-/// The unique identifier for a topic on Hedera.
+/// The unique identifier for a topic on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 #[repr(C)]
 pub struct TopicId {

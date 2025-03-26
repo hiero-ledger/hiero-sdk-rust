@@ -39,7 +39,7 @@ use crate::common::{
 const TEST_SECONDS: i64 = 86400;
 
 #[tokio::test]
-#[ignore = "not implemented in Hedera yet"]
+#[ignore = "not implemented in Hiero yet"]
 async fn create_account() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
@@ -74,7 +74,7 @@ async fn create_account() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[ignore = "not implemented in Hedera yet"]
+#[ignore = "not implemented in Hiero yet"]
 async fn create_account_schedule() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
@@ -156,7 +156,7 @@ async fn transfer() -> anyhow::Result<()> {
 
     assert_eq!(info.executed_at, None);
 
-    // Finally send this last signature to Hedera. This last signature _should_ mean the transaction executes
+    // Finally send this last signature to Hiero. This last signature _should_ mean the transaction executes
     // since all 3 signatures have been provided.
     ScheduleSignTransaction::new()
         .schedule_id(schedule_id)

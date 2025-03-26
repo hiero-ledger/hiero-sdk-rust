@@ -20,7 +20,7 @@ use crate::{
     TokenId,
 };
 
-/// The unique identifier for a token on Hedera.
+/// The unique identifier for a token on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct NftId {
     /// The (non-fungible) token of which this NFT is an instance.

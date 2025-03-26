@@ -89,7 +89,7 @@ pub struct TokenCreateTransactionData {
     /// The key which can change the supply of a token.
     supply_key: Option<Key>,
 
-    /// The default freeze status (frozen or unfrozen) of Hedera accounts relative to this token. If
+    /// The default freeze status (frozen or unfrozen) of Hiero accounts relative to this token. If
     /// true, an account must be unfrozen before it can receive the token
     freeze_default: bool,
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // todo: more indepth documentation
-//! Hedera Rust SDK.
+//! Hiero Rust SDK.
 
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(
