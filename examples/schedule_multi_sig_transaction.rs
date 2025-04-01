@@ -114,7 +114,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("sending schedule sign transaction");
 
-    // Finally send this last signature to Hedera. This last signature _should_ mean the transaction executes
+    // Finally send this last signature to Hiero. This last signature _should_ mean the transaction executes
     // since all 3 signatures have been provided.
     ScheduleSignTransaction::new()
         .node_account_ids([response.node_account_id])

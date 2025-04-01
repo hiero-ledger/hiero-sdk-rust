@@ -350,7 +350,7 @@ async fn charges_hbar_fee_with_limits_applied() -> anyhow::Result<()> {
 
     TopicMessageSubmitTransaction::new()
         .topic_id(topic_id)
-        .message("Hello, Hedera™ hashgraph!".as_bytes().to_vec())
+        .message("Hello, Hiero™ hashgraph!".as_bytes().to_vec())
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -411,7 +411,7 @@ async fn exempts_fee_exempt_keys_from_hbar_fees() -> anyhow::Result<()> {
 
     TopicMessageSubmitTransaction::new()
         .topic_id(topic_id)
-        .message("Hello, Hedera™ hashgraph!".as_bytes().to_vec())
+        .message("Hello, Hiero™ hashgraph!".as_bytes().to_vec())
         .execute(&client)
         .await?
         .get_receipt(&client)

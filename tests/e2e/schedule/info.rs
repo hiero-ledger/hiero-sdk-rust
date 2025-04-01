@@ -17,7 +17,7 @@ use crate::common::{
 };
 
 #[tokio::test]
-#[ignore = "not implemented in Hedera yet"]
+#[ignore = "not implemented in Hiero yet"]
 async fn basic() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());

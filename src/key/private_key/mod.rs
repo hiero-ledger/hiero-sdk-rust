@@ -75,7 +75,7 @@ impl From<k256::ecdsa::SigningKey> for PrivateKeyData {
     }
 }
 
-/// A private key on the Hedera network.
+/// A private key on the Hiero network.
 #[derive(Clone)]
 pub struct PrivateKey(Arc<PrivateKeyDataWrapper>);
 

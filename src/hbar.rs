@@ -15,11 +15,11 @@ pub type Tinybar = i64;
 
 /// Common units of hbar; for the most part they follow SI prefix conventions.
 ///
-/// See the [Hedera Documentation](https://docs.hedera.com/guides/docs/sdks/hbars#hbar-units).
+/// See the [Hiero Documentation](https://docs.hedera.com/guides/docs/sdks/hbars#hbar-units).
 #[repr(i64)]
 #[derive(Debug, Copy, Hash, PartialEq, Eq, Clone)]
 pub enum HbarUnit {
-    /// The atomic (smallest) unit of [`Hbar`], used natively by the Hedera network.
+    /// The atomic (smallest) unit of [`Hbar`], used natively by the Hiero network.
     ///
     /// It is equivalent to <sup>1</sup>&frasl;<sub>100,000,000</sub> [`Hbar`](Self::Hbar).
     Tinybar = 1,
@@ -41,7 +41,7 @@ pub enum HbarUnit {
 
     /// Equivalent to 1 billion [`Hbar`](Self::Hbar) or 100 quadrillion [`Tinybar`](Self::Tinybar).
     ///
-    /// The maximum hbar amount supported by Hedera in any context is ~92 gigabar
+    /// The maximum hbar amount supported by Hiero in any context is ~92 gigabar
     /// (2<sup>63</sup> tinybar); use this unit sparingly.
     Gigabar = 1_000_000_000 * 100_000_000,
 }

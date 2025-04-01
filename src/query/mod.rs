@@ -32,7 +32,7 @@ pub(crate) use execute::{
 };
 pub(crate) use protobuf::ToQueryProtobuf;
 
-/// A query that can be executed on the Hedera network.
+/// A query that can be executed on the Hiero network.
 #[derive(Debug, Default)]
 pub struct Query<D>
 where
@@ -78,7 +78,7 @@ where
 
     /// Returns the explicit payment amount for this query.
     ///
-    /// The client will submit exactly this amount for the payment of this query. Hedera
+    /// The client will submit exactly this amount for the payment of this query. Hiero
     /// will not return any remainder (over the actual cost for this query).
     #[must_use]
     pub fn get_payment_amount(&self) -> Option<Hbar> {
@@ -87,7 +87,7 @@ where
 
     /// Sets the explicit payment amount for this query.
     ///
-    /// The client will submit exactly this amount for the payment of this query. Hedera
+    /// The client will submit exactly this amount for the payment of this query. Hiero
     /// will not return any remainder (over the actual cost for this query).
     pub fn payment_amount(&mut self, amount: Hbar) -> &mut Self {
         self.payment.amount(amount);
@@ -208,7 +208,7 @@ impl<D> Query<D>
 where
     D: QueryExecute,
 {
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute(&mut self, client: &Client) -> crate::Result<D::Response> {
@@ -271,7 +271,7 @@ where
         execute(client, self, timeout).await
     }
 
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute_with_timeout(

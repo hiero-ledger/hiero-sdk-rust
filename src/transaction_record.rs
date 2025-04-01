@@ -25,7 +25,7 @@ use crate::{
     Transfer,
 };
 
-/// The complete record for a transaction on Hedera that has reached consensus.
+/// The complete record for a transaction on Hiero that has reached consensus.
 /// Response from [`TransactionRecordQuery`][crate::TransactionRecordQuery].
 #[derive(Debug, Clone)]
 pub struct TransactionRecord {

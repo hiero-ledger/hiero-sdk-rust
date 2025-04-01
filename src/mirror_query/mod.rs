@@ -16,7 +16,7 @@ pub(crate) use subscribe::{
 
 use self::subscribe::MirrorQueryExecute;
 
-/// A query that can be executed on the Hedera mirror network.
+/// A query that can be executed on the Hiero mirror network.
 #[derive(Clone, Debug, Default)]
 pub struct MirrorQuery<D> {
     pub(crate) data: D,

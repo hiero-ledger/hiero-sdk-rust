@@ -48,7 +48,7 @@ mod tests;
 pub(super) const EC_ALGORITM_OID: ObjectIdentifier =
     ObjectIdentifier::new_unwrap("1.2.840.10045.2.1");
 
-/// A public key on the Hedera network.
+/// A public key on the Hiero network.
 #[derive(Clone, Eq, Copy, Hash, PartialEq)]
 pub struct PublicKey(PublicKeyData);
 

@@ -23,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key);
 
     let receipt = FileCreateTransaction::new()
-        .contents(&b"Hedera Hashgraph is great!"[..])
+        .contents(&b"Hiero is great!"[..])
         .execute(&client)
         .await?
         .get_receipt(&client)

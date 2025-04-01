@@ -16,7 +16,7 @@ pub type Result<T> = StdResult<T, Error>;
 
 pub(crate) type BoxStdError = Box<dyn StdError + Send + Sync + 'static>;
 
-/// Represents any possible error from a fallible function in the Hedera SDK.
+/// Represents any possible error from a fallible function in the Hiero SDK.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum Error {
@@ -169,7 +169,7 @@ pub enum Error {
     #[error("node account `{0}` was not found in the configured network")]
     NodeAccountUnknown(Box<AccountId>),
 
-    /// Received an unrecognized status code from the Hedera Network.
+    /// Received an unrecognized status code from the Hiero Network.
     ///
     /// This can happen when the SDK is outdated, try updating your SDK.
     #[error("received unrecognized status code: {0}, try updating your SDK")]

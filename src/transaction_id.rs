@@ -338,7 +338,7 @@ mod tests {
         )
     }
 
-    /// Parse a transaction ID returned by the Hedera mirror api.
+    /// Parse a transaction ID returned by the Hiero mirror api.
     ///
     /// Test case was an output of this mirror request:
     /// curl 'https://mainnet.mirrornode.hedera.com/api/v1/accounts/2?transactionType=cryptotransfer'

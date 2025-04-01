@@ -71,7 +71,7 @@ impl<T: ValidateChecksums> ValidateChecksums for Option<T> {
     }
 }
 
-/// The ID of an entity on the Hedera network.
+/// The ID of an entity on the Hiero network.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct EntityId {
     /// A non-negative number identifying the shard containing this entity.

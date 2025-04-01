@@ -4,7 +4,7 @@ use hedera::PrivateKey;
 
 fn main() {
     // Generate a Ed25519 key
-    // This is the current recommended default for Hedera
+    // This is the current recommended default for Hiero
 
     let private = PrivateKey::generate_ed25519();
     let public = private.public_key();

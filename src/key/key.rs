@@ -12,7 +12,7 @@ use crate::{
     ToProtobuf,
 };
 
-/// Any method that can be used to authorize an operation on Hedera.
+/// Any method that can be used to authorize an operation on Hiero.
 #[derive(Eq, PartialEq, Debug, Clone, Hash)]
 #[non_exhaustive]
 pub enum Key {

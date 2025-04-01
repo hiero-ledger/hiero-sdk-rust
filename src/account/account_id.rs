@@ -26,7 +26,7 @@ use crate::{
     ToProtobuf,
 };
 
-/// A unique identifier for a cryptocurrency account on Hedera.
+/// A unique identifier for a cryptocurrency account on Hiero.
 #[derive(Copy, Hash, PartialEq, Eq, Clone)]
 pub struct AccountId {
     /// A non-negative number identifying the shard containing this account.

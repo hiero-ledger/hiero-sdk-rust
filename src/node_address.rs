@@ -26,7 +26,7 @@ fn parse_socket_addr_v4(ip: Vec<u8>, port: i32) -> crate::Result<SocketAddrV4> {
     Ok(SocketAddrV4::new(octets.into(), port))
 }
 
-/// The data about a node, including its service endpoints and the Hedera account to be paid for
+/// The data about a node, including its service endpoints and the Hiero account to be paid for
 /// services provided by the node (that is, queries answered and transactions submitted.).
 #[derive(Debug, Clone)]
 pub struct NodeAddress {

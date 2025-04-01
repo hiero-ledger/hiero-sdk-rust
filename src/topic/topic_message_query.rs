@@ -49,7 +49,7 @@ pub struct TopicMessageQueryContext {
     start_time: Option<OffsetDateTime>,
 }
 
-/// Query a stream of Hedera Consensus Service (HCS)
+/// Query a stream of Hiero Consensus Service (HCS)
 /// messages for an HCS Topic via a specific (possibly open-ended) time range.
 pub type TopicMessageQuery = MirrorQuery<TopicMessageQueryData>;
 

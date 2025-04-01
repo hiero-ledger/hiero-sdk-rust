@@ -94,7 +94,7 @@ mod data {
     pub(super) use crate::transfer_transaction::TransferTransactionData as Transfer;
 }
 
-/// Any possible transaction that may be executed on the Hedera network.
+/// Any possible transaction that may be executed on the Hiero network.
 pub type AnyTransaction = Transaction<AnyTransactionData>;
 
 #[derive(Debug, Clone)]
