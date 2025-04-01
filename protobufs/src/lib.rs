@@ -9,6 +9,9 @@ mod time_0_3;
 #[cfg(feature = "fraction")]
 mod fraction;
 
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
 // fixme: Do this, just, don't warn 70 times in generated code.
 #[allow(clippy::derive_partial_eq_without_eq)]
 pub mod services {
