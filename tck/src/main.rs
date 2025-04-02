@@ -59,7 +59,7 @@ async fn run_server() -> anyhow::Result<SocketAddr> {
         count: Arc::new(AtomicUsize::new(0)),
     });
 
-    let server = Server::builder().set_rpc_middleware(m).build("127.0.0.1:8545").await?;
+    let server = Server::builder().set_rpc_middleware(m).build("127.0.0.1:8544").await?;
 
     let addr = server.local_addr()?;
     let handle = server.start(RpcServerImpl.into_rpc());
