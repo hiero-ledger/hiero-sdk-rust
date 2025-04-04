@@ -62,7 +62,7 @@ aes = "0.8.3"
 md5 = "0.7.0"
 sec1 = { version = "0.7.3", features = ["der"] }
 tower = { version = "0.5.2", features = ["util"] }
-openssl = "0.10.70"
+openssl = "0.10.72"
 hyper-util = "0.1.10"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
 
