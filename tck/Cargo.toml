@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 tracing-subscriber = { version = "0.3.3", features = ["env-filter"] }
-tokio = { version = "1.36.0", features = ["signal"] }
+tokio = { version = "1.44.2", features = ["signal"] }
 anyhow = "1.0.81"
 tower = { version = "0.4.13", features = ["tracing"] }
 tracing = "0.1.41"
