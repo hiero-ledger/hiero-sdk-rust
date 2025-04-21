@@ -97,7 +97,7 @@ default-features = false
 features = ["std", "arc-swap", "unsize"]
 
 [dev-dependencies]
-anyhow = "1.0.57"
+anyhow = "1.0.98"
 assert_matches = "1.5.0"
 clap = { version = "4.0.0", features = ["derive", "env"] }
 dotenvy = "0.15.5"
