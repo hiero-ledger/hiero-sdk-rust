@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::time::Duration;
 
 use rand::Rng;
@@ -6,7 +7,37 @@ use triomphe::Arc;
 
 use super::mirror::MirrorNetwork;
 use super::Network;
-use crate::NodeAddressBookQuery;
+use crate::client::config::EndpointConfig;
+use crate::{
+    AccountId,
+    NodeAddressBookQuery,
+};
+
+pub(crate) enum ManagedNetworkBuilder {
+    Addresses(HashMap<String, AccountId>),
+    Network(ManagedNetwork),
+    Mainnet,
+    Previewnet,
+    Testnet,
+}
+
+impl ManagedNetworkBuilder {
+    pub(crate) fn build(self, endpoint_config: EndpointConfig) -> crate::Result<ManagedNetwork> {
+        let managed = match self {
+            Self::Addresses(addresses) => {
+                let network = Network::from_addresses(endpoint_config, &addresses)?;
+
+                ManagedNetwork::new(network, MirrorNetwork::default())
+            }
+            Self::Network(network) => network,
+            Self::Mainnet => ManagedNetwork::mainnet(endpoint_config),
+            Self::Previewnet => ManagedNetwork::previewnet(endpoint_config),
+            Self::Testnet => ManagedNetwork::testnet(endpoint_config),
+        };
+
+        Ok(managed)
+    }
+}
 
 #[derive(Clone)]
 pub(crate) struct ManagedNetwork(Arc<ManagedNetworkInner>);
@@ -23,16 +54,16 @@ impl ManagedNetwork {
         Self(Arc::new(ManagedNetworkInner { primary, mirror }))
     }
 
-    pub(crate) fn mainnet() -> Self {
-        Self::new(Network::mainnet(), MirrorNetwork::mainnet())
+    pub(crate) fn mainnet(endpoint_config: EndpointConfig) -> Self {
+        Self::new(Network::mainnet(endpoint_config), MirrorNetwork::mainnet())
     }
 
-    pub(crate) fn testnet() -> Self {
-        Self::new(Network::testnet(), MirrorNetwork::testnet())
+    pub(crate) fn testnet(endpoint_config: EndpointConfig) -> Self {
+        Self::new(Network::testnet(endpoint_config), MirrorNetwork::testnet())
     }
 
-    pub(crate) fn previewnet() -> Self {
-        Self::new(Network::previewnet(), MirrorNetwork::previewnet())
+    pub(crate) fn previewnet(endpoint_config: EndpointConfig) -> Self {
+        Self::new(Network::previewnet(endpoint_config), MirrorNetwork::previewnet())
     }
 }
 

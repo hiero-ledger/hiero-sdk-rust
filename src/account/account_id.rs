@@ -351,7 +351,7 @@ mod tests {
         assert_eq!(
             AccountId::from_str("0.0.123")
                 .unwrap()
-                .to_string_with_checksum(&Client::for_testnet())
+                .to_string_with_checksum(&Client::for_testnet().unwrap())
                 .unwrap(),
             "0.0.123-esxsf"
         );
@@ -359,7 +359,7 @@ mod tests {
 
     #[tokio::test]
     async fn bad_checksum_on_previewnet() {
-        let client = Client::for_previewnet();
+        let client = Client::for_previewnet().unwrap();
         let id = AccountId::from_str("0.0.123-ntjli").unwrap();
 
         assert_matches!(

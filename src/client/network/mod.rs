@@ -27,6 +27,7 @@ use tonic::transport::{
 };
 use triomphe::Arc;
 
+use crate::client::config::EndpointConfig;
 use crate::{
     AccountId,
     ArcSwap,
@@ -90,20 +91,23 @@ pub(crate) const PREVIEWNET: &[(u64, &[&str])] = &[
 pub(crate) struct Network(pub(crate) ArcSwap<NetworkData>);
 
 impl Network {
-    pub(super) fn mainnet() -> Self {
-        NetworkData::from_static(MAINNET).into()
+    pub(super) fn mainnet(endpoint_config: EndpointConfig) -> Self {
+        NetworkData::from_static(endpoint_config, MAINNET).into()
     }
 
-    pub(super) fn testnet() -> Self {
-        NetworkData::from_static(TESTNET).into()
+    pub(super) fn testnet(endpoint_config: EndpointConfig) -> Self {
+        NetworkData::from_static(endpoint_config, TESTNET).into()
     }
 
-    pub(super) fn previewnet() -> Self {
-        NetworkData::from_static(PREVIEWNET).into()
+    pub(super) fn previewnet(endpoint_config: EndpointConfig) -> Self {
+        NetworkData::from_static(endpoint_config, PREVIEWNET).into()
     }
 
-    pub(super) fn from_addresses(addresses: &HashMap<String, AccountId>) -> crate::Result<Self> {
-        Ok(NetworkData::from_addresses(addresses)?.into())
+    pub(super) fn from_addresses(
+        endpoint_config: EndpointConfig,
+        addresses: &HashMap<String, AccountId>,
+    ) -> crate::Result<Self> {
+        Ok(NetworkData::from_addresses(endpoint_config, addresses)?.into())
     }
 
     fn try_rcu<T: Into<Arc<NetworkData>>, E, F: FnMut(&Arc<NetworkData>) -> Result<T, E>>(
@@ -155,9 +159,9 @@ impl From<NetworkData> for Network {
     }
 }
 
-// note: `Default` here is mostly only useful so that we don't need to implement `from_addresses` twice, notably this doesn't allocate.
 #[derive(Default)]
 pub(crate) struct NetworkData {
+    endpoint_config: Arc<EndpointConfig>,
     map: HashMap<AccountId, usize>,
     node_ids: Box<[AccountId]>,
     backoff: RwLock<NodeBackoff>,
@@ -167,11 +171,31 @@ pub(crate) struct NetworkData {
 }
 
 impl NetworkData {
-    pub(crate) fn from_addresses(addresses: &HashMap<String, AccountId>) -> crate::Result<Self> {
-        Self::default().with_addresses(addresses)
+    fn empty(endpoint_config: EndpointConfig) -> Self {
+        Self {
+            endpoint_config: Arc::new(endpoint_config),
+            map: Default::default(),
+            node_ids: Default::default(),
+            backoff: Default::default(),
+            health: Default::default(),
+            connections: Default::default(),
+        }
     }
 
-    pub(crate) fn from_static(network: &'static [(u64, &'static [&'static str])]) -> Self {
+    pub(crate) fn from_addresses(
+        endpoint_config: EndpointConfig,
+        addresses: &HashMap<String, AccountId>,
+    ) -> crate::Result<Self> {
+        let this = Self::empty(endpoint_config);
+
+        this.with_addresses(addresses)
+    }
+
+    pub(crate) fn from_static(
+        endpoint_config: EndpointConfig,
+        network: &'static [(u64, &'static [&'static str])],
+    ) -> Self {
+        let endpoint_config = Arc::new(endpoint_config);
         let mut map = HashMap::with_capacity(network.len());
         let mut node_ids = Vec::with_capacity(network.len());
         let mut connections = Vec::with_capacity(network.len());
@@ -183,10 +207,11 @@ impl NetworkData {
             map.insert(node_account_id, i);
             node_ids.push(node_account_id);
             health.push(Arc::default());
-            connections.push(NodeConnection::new_static(address));
+            connections.push(NodeConnection::new_static(endpoint_config.clone(), address));
         }
 
         Self {
+            endpoint_config,
             map,
             node_ids: node_ids.into_boxed_slice(),
             health: health.into_boxed_slice(),
@@ -211,24 +236,29 @@ impl NetworkData {
                 .map(|it| (*it.ip()).into())
                 .collect();
 
+            let config = old.endpoint_config.clone();
+
             // if the node is the exact same we want to reuse everything (namely the connections and `healthy`).
             // if the node has different routes then we still want to reuse `healthy` but replace the channel with a new channel.
             // if the node just flat out doesn't exist in `old`, we want to add the new node.
             // and, last but not least, if the node doesn't exist in `new` we want to get rid of it.
             let upsert = match old.map.get(&address.node_account_id) {
                 Some(&account) => {
-                    let connection =
-                        match old.connections[account].addresses.symmetric_difference(&new).count()
-                        {
-                            0 => old.connections[account].clone(),
-                            _ => NodeConnection { addresses: new, channel: OnceCell::new() },
-                        };
+                    let connection = match old.connections[account]
+                        .addresses
+                        .symmetric_difference(&new)
+                        .count()
+                    {
+                        0 => old.connections[account].clone(),
+                        _ => NodeConnection { config, addresses: new, channel: OnceCell::new() },
+                    };
 
                     (old.health[account].clone(), connection)
                 }
-                None => {
-                    (Arc::default(), NodeConnection { addresses: new, channel: OnceCell::new() })
-                }
+                None => (
+                    Arc::default(),
+                    NodeConnection { config, addresses: new, channel: OnceCell::new() },
+                ),
             };
 
             map.insert(address.node_account_id, i);
@@ -238,6 +268,7 @@ impl NetworkData {
         }
 
         Self {
+            endpoint_config: old.endpoint_config.clone(),
             map,
             node_ids: node_ids.into_boxed_slice(),
             health: health.into_boxed_slice(),
@@ -267,6 +298,7 @@ impl NetworkData {
                     node_ids.push(*node);
                     // fixme: keep the channel around more.
                     connections.push(NodeConnection {
+                        config: self.endpoint_config.clone(),
                         addresses: BTreeSet::from([address]),
                         channel: OnceCell::new(),
                     });
@@ -280,6 +312,7 @@ impl NetworkData {
         }
 
         Ok(Self {
+            endpoint_config: self.endpoint_config.clone(),
             map,
             node_ids: node_ids.into_boxed_slice(),
             health: health.into_boxed_slice(),
@@ -553,6 +586,7 @@ impl From<Ipv4Addr> for HostAndPort {
 
 #[derive(Clone)]
 struct NodeConnection {
+    config: Arc<EndpointConfig>,
     addresses: BTreeSet<HostAndPort>,
     channel: OnceCell<Channel>,
 }
@@ -560,8 +594,9 @@ struct NodeConnection {
 impl NodeConnection {
     const PLAINTEXT_PORT: u16 = 50211;
 
-    fn new_static(addresses: &[&'static str]) -> NodeConnection {
+    fn new_static(config: Arc<EndpointConfig>, addresses: &[&'static str]) -> NodeConnection {
         Self {
+            config,
             addresses: addresses.iter().copied().map(HostAndPort::from_static).collect(),
             channel: OnceCell::default(),
         }
@@ -572,12 +607,9 @@ impl NodeConnection {
             .channel
             .get_or_init(|| {
                 let addresses = self.addresses.iter().map(|it| {
-                    Endpoint::from_shared(format!("tcp://{it}"))
-                        .unwrap()
-                        .keep_alive_timeout(Duration::from_secs(10))
-                        .keep_alive_while_idle(true)
-                        .tcp_keepalive(Some(Duration::from_secs(10)))
-                        .connect_timeout(Duration::from_secs(10))
+                    let endpoint = Endpoint::from_shared(format!("tcp://{it}")).unwrap();
+
+                    self.config.apply(endpoint)
                 });
 
                 Channel::balance_list(addresses)

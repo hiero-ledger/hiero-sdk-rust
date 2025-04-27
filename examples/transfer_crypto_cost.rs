@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
     let _ = dotenvy::dotenv();
     let args = Args::parse();
 
-    let client = Client::for_testnet();
+    let client = Client::for_testnet()?;
 
     client.set_operator(args.operator_account_id, args.operator_key);
 
