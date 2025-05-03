@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::env;
-use std::fs::{
-    self,
-    create_dir_all,
-    read_dir,
-};
+use std::fs::{self, create_dir_all, read_dir};
 use std::path::Path;
 
 use regex::RegexBuilder;
@@ -252,7 +248,7 @@ fn main() -> anyhow::Result<()> {
         .services_same("UtilPrngTransactionBody")
         .services_same("VirtualAddress");
 
-    cfg.out_dir(&sdk_out_dir).compile_protos(
+    cfg.out_dir(&sdk_out_dir).emit_rerun_if_changed(false).compile_protos(
         &["./sdk/transaction_list.proto"],
         &["./sdk/", services_tmp_path.as_os_str().to_str().unwrap()],
     )?;
