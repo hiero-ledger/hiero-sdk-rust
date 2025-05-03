@@ -248,10 +248,14 @@ fn main() -> anyhow::Result<()> {
         .services_same("UtilPrngTransactionBody")
         .services_same("VirtualAddress");
 
+    // disable emitting for the generated proto files
     cfg.out_dir(&sdk_out_dir).emit_rerun_if_changed(false).compile_protos(
         &["./sdk/transaction_list.proto"],
         &["./sdk/", services_tmp_path.as_os_str().to_str().unwrap()],
     )?;
+
+    //  check if the "./sdk" folder has changed
+    println!("cargo:rerun-if-changed={}", "./sdk");
 
     // see note wrt services.
     remove_useless_comments(&sdk_out_dir.join("proto.rs"))?;
