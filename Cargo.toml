@@ -101,7 +101,7 @@ anyhow = "1.0.98"
 assert_matches = "1.5.0"
 clap = { version = "4.0.0", features = ["derive", "env"] }
 dotenvy = "0.15.5"
-expect-test = "1.4.0"
+expect-test = "1.5.1"
 hex-literal = "1.0.0"
 miniserde = "0.1.30"
 parking_lot = "0.12.0"
