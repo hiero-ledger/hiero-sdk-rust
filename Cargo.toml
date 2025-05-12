@@ -56,7 +56,7 @@ parking_lot = "0.12.0"
 serde_json = { version = "1.0.96", optional = true }
 serde = { version = "1.0.163", optional = true }
 serde_derive = { version = "1.0.163", optional = true }
-pem = "3.0.1"
+pem = "3.0.5"
 cbc = "0.1.2"
 aes = "0.8.3"
 md5 = "0.7.0"
