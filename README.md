@@ -1,25 +1,26 @@
-# Hedera™ Rust SDK
+# Hiero™ Rust SDK
 
-> The SDK for interacting with Hedera Hashgraph: the official distributed
+> The SDK for interacting with Hiero: the official distributed
 > consensus platform built using the Hashgraph consensus algorithm for fast,
-> fair and secure transactions. Hedera enables and empowers developers to
+> fair and secure transactions. Hiero enables and empowers developers to
 > build an entirely new class of decentralized applications.
 
-<sub>Maintained with ❤️ by <a href="https://launchbadge.com" target="_blank">LaunchBadge</a>, <a href="https://www.swirlds.com/" target="_blank">Swirlds Labs</a>, and the Hedera community</sub>
+<sub>Maintained with ❤️ by <a href="https://launchbadge.com" target="_blank">LaunchBadge</a>, <a href="https://www.swirlds.com/" target="_blank">Swirlds Labs</a>, and the Hiero community</sub>
 
 ## Requirements
 
 - [Rust](https://rustup.rs)
 - [protoc](https://grpc.io/docs/protoc-installation)
+- [OpenSSL](https://www.openssl.org/)
 
 Clone this repository and its submodules:
 
 ```bash
-git clone --recursive https://github.com/hashgraph/hedera-sdk-rust.git
+git clone --recursive https://github.com/hiero-ledger/hiero-sdk-rust.git
 
 ```
 
-Update [`\protobufs`](https://github.com/hashgraph/hedera-protobufs) submodule to recent version (if necessary):
+Update [`\protobufs`](https://github.com/hiero-ledger/hiero-consensus-node.git) submodule to recent version (if necessary):
 
 ```bash
 git submodule update --recursive --remote
@@ -33,11 +34,11 @@ cargo check
 
 ## API Docs
 
-Check out the [Hedera Rust SDK API reference docs](http://docs.rs/hedera/latest/hedera/index.html).
+Check out the [Hiero Rust SDK API reference docs](http://docs.rs/hedera/latest/hedera/index.html).
 
 ## Community and Support
 
-If you have any questions on the Hedera SDK or Hedera more generally, you can join our team and hundreds of other developers using Hedera in our community Discord:
+If you have any questions on the Hiero SDK or Hiero more generally, you can join our team and hundreds of other developers using Hedera in our community Discord:
 
 <a href="https://hedera.com/discord" target="_blank">
   <img alt="" src="https://user-images.githubusercontent.com/753919/167244200-b95cd3a6-6256-4eaf-b9b4-f1f192341485.png" height="60">
@@ -102,10 +103,10 @@ cargo test account::create::initial_balance_and_key
 
 #### Local Environment Testing
 
-Hedera offers a way to run tests through your localhost using the `hedera-local-node` service.
+Hiero offers a way to run tests through your localhost using the `hiero-local-node` service.
 
 For instructions on how to set up and run local node, follow the steps in the git repository:
-<https://github.com/hashgraph/hedera-local-node>
+<https://github.com/hiero-ledger/hiero-local-node>
 
 Once the local node is running in Docker, use these environment variables in the `.env`.
 

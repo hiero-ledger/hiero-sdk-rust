@@ -1,31 +1,20 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use std::borrow::Cow;
 use std::ops::Deref;
 use std::time::Duration;
 
+use hyper::Uri;
+use hyper_openssl::client::legacy::HttpsConnector;
+use hyper_util::client::legacy::connect::HttpConnector;
 use once_cell::sync::OnceCell;
+use openssl::ssl::{
+    SslConnector,
+    SslMethod,
+    SslVerifyMode,
+};
 use tonic::transport::{
     Channel,
-    ClientTlsConfig,
     Endpoint,
 };
 use triomphe::Arc;
@@ -63,9 +52,7 @@ impl MirrorNetwork {
     }
 
     fn network(address: &'static str) -> Self {
-        let tls_config = ClientTlsConfig::new().domain_name(address.split_once(':').unwrap().0);
-
-        Self(ArcSwap::new(Arc::new(MirrorNetworkData::from_static(&[address], tls_config))))
+        Self(ArcSwap::new(Arc::new(MirrorNetworkData::from_static(&[address]))))
     }
 
     #[cfg(feature = "serde")]
@@ -78,40 +65,43 @@ impl MirrorNetwork {
 pub(crate) struct MirrorNetworkData {
     addresses: Vec<Cow<'static, str>>,
     channel: OnceCell<Channel>,
-    tls_config: ClientTlsConfig,
 }
 
 impl MirrorNetworkData {
     pub(crate) fn from_addresses(addresses: Vec<Cow<'static, str>>) -> Self {
-        Self { addresses, channel: OnceCell::new(), tls_config: ClientTlsConfig::new() }
+        Self { addresses, channel: OnceCell::new() }
     }
 
-    pub(crate) fn from_static(network: &[&'static str], tls_config: ClientTlsConfig) -> Self {
-        let mut addresses = Vec::with_capacity(network.len());
+    pub(crate) fn from_static(network: &[&'static str]) -> Self {
+        let addresses = network.iter().map(|&addr| Cow::Borrowed(addr)).collect();
 
-        for address in network {
-            addresses.push(Cow::Borrowed(*address));
-        }
-
-        Self { addresses, channel: OnceCell::new(), tls_config }
+        Self { addresses, channel: OnceCell::new() }
     }
 
     pub(crate) fn channel(&self) -> Channel {
         self.channel
             .get_or_init(|| {
-                let endpoints = self.addresses.iter().map(|address| {
-                    let uri = format!("https://{address}");
-                    Endpoint::from_shared(uri)
-                        .unwrap()
-                        .keep_alive_timeout(Duration::from_secs(10))
-                        .tls_config(self.tls_config.clone())
-                        .unwrap()
-                        .keep_alive_while_idle(true)
-                        .tcp_keepalive(Some(Duration::from_secs(10)))
-                        .connect_timeout(Duration::from_secs(10))
-                });
+                let endpoint = self.addresses.iter().next().unwrap();
+                let uri = format!("https://{endpoint}");
+                let uri_parsed = Uri::from_maybe_shared(uri).unwrap();
 
-                Channel::balance_list(endpoints)
+                // Configure OpenSSL
+                let mut ssl_builder = SslConnector::builder(SslMethod::tls()).unwrap();
+                ssl_builder.set_verify(SslVerifyMode::PEER);
+                ssl_builder.set_alpn_protos(b"\x02h2").unwrap();
+
+                // Create HTTPS connector with OpenSSL
+                let mut http = HttpConnector::new();
+                http.enforce_http(false);
+                let https = HttpsConnector::with_connector(http, ssl_builder).unwrap();
+
+                Endpoint::from_shared(uri_parsed.to_string())
+                    .unwrap()
+                    .connect_timeout(Duration::from_secs(10))
+                    .keep_alive_timeout(Duration::from_secs(10))
+                    .keep_alive_while_idle(true)
+                    .tcp_keepalive(Some(Duration::from_secs(10)))
+                    .connect_with_connector_lazy(https)
             })
             .clone()
     }

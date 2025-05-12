@@ -1,28 +1,11 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use hedera_proto::services;
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
 use time::Duration;
 use tonic::transport::Channel;
 
+use crate::custom_fixed_fee::CustomFixedFee;
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
     FromProtobuf,
@@ -40,6 +23,7 @@ use crate::{
     AccountId,
     BoxGrpcFuture,
     Error,
+    Hbar,
     Key,
     Transaction,
     ValidateChecksums,
@@ -73,6 +57,15 @@ pub struct TopicCreateTransactionData {
 
     /// Account to be used at the topic's expiration time to extend the life of the topic.
     auto_renew_account_id: Option<AccountId>,
+
+    /// The key that can be used to update the custom fees for this topic.
+    fee_schedule_key: Option<Key>,
+
+    /// If the transaction contains a signer from this list, no custom fees are applied.
+    fee_exempt_keys: Vec<Key>,
+
+    /// The custom fee to be assessed during a message submission to this topic. Empty if no custom fees are applied.
+    custom_fees: Vec<CustomFixedFee>,
 }
 
 impl Default for TopicCreateTransactionData {
@@ -83,6 +76,9 @@ impl Default for TopicCreateTransactionData {
             submit_key: None,
             auto_renew_period: Some(Duration::days(90)),
             auto_renew_account_id: None,
+            fee_schedule_key: None,
+            fee_exempt_keys: vec![],
+            custom_fees: vec![],
         }
     }
 }
@@ -153,9 +149,73 @@ impl TopicCreateTransaction {
         self.data_mut().auto_renew_account_id = Some(id);
         self
     }
+
+    /// Sets the key that can be used to update the fee schedule for the topic.
+    pub fn fee_schedule_key(&mut self, key: impl Into<Key>) -> &mut Self {
+        self.data_mut().fee_schedule_key = Some(key.into());
+        self
+    }
+
+    /// The keys that can be used to update the fee schedule for the topic.
+    #[must_use]
+    pub fn get_fee_schedule_key(&self) -> Option<&Key> {
+        self.data().fee_schedule_key.as_ref()
+    }
+
+    /// Sets the keys that can be used to update the fee schedule for the topic.
+    pub fn fee_exempt_keys(&mut self, keys: Vec<Key>) -> &mut Self {
+        self.data_mut().fee_exempt_keys = keys;
+        self
+    }
+
+    /// The keys exempt from custom fees for this topic.
+    #[must_use]
+    pub fn get_fee_exempt_keys(&self) -> &Vec<Key> {
+        &self.data().fee_exempt_keys
+    }
+
+    /// Clears the keys exempt from custom fees for this topic.
+    pub fn clear_fee_exempt_keys(&mut self) -> &mut Self {
+        self.data_mut().fee_exempt_keys.clear();
+        self
+    }
+
+    /// Adds a key to the list of keys exempt from custom fees for this topic.
+    pub fn add_fee_exempt_key(&mut self, key: impl Into<Key>) -> &mut Self {
+        self.data_mut().fee_exempt_keys.push(key.into());
+        self
+    }
+
+    /// The custom fees to be assessed during a message submission to this topic.
+    #[must_use]
+    pub fn get_custom_fees(&self) -> &Vec<CustomFixedFee> {
+        &self.data().custom_fees
+    }
+
+    /// Sets the custom fees to be assessed during a message submission to this topic.
+    pub fn custom_fees(&mut self, fees: Vec<CustomFixedFee>) -> &mut Self {
+        self.data_mut().custom_fees = fees;
+        self
+    }
+
+    /// Clears the custom fees for this topic.
+    pub fn clear_custom_fees(&mut self) -> &mut Self {
+        self.data_mut().custom_fees.clear();
+        self
+    }
+
+    /// Adds a custom fee to the list of custom fees for this topic.
+    pub fn add_custom_fee(&mut self, fee: CustomFixedFee) -> &mut Self {
+        self.data_mut().custom_fees.push(fee);
+        self
+    }
 }
 
-impl TransactionData for TopicCreateTransactionData {}
+impl TransactionData for TopicCreateTransactionData {
+    fn default_max_transaction_fee(&self) -> Hbar {
+        Hbar::new(25)
+    }
+}
 
 impl TransactionExecute for TopicCreateTransactionData {
     fn execute(
@@ -200,12 +260,27 @@ impl From<TopicCreateTransactionData> for AnyTransactionData {
 
 impl FromProtobuf<services::ConsensusCreateTopicTransactionBody> for TopicCreateTransactionData {
     fn from_protobuf(pb: services::ConsensusCreateTopicTransactionBody) -> crate::Result<Self> {
+        let custom_fees = pb
+            .custom_fees
+            .into_iter()
+            .map(CustomFixedFee::from_protobuf)
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let fee_exempt_keys = pb
+            .fee_exempt_key_list
+            .into_iter()
+            .map(Key::from_protobuf)
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(Self {
             topic_memo: pb.memo,
             admin_key: Option::from_protobuf(pb.admin_key)?,
             submit_key: Option::from_protobuf(pb.submit_key)?,
             auto_renew_period: pb.auto_renew_period.map(Into::into),
             auto_renew_account_id: Option::from_protobuf(pb.auto_renew_account)?,
+            fee_schedule_key: Option::from_protobuf(pb.fee_schedule_key)?,
+            fee_exempt_keys,
+            custom_fees,
         })
     }
 }
@@ -214,12 +289,20 @@ impl ToProtobuf for TopicCreateTransactionData {
     type Protobuf = services::ConsensusCreateTopicTransactionBody;
 
     fn to_protobuf(&self) -> Self::Protobuf {
+        let custom_fees = self.custom_fees.iter().map(|fee| fee.to_protobuf()).collect::<Vec<_>>();
+        let fee_exempt_key_list =
+            self.fee_exempt_keys.iter().map(|key| key.to_protobuf()).collect::<Vec<_>>();
+        let fee_schedule_key = self.fee_schedule_key.as_ref().map(|key| key.to_protobuf());
+
         services::ConsensusCreateTopicTransactionBody {
             auto_renew_account: self.auto_renew_account_id.to_protobuf(),
             memo: self.topic_memo.clone(),
             admin_key: self.admin_key.to_protobuf(),
             submit_key: self.submit_key.to_protobuf(),
             auto_renew_period: self.auto_renew_period.to_protobuf(),
+            custom_fees,
+            fee_exempt_key_list,
+            fee_schedule_key,
         }
     }
 }
@@ -231,6 +314,7 @@ mod tests {
     use time::Duration;
 
     use super::TopicCreateTransactionData;
+    use crate::custom_fixed_fee::CustomFixedFee;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,
@@ -243,7 +327,9 @@ mod tests {
     use crate::{
         AccountId,
         AnyTransaction,
+        PrivateKey,
         PublicKey,
+        TokenId,
         TopicCreateTransaction,
     };
 
@@ -379,6 +465,9 @@ mod tests {
                             ),
                         },
                     ),
+                    fee_schedule_key: None,
+                    fee_exempt_key_list: [],
+                    custom_fees: [],
                 },
             )
         "#]]
@@ -406,6 +495,9 @@ mod tests {
             submit_key: Some(key().to_protobuf()),
             auto_renew_period: Some(AUTO_RENEW_PERIOD.to_protobuf()),
             auto_renew_account: Some(AUTO_RENEW_ACCOUNT_ID.to_protobuf()),
+            custom_fees: vec![],
+            fee_exempt_key_list: vec![],
+            fee_schedule_key: None,
         };
 
         let tx = TopicCreateTransactionData::from_protobuf(tx).unwrap();
@@ -470,5 +562,111 @@ mod tests {
     #[should_panic]
     fn get_set_auto_renew_account_id_frozen_panics() {
         make_transaction().auto_renew_account_id(AUTO_RENEW_ACCOUNT_ID);
+    }
+
+    #[test]
+    fn get_set_fee_schedule_key() {
+        let mut tx = TopicCreateTransaction::new();
+        tx.fee_schedule_key(key());
+
+        assert_eq!(tx.get_fee_schedule_key(), Some(&key().into()));
+    }
+
+    #[test]
+    #[should_panic]
+    fn get_set_fee_schedule_key_frozen_panics() {
+        make_transaction().fee_schedule_key(key());
+    }
+
+    #[test]
+    fn get_set_fee_exempt_keys() {
+        let keys = vec![PrivateKey::generate_ecdsa(), PrivateKey::generate_ecdsa()];
+        let mut tx = TopicCreateTransaction::new();
+        tx.fee_exempt_keys(keys.iter().map(|key| key.public_key().into()).collect());
+
+        assert_eq!(
+            tx.get_fee_exempt_keys(),
+            &keys.iter().map(|key| key.public_key().into()).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn get_set_custom_fees() {
+        let mut tx = TopicCreateTransaction::new();
+        tx.custom_fees(vec![
+            CustomFixedFee::new(100, Some(TokenId::new(1, 2, 3)), Some(AccountId::new(4, 5, 6))),
+            CustomFixedFee::new(200, None, None),
+        ]);
+
+        assert_eq!(
+            tx.get_custom_fees(),
+            &vec![
+                CustomFixedFee::new(
+                    100,
+                    Some(TokenId::new(1, 2, 3)),
+                    Some(AccountId::new(4, 5, 6))
+                ),
+                CustomFixedFee::new(200, None, None)
+            ]
+        );
+    }
+
+    #[test]
+    fn add_topic_custom_fee_to_list() {
+        let custom_fixed_fees = vec![
+            CustomFixedFee::new(1, Some(TokenId::new(0, 0, 0)), None),
+            CustomFixedFee::new(2, Some(TokenId::new(0, 0, 1)), None),
+            CustomFixedFee::new(3, Some(TokenId::new(0, 0, 2)), None),
+        ];
+
+        let custom_fee_to_add = CustomFixedFee::new(4, Some(TokenId::new(0, 0, 3)), None);
+
+        let mut expected_custom_fees = custom_fixed_fees.clone();
+        expected_custom_fees.push(custom_fee_to_add.clone());
+
+        let mut tx = TopicCreateTransaction::new();
+        tx.custom_fees(custom_fixed_fees);
+        tx.add_custom_fee(custom_fee_to_add);
+
+        assert_eq!(tx.get_custom_fees().len(), expected_custom_fees.len());
+        assert_eq!(tx.get_custom_fees(), &expected_custom_fees);
+    }
+
+    #[test]
+    fn add_topic_custom_fee_to_empty_list() {
+        let custom_fee_to_add = CustomFixedFee::new(4, Some(TokenId::new(0, 0, 3)), None);
+
+        let mut tx = TopicCreateTransaction::new();
+        tx.add_custom_fee(custom_fee_to_add.clone());
+
+        assert_eq!(tx.get_custom_fees().len(), 1);
+        assert_eq!(tx.get_custom_fees(), &vec![custom_fee_to_add]);
+    }
+
+    #[test]
+    fn add_fee_exempt_key_to_empty_list() {
+        let mut tx = TopicCreateTransaction::new();
+
+        let fee_exempt_key = PrivateKey::generate_ecdsa();
+        tx.add_fee_exempt_key(fee_exempt_key.public_key());
+
+        assert_eq!(tx.get_fee_exempt_keys().len(), 1);
+        assert_eq!(tx.get_fee_exempt_keys(), &vec![fee_exempt_key.public_key().into()]);
+    }
+
+    #[test]
+    fn add_fee_exempt_key_to_list() {
+        let fee_exempt_key = PrivateKey::generate_ecdsa();
+        let mut tx = TopicCreateTransaction::new();
+        tx.fee_exempt_keys(vec![fee_exempt_key.public_key().into()]);
+
+        let fee_exempt_key_to_add = PrivateKey::generate_ecdsa();
+        tx.add_fee_exempt_key(fee_exempt_key_to_add.public_key());
+
+        let expected_keys =
+            vec![fee_exempt_key.public_key().into(), fee_exempt_key_to_add.public_key().into()];
+
+        assert_eq!(tx.get_fee_exempt_keys().len(), 2);
+        assert_eq!(tx.get_fee_exempt_keys(), &expected_keys);
     }
 }

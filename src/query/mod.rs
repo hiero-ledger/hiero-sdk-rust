@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use futures_core::future::BoxFuture;
 use time::Duration;
@@ -50,7 +32,7 @@ pub(crate) use execute::{
 };
 pub(crate) use protobuf::ToQueryProtobuf;
 
-/// A query that can be executed on the Hedera network.
+/// A query that can be executed on the Hiero network.
 #[derive(Debug, Default)]
 pub struct Query<D>
 where
@@ -96,7 +78,7 @@ where
 
     /// Returns the explicit payment amount for this query.
     ///
-    /// The client will submit exactly this amount for the payment of this query. Hedera
+    /// The client will submit exactly this amount for the payment of this query. Hiero
     /// will not return any remainder (over the actual cost for this query).
     #[must_use]
     pub fn get_payment_amount(&self) -> Option<Hbar> {
@@ -105,7 +87,7 @@ where
 
     /// Sets the explicit payment amount for this query.
     ///
-    /// The client will submit exactly this amount for the payment of this query. Hedera
+    /// The client will submit exactly this amount for the payment of this query. Hiero
     /// will not return any remainder (over the actual cost for this query).
     pub fn payment_amount(&mut self, amount: Hbar) -> &mut Self {
         self.payment.amount(amount);
@@ -226,7 +208,7 @@ impl<D> Query<D>
 where
     D: QueryExecute,
 {
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute(&mut self, client: &Client) -> crate::Result<D::Response> {
@@ -289,7 +271,7 @@ where
         execute(client, self, timeout).await
     }
 
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute_with_timeout(

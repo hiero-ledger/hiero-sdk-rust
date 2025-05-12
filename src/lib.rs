@@ -1,25 +1,7 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 // todo: more indepth documentation
-//! Hedera Rust SDK.
+//! Hiero Rust SDK.
 
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(
@@ -121,6 +103,8 @@ mod account;
 mod address_book;
 mod client;
 mod contract;
+mod custom_fee_limit;
+mod custom_fixed_fee;
 mod downcast;
 mod entity_id;
 mod error;
@@ -178,10 +162,14 @@ pub use account::{
     AccountInfo,
     AccountInfoQuery,
     AccountRecordsQuery,
-    AccountStakersQuery,
     AccountUpdateTransaction,
     AllProxyStakers,
     ProxyStaker,
+};
+pub use address_book::{
+    NodeCreateTransaction,
+    NodeDeleteTransaction,
+    NodeUpdateTransaction,
 };
 pub use client::Client;
 pub(crate) use client::Operator;
@@ -202,6 +190,7 @@ pub use contract::{
     ContractUpdateTransaction,
     DelegateContractId,
 };
+pub use custom_fixed_fee::CustomFixedFee;
 pub use entity_id::EntityId;
 pub(crate) use entity_id::ValidateChecksums;
 pub use error::{
@@ -293,6 +282,7 @@ pub use schedule::{
     ScheduleSignTransaction,
 };
 pub use semantic_version::SemanticVersion;
+pub use service_endpoint::ServiceEndpoint;
 pub use staking_info::StakingInfo;
 pub use system::{
     FreezeTransaction,

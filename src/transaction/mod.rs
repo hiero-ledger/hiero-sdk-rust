@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -32,6 +14,7 @@ use prost::Message;
 use time::Duration;
 use triomphe::Arc;
 
+use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
 use crate::execute::execute;
 use crate::signer::AnySigner;
@@ -80,7 +63,7 @@ pub(crate) use source::TransactionSources;
 
 const DEFAULT_TRANSACTION_VALID_DURATION: Duration = Duration::seconds(120);
 
-/// A transaction that can be executed on the Hedera network.
+/// A transaction that can be executed on the Hiero network.
 #[derive(Clone)]
 pub struct Transaction<D> {
     body: TransactionBody<D>,
@@ -109,6 +92,11 @@ pub(crate) struct TransactionBody<D> {
     pub(crate) is_frozen: bool,
 
     pub(crate) regenerate_transaction_id: Option<bool>,
+
+    /// The maximum custom fee that the user is willing to pay for the message.
+    /// If left empty, the user is willing to pay any custom fee.
+    /// If used with a transaction type that does not support custom fee limits, the transaction will fail.
+    pub(crate) custom_fee_limits: Vec<CustomFeeLimit>,
 }
 
 impl<D> Default for Transaction<D>
@@ -127,6 +115,7 @@ where
                 operator: None,
                 is_frozen: false,
                 regenerate_transaction_id: None,
+                custom_fee_limits: Vec::new(),
             },
             signers: Vec::new(),
             sources: None,
@@ -190,7 +179,7 @@ impl<D> Transaction<D> {
 
     /// # Panics
     /// If `self.is_frozen()`.
-    fn body_mut(&mut self) -> &mut TransactionBody<D> {
+    pub(crate) fn body_mut(&mut self) -> &mut TransactionBody<D> {
         self.require_not_frozen();
         &mut self.body
     }
@@ -258,6 +247,33 @@ impl<D> Transaction<D> {
     /// Sets the maximum transaction fee the paying account is willing to pay.
     pub fn max_transaction_fee(&mut self, fee: Hbar) -> &mut Self {
         self.body_mut().max_transaction_fee = Some(fee);
+        self
+    }
+
+    /// Returns the custom fee limits for the transaction.
+    #[must_use]
+    pub fn get_custom_fee_limits(&self) -> &[CustomFeeLimit] {
+        &self.body.custom_fee_limits
+    }
+
+    /// Sets the custom fee limits for the transaction.
+    pub fn custom_fee_limits(
+        &mut self,
+        limits: impl IntoIterator<Item = CustomFeeLimit>,
+    ) -> &mut Self {
+        self.body_mut().custom_fee_limits = limits.into_iter().collect();
+        self
+    }
+
+    /// Adds a custom fee limit to the transaction.
+    pub fn add_custom_fee_limit(&mut self, limit: CustomFeeLimit) -> &mut Self {
+        self.body_mut().custom_fee_limits.push(limit);
+        self
+    }
+
+    /// Removes all custom fee limits for the transaction.
+    pub fn clear_custom_fee_limits(&mut self) -> &mut Self {
+        self.body_mut().custom_fee_limits.clear();
         self
     }
 
@@ -427,6 +443,8 @@ impl<D: ValidateChecksums> Transaction<D> {
             client.and_then(Client::default_max_transaction_fee)
         });
 
+        let custom_fee_limits = self.body.custom_fee_limits.clone();
+
         let operator = client.and_then(Client::full_load_operator);
 
         // note: yes, there's an `Some(opt.unwrap())`, this is INTENTIONAL.
@@ -434,6 +452,7 @@ impl<D: ValidateChecksums> Transaction<D> {
         self.body.max_transaction_fee = max_transaction_fee;
         self.body.operator = operator;
         self.body.is_frozen = true;
+        self.body.custom_fee_limits = custom_fee_limits;
 
         if let Some(client) = client {
             if client.auto_validate_checksums() {
@@ -699,7 +718,7 @@ where
 
         match result {
             Ok(response) => {
-                // unexpected response from Hedera, expecting to receive an `InsufficientTxFee` but received `Ok`
+                // unexpected response from Hiero, expecting to receive an `InsufficientTxFee` but received `Ok`
                 return Err(Error::TransactionPreCheckStatus {
                     cost: None,
                     status: services::ResponseCodeEnum::Ok,
@@ -717,7 +736,7 @@ where
         }
     }
 
-    /// Execute this transaction against the provided client of the Hedera network.
+    /// Execute this transaction against the provided client of the Hiero network.
     pub async fn execute(&mut self, client: &Client) -> crate::Result<TransactionResponse> {
         self.execute_with_optional_timeout(client, None).await
     }
@@ -816,7 +835,7 @@ where
         Ok(responses)
     }
 
-    /// Execute this transaction against the provided client of the Hedera network.
+    /// Execute this transaction against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute_with_timeout(
@@ -833,7 +852,7 @@ impl<D> Transaction<D>
 where
     D: TransactionExecuteChunked,
 {
-    /// Execute all transactions against the provided client of the Hedera network.
+    /// Execute all transactions against the provided client of the Hiero network.
     pub async fn execute_all(
         &mut self,
         client: &Client,
@@ -964,6 +983,7 @@ fn pb_transaction_body_eq(
         generate_record,
         memo,
         data,
+        max_custom_fees,
     } = rhs;
 
     if &lhs.transaction_fee != transaction_fee {
@@ -979,6 +999,10 @@ fn pb_transaction_body_eq(
     }
 
     if &lhs.memo != memo {
+        return false;
+    }
+
+    if &lhs.max_custom_fees != max_custom_fees {
         return false;
     }
 
@@ -1055,6 +1079,7 @@ where
             operator,
             is_frozen,
             regenerate_transaction_id,
+            custom_fee_limits,
         } = body;
 
         // not a `map().map_err()` because ownership.
@@ -1070,6 +1095,7 @@ where
                     operator,
                     is_frozen,
                     regenerate_transaction_id,
+                    custom_fee_limits,
                 },
                 signers,
                 sources,
@@ -1086,6 +1112,7 @@ where
                     operator,
                     is_frozen,
                     regenerate_transaction_id,
+                    custom_fee_limits,
                 },
                 signers,
                 sources,
@@ -1169,6 +1196,7 @@ pub(crate) mod test_helpers {
             generate_record,
             memo,
             data,
+            max_custom_fees,
         } = body;
 
         let node_account_id = node_account_id.unwrap();
@@ -1181,7 +1209,7 @@ pub(crate) mod test_helpers {
         assert_eq!(transaction_valid_duration, Some(services::Duration { seconds: 120 }));
         assert_eq!(generate_record, false);
         assert_eq!(memo, "");
-
+        assert_eq!(max_custom_fees, vec![]);
         data.unwrap()
     }
 

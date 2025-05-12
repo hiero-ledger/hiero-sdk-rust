@@ -1,4 +1,5 @@
 mod account;
+mod address_book;
 mod client;
 mod common;
 mod contract;

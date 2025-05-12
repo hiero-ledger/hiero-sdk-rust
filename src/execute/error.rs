@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 use std::error::Error;
 
 use serde::de::StdError;
@@ -28,21 +10,6 @@ fn has_transient_io_error<E: StdError>(error: E) -> bool {
 
     if let Some(io_error) = source.downcast_ref::<std::io::Error>() {
         is_io_error_transient(io_error)
-    } else {
-        false
-    }
-}
-
-// tonic 0.11 (current dependency)
-fn is_hyper_0_error_transient(error: &hyper_0::Error) -> bool {
-    if error.is_canceled() || has_transient_io_error(error) {
-        true
-    } else if let Some(source) = error.source() {
-        if let Some(h2_error) = source.downcast_ref::<h2_03::Error>() {
-            h2_error.is_go_away()
-        } else {
-            false
-        }
     } else {
         false
     }
@@ -80,8 +47,8 @@ pub(super) fn is_tonic_status_transient(status: &tonic::Status) -> bool {
         return false;
     };
 
-    if let Some(hyper_0) = source.downcast_ref::<hyper_0::Error>() {
-        is_hyper_0_error_transient(hyper_0)
+    if let Some(hyper) = source.downcast_ref::<hyper::Error>() {
+        is_hyper_error_transient(hyper)
     } else if let Some(hyper) = source.downcast_ref::<hyper::Error>() {
         is_hyper_error_transient(hyper)
     } else {

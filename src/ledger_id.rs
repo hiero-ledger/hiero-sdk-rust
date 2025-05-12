@@ -72,7 +72,7 @@ impl ToOwned for RefLedgerId {
     }
 }
 
-/// The ID of a Hedera Ledger.
+/// The ID of a Hiero Ledger.
 #[derive(Eq, PartialEq)]
 pub struct LedgerId(Box<RefLedgerId>);
 

@@ -1,3 +1,4 @@
-[submodule "protobufs/src"]
-	path = protobufs/protobufs
-	url = https://github.com/hashgraph/hedera-protobufs.git
+[submodule "protobufs/services"]
+	path = protobufs/services
+	url = https://github.com/hiero-ledger/hiero-consensus-node.git
+	sparse-checkout = true

@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use async_stream::stream;
 use backoff::backoff::Backoff;
@@ -39,7 +21,7 @@ impl<D> MirrorQuery<D>
 where
     D: MirrorQueryExecute,
 {
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     // todo:
     #[allow(clippy::missing_errors_doc)]
     pub async fn execute(&mut self, client: &Client) -> crate::Result<D::Response> {
@@ -54,7 +36,7 @@ where
         self.data.execute_with_optional_timeout(&self.common, client, timeout).await
     }
 
-    /// Execute this query against the provided client of the Hedera network.
+    /// Execute this query against the provided client of the Hiero network.
     ///
     /// Note that `timeout` is the connection timeout.
     // todo:
@@ -67,12 +49,12 @@ where
         self.execute_with_optional_timeout(client, Some(timeout)).await
     }
 
-    /// Subscribe to this query with the provided client of the Hedera network.
+    /// Subscribe to this query with the provided client of the Hiero network.
     pub fn subscribe<'a>(&self, client: &'a Client) -> D::ItemStream<'a> {
         self.subscribe_with_optional_timeout(client, None)
     }
 
-    /// Subscribe to this query with the provided client of the Hedera network.
+    /// Subscribe to this query with the provided client of the Hiero network.
     ///
     /// Note that `timeout` is the connection timeout.
     pub fn subscribe_with_timeout<'a>(

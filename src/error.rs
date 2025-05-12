@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use std::error::Error as StdError;
 use std::result::Result as StdResult;
@@ -34,7 +16,7 @@ pub type Result<T> = StdResult<T, Error>;
 
 pub(crate) type BoxStdError = Box<dyn StdError + Send + Sync + 'static>;
 
-/// Represents any possible error from a fallible function in the Hedera SDK.
+/// Represents any possible error from a fallible function in the Hiero SDK.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum Error {
@@ -187,7 +169,7 @@ pub enum Error {
     #[error("node account `{0}` was not found in the configured network")]
     NodeAccountUnknown(Box<AccountId>),
 
-    /// Received an unrecognized status code from the Hedera Network.
+    /// Received an unrecognized status code from the Hiero Network.
     ///
     /// This can happen when the SDK is outdated, try updating your SDK.
     #[error("received unrecognized status code: {0}, try updating your SDK")]

@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use std::env;
 use std::fs::{
@@ -29,8 +11,7 @@ use std::path::Path;
 use regex::RegexBuilder;
 
 const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
-const DERIVE_EQ_HASH_COPY: &str = "#[derive(Copy, Eq, Hash)]";
-const SERVICES_FOLDER: &str = "./protobufs/services";
+const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobufs/services";
 
 fn main() -> anyhow::Result<()> {
     // services is the "base" module for the hedera protobufs
@@ -65,8 +46,10 @@ fn main() -> anyhow::Result<()> {
     fs::rename(out_path.join("services"), &services_tmp_path)?;
 
     let services: Vec<_> = read_dir(&services_tmp_path)?
+        .chain(read_dir(&services_tmp_path.join("auxiliary").join("tss"))?)
         .filter_map(|entry| {
             let entry = entry.ok()?;
+
             entry.file_type().ok()?.is_file().then(|| entry.path())
         })
         .collect();
@@ -79,8 +62,12 @@ fn main() -> anyhow::Result<()> {
         // ensure that every `package _` entry is `package proto;`
         let contents = re_package.replace(&contents, "package proto;");
 
-        // remove com.hedera.hapi.node.addressbook. prefix
         let contents = contents.replace("com.hedera.hapi.node.addressbook.", "");
+        let contents = contents.replace("com.hedera.hapi.services.auxiliary.history.", "");
+        let contents = contents.replace("com.hedera.hapi.services.auxiliary.tss.", "");
+        let contents = contents.replace("com.hedera.hapi.platform.event.", "");
+
+        let contents = remove_unused_types(&contents);
 
         fs::write(service, &*contents)?;
     }
@@ -96,35 +83,35 @@ fn main() -> anyhow::Result<()> {
     // any protobufs that would typically be used as parameter, that meet the requirements of those
     // traits
     cfg = cfg
-        .type_attribute("proto.ShardID", DERIVE_EQ_HASH_COPY)
-        .type_attribute("proto.RealmID", DERIVE_EQ_HASH_COPY)
+        .type_attribute("proto.ShardID", DERIVE_EQ_HASH)
+        .type_attribute("proto.RealmID", DERIVE_EQ_HASH)
         .type_attribute("proto.AccountID", DERIVE_EQ_HASH)
         .type_attribute("proto.AccountID.account", DERIVE_EQ_HASH)
-        .type_attribute("proto.FileID", DERIVE_EQ_HASH_COPY)
+        .type_attribute("proto.FileID", DERIVE_EQ_HASH)
         .type_attribute("proto.ContractID", DERIVE_EQ_HASH)
         .type_attribute("proto.ContractID.contract", DERIVE_EQ_HASH)
         .type_attribute("proto.TransactionID", DERIVE_EQ_HASH)
-        .type_attribute("proto.Timestamp", DERIVE_EQ_HASH_COPY)
+        .type_attribute("proto.Timestamp", DERIVE_EQ_HASH)
         .type_attribute("proto.NftTransfer", DERIVE_EQ_HASH)
-        .type_attribute("proto.Fraction", DERIVE_EQ_HASH_COPY)
-        .type_attribute("proto.TopicID", DERIVE_EQ_HASH_COPY)
-        .type_attribute("proto.TokenID", DERIVE_EQ_HASH_COPY)
-        .type_attribute("proto.ScheduleID", DERIVE_EQ_HASH_COPY)
-        .type_attribute("proto.FeeComponents", DERIVE_EQ_HASH_COPY)
+        .type_attribute("proto.Fraction", DERIVE_EQ_HASH)
+        .type_attribute("proto.TopicID", DERIVE_EQ_HASH)
+        .type_attribute("proto.TokenID", DERIVE_EQ_HASH)
+        .type_attribute("proto.ScheduleID", DERIVE_EQ_HASH)
+        .type_attribute("proto.FeeComponents", DERIVE_EQ_HASH)
         .type_attribute("proto.Key", DERIVE_EQ_HASH)
         .type_attribute("proto.KeyList", DERIVE_EQ_HASH)
         .type_attribute("proto.ThresholdKey", DERIVE_EQ_HASH)
         .type_attribute("proto.Key.key", DERIVE_EQ_HASH)
         .type_attribute("proto.SignaturePair", DERIVE_EQ_HASH)
         .type_attribute("proto.SignaturePair.signature", DERIVE_EQ_HASH)
-        .type_attribute("proto.FeeData", DERIVE_EQ_HASH_COPY)
-        .type_attribute("proto.TokenBalance", DERIVE_EQ_HASH_COPY)
+        .type_attribute("proto.FeeData", DERIVE_EQ_HASH)
+        .type_attribute("proto.TokenBalance", DERIVE_EQ_HASH)
         .type_attribute("proto.TokenAssociation", DERIVE_EQ_HASH)
         .type_attribute("proto.CryptoAllowance", DERIVE_EQ_HASH)
         .type_attribute("proto.TokenAllowance", DERIVE_EQ_HASH)
         .type_attribute("proto.GrantedCryptoAllowance", DERIVE_EQ_HASH)
         .type_attribute("proto.GrantedTokenAllowance", DERIVE_EQ_HASH)
-        .type_attribute("proto.Duration", DERIVE_EQ_HASH_COPY);
+        .type_attribute("proto.Duration", DERIVE_EQ_HASH);
 
     // the ResponseCodeEnum should be marked as #[non_exhaustive] so
     // adding variants does not trigger a breaking change
@@ -134,21 +121,20 @@ fn main() -> anyhow::Result<()> {
     cfg = cfg.type_attribute(
         "proto.ResponseCodeEnum",
         r#"#[doc = "
- Returned in `TransactionReceipt`, `Error::PreCheckStatus`, and `Error::ReceiptStatus`.
- 
- The success variant is `Success` which is what a `TransactionReceipt` will contain for a
- successful transaction.
-     "]"#,
+  Returned in `TransactionReceipt`, `Error::PreCheckStatus`, and `Error::ReceiptStatus`.
+  
+  The success variant is `Success` which is what a `TransactionReceipt` will contain for a
+  successful transaction.
+      "]"#,
     );
 
-    cfg.compile(&services, &[services_tmp_path])?;
+    cfg.compile_protos(&services, &[services_tmp_path.clone()])?;
 
     // NOTE: prost generates rust doc comments and fails to remove the leading * line
     remove_useless_comments(&Path::new(&env::var("OUT_DIR")?).join("proto.rs"))?;
 
     // mirror
     // NOTE: must be compiled in a separate folder otherwise it will overwrite the previous build
-
     let mirror_out_dir = Path::new(&env::var("OUT_DIR")?).join("mirror");
     create_dir_all(&mirror_out_dir)?;
 
@@ -163,12 +149,9 @@ fn main() -> anyhow::Result<()> {
             "crate::services::ConsensusMessageChunkInfo",
         )
         .out_dir(&mirror_out_dir)
-        .compile(
-            &[
-                "./protobufs/mirror/consensus_service.proto",
-                "./protobufs/mirror/mirror_network_service.proto",
-            ],
-            &["./protobufs/mirror/", "./protobufs/services/"],
+        .compile_protos(
+            &["./mirror/consensus_service.proto", "./mirror/mirror_network_service.proto"],
+            &["./mirror/", "./services/hapi/hedera-protobufs/services/"],
         )?;
 
     remove_useless_comments(&mirror_out_dir.join("proto.rs"))?;
@@ -183,9 +166,12 @@ fn main() -> anyhow::Result<()> {
     let cfg = tonic_build::configure();
     let cfg = builder::extern_basic_types(cfg);
 
-    cfg.out_dir(&streams_out_dir).compile(
-        &["./protobufs/streams/account_balance_file.proto"],
-        &["./protobufs/streams/", "./protobufs/services/"],
+    cfg.out_dir(&streams_out_dir).compile_protos(
+        &["./services/hapi/hedera-protobufs/streams/account_balance_file.proto"],
+        &[
+            "./services/hapi/hedera-protobufs/streams/",
+            "./services/hapi/hedera-protobufs/services/",
+        ],
     )?;
 
     // see note wrt services.
@@ -256,15 +242,19 @@ fn main() -> anyhow::Result<()> {
         .services_same("TokenUpdateTransactionBody")
         .services_same("TokenUpdateNftsTransactionBody")
         .services_same("TokenWipeAccountTransactionBody")
+        .services_same("TssMessageTransactionBody")
+        .services_same("TssVoteTransactionBody")
+        .services_same("TssShareSignatureTransactionBody")
+        .services_same("TssEncryptionKeyTransactionBody")
         .services_same("Transaction")
         .services_same("TransactionBody")
         .services_same("UncheckedSubmitBody")
         .services_same("UtilPrngTransactionBody")
         .services_same("VirtualAddress");
 
-    cfg.out_dir(&sdk_out_dir).compile(
-        &["./protobufs/sdk/transaction_list.proto"],
-        &["./protobufs/sdk/", "./protobufs/services/"],
+    cfg.out_dir(&sdk_out_dir).compile_protos(
+        &["./sdk/transaction_list.proto"],
+        &["./sdk/", services_tmp_path.as_os_str().to_str().unwrap()],
     )?;
 
     // see note wrt services.
@@ -280,9 +270,49 @@ fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
     contents = contents.replace("/// *\n", "");
     contents = contents.replace("/// UNDOCUMENTED", "");
 
+    // Remove code examples in comments
+    let re = regex::Regex::new(r"/// ```[\s\S]*?/// ```\n").unwrap();
+    contents = re.replace_all(&contents, "").to_string();
+
     fs::write(path, contents)?;
 
     Ok(())
+}
+
+// Temporary function to remove unused types in transaction.proto
+fn remove_unused_types(contents: &str) -> String {
+    let contents = contents.replace(
+        "import \"event/state_signature_transaction.proto\";",
+        "// import \"event/state_signature_transaction.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"auxiliary/history/history_proof_vote.proto\";",
+        "// import \"auxiliary/history/history_proof_vote.proto\";",
+    );
+    let contents = contents.replace(
+        "import \"auxiliary/history/history_proof_signature.proto\";",
+        "// import \"auxiliary/history/history_proof_signature.proto\";",
+    );
+    let contents = contents.replace(
+        "import \"auxiliary/history/history_proof_key_publication.proto\";",
+        "// import \"auxiliary/history/history_proof_key_publication.proto\";",
+    );
+
+    let contents = contents.replace("StateSignatureTransaction", "// StateSignatureTransaction");
+
+    let contents =
+        contents.replace("HistoryProofSignatureTransaction", "// HistoryProofSignatureTransaction");
+
+    let contents = contents.replace(
+        "HistoryProofKeyPublicationTransaction",
+        "// HistoryProofKeyPublicationTransaction",
+    );
+
+    let contents =
+        contents.replace("HistoryProofVoteTransaction", "// HistoryProofVoteTransaction");
+
+    contents
 }
 
 trait BuilderExtensions {

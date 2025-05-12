@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use std::fmt::{
     self,
@@ -44,7 +26,7 @@ use crate::{
     ToProtobuf,
 };
 
-/// A unique identifier for a cryptocurrency account on Hedera.
+/// A unique identifier for a cryptocurrency account on Hiero.
 #[derive(Copy, Hash, PartialEq, Eq, Clone)]
 pub struct AccountId {
     /// A non-negative number identifying the shard containing this account.
@@ -95,15 +77,8 @@ impl AccountId {
     ///
     /// Accepts "0x___" Ethereum public address.
     #[must_use]
-    pub fn from_evm_address(address: &EvmAddress) -> Self {
-        Self {
-            shard: 0,
-            realm: 0,
-            num: 0,
-            alias: None,
-            evm_address: Some(*address),
-            checksum: None,
-        }
+    pub fn from_evm_address(address: &EvmAddress, shard: u64, realm: u64) -> Self {
+        Self { shard, realm, num: 0, alias: None, evm_address: Some(*address), checksum: None }
     }
 
     /// Convert `self` to a protobuf-encoded [`Vec<u8>`].
@@ -249,7 +224,7 @@ impl FromStr for AccountId {
 
             // 0x<evm_address>
             PartialEntityId::ShortOther(evm_address) => {
-                Ok(Self::from_evm_address(&evm_address.parse()?))
+                Ok(Self::from_evm_address(&evm_address.parse()?, 0, 0))
             }
 
             // <shard>.<realm>.<alias>
@@ -509,7 +484,7 @@ mod tests {
         let evm_address =
             EvmAddress::from_str("0x302a300506032b6570032100114e6abc371b82da").unwrap();
 
-        let id = AccountId::from_evm_address(&evm_address);
+        let id = AccountId::from_evm_address(&evm_address, 0, 0);
 
         expect_test::expect!["0x302a300506032b6570032100114e6abc371b82da"]
             .assert_eq(&id.to_string());
