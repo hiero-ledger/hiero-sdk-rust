@@ -82,7 +82,7 @@ default-features = false
 features = ["std"]
 
 [dependencies.k256]
-version = "0.13.0"
+version = "0.13.4"
 default-features = false
 features = ["ecdsa", "precomputed-tables", "std"]
 
