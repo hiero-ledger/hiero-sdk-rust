@@ -265,11 +265,13 @@ mod tests {
                     hbars: 100,
                     cents: 100,
                     expiration_time: EXPIRATION_TIME,
+                    exchange_rate_in_cents: f64::from(100) / f64::from(100),
                 },
                 next_rate: ExchangeRate {
                     hbars: 200,
                     cents: 200,
                     expiration_time: EXPIRATION_TIME,
+                    exchange_rate_in_cents: f64::from(200) / f64::from(200),
                 },
             }),
             contract_id: Some(ContractId::new(3, 2, 1)),
