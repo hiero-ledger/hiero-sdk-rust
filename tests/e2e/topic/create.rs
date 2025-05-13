@@ -62,7 +62,27 @@ async fn fieldless() -> anyhow::Result<()> {
         .await?
         .topic_id
         .unwrap();
+    Ok(())
+}
 
+#[tokio::test]
+async fn autoset_auto_renew_account() -> anyhow::Result<()> {
+    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+        return Ok(());
+    };
+
+    let topic_id = TopicCreateTransaction::new()
+        .admin_key(client.get_operator_public_key().unwrap())
+        .topic_memo("[e2e::TopicCreateTransaction]")
+        .execute(&client)
+        .await?
+        .get_receipt(&client)
+        .await?
+        .topic_id
+        .unwrap();
+
+    let info = TopicInfoQuery::new().topic_id(topic_id).execute(&client).await?;
+    assert_eq!(info.auto_renew_account_id.unwrap(), client.get_operator_account_id().unwrap());
     Ok(())
 }
 
@@ -429,7 +449,6 @@ async fn exempts_fee_exempt_keys_from_hbar_fees() -> anyhow::Result<()> {
 
 // Test temporarily taken out until can figure out a solution for a separate freeze
 #[tokio::test]
-#[ignore = "Not Supported. Apply test when 0.60.0 is released to networks (mainnet, testnet, previewnet)"]
 async fn automatically_assign_auto_renew_account_id_on_topic_create() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
@@ -448,7 +467,6 @@ async fn automatically_assign_auto_renew_account_id_on_topic_create() -> anyhow:
 }
 
 #[tokio::test]
-#[ignore = "Not Supported. Apply test when 0.60.0 is released to networks (mainnet, testnet, previewnet)"]
 async fn create_with_transaction_id_assigns_auto_renew_account_id_to_transaction_id_account_id(
 ) -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {

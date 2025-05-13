@@ -240,7 +240,15 @@ impl ToTransactionDataProtobuf for TopicCreateTransactionData {
     ) -> services::transaction_body::Data {
         let _ = chunk_info.assert_single_transaction();
 
-        services::transaction_body::Data::ConsensusCreateTopic(self.to_protobuf())
+        // Generate the protobuf data
+        let mut protobuf_data = self.to_protobuf();
+
+        // Manually assign the auto_renew_account with operator_id if none is set
+        if protobuf_data.auto_renew_account.is_none() {
+            let operator_id = chunk_info.current_transaction_id.account_id;
+            protobuf_data.auto_renew_account = Some(operator_id.to_protobuf());
+        }
+        services::transaction_body::Data::ConsensusCreateTopic(protobuf_data)
     }
 }
 
