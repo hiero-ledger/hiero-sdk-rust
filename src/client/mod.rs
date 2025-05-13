@@ -26,6 +26,8 @@ use triomphe::Arc;
 use self::network::managed::ManagedNetwork;
 use self::network::mirror::MirrorNetwork;
 pub(crate) use self::network::mirror::MirrorNetworkData;
+pub use crate::client::config::EndpointConfig;
+use crate::client::network::managed::ManagedNetworkBuilder;
 use crate::ping_query::PingQuery;
 use crate::signer::AnySigner;
 use crate::{
@@ -68,9 +70,10 @@ impl Default for ClientBackoff {
     }
 }
 
-// yes, client is complicated enough for this, even if it's only internal.
-struct ClientBuilder {
-    network: ManagedNetwork,
+/// Builder pattern for creating a client
+pub struct ClientBuilder {
+    endpoint_config: Option<EndpointConfig>,
+    network: ManagedNetworkBuilder,
     operator: Option<Operator>,
     max_transaction_fee: Option<NonZeroU64>,
     max_query_payment: Option<NonZeroU64>,
@@ -82,9 +85,40 @@ struct ClientBuilder {
 }
 
 impl ClientBuilder {
+    /// Construct a client with the given nodes configured.
+    ///
+    /// Note that this disables network auto-updating.
+    pub fn for_addresses(addresses: HashMap<String, AccountId>) -> Self {
+        let network = ManagedNetworkBuilder::Addresses(addresses);
+
+        ClientBuilder::new(network).disable_network_updating()
+    }
+
+    /// Set defaults for a mainnet client
+    pub fn for_mainnet() -> Self {
+        ClientBuilder::new(ManagedNetworkBuilder::Mainnet).ledger_id(Some(LedgerId::mainnet()))
+    }
+
+    /// Set defaults for a previewnet client
+    pub fn for_previewnet() -> Self {
+        ClientBuilder::new(ManagedNetworkBuilder::Previewnet)
+            .ledger_id(Some(LedgerId::previewnet()))
+    }
+
+    /// Set defaults for a testnet client
+    pub fn for_testnet() -> Self {
+        ClientBuilder::new(ManagedNetworkBuilder::Testnet).ledger_id(Some(LedgerId::testnet()))
+    }
+
+    /// Set non-default endpoint configuration
+    pub fn endpoint_config(self, endpoint_config: EndpointConfig) -> Self {
+        Self { endpoint_config: Some(endpoint_config), ..self }
+    }
+
     #[must_use]
-    fn new(network: ManagedNetwork) -> Self {
+    fn new(network: ManagedNetworkBuilder) -> Self {
         Self {
+            endpoint_config: None,
             network,
             operator: None,
             max_transaction_fee: None,
@@ -105,8 +139,10 @@ impl ClientBuilder {
         Self { ledger_id, ..self }
     }
 
-    fn build(self) -> Client {
+    /// Build configured client
+    pub fn build(self) -> crate::Result<Client> {
         let Self {
+            endpoint_config,
             network,
             operator,
             max_transaction_fee,
@@ -118,6 +154,10 @@ impl ClientBuilder {
             backoff,
         } = self;
 
+        let endpoint_config = endpoint_config.unwrap_or_default();
+
+        let network = network.build(endpoint_config)?;
+
         let network_update_tx = match update_network {
             true => network::managed::spawn_network_update(
                 network.clone(),
@@ -127,7 +167,7 @@ impl ClientBuilder {
             false => watch::channel(None).0,
         };
 
-        Client(Arc::new(ClientInner {
+        let client = Client(Arc::new(ClientInner {
             network,
             operator: ArcSwapOption::new(operator.map(Arc::new)),
             max_transaction_fee_tinybar: AtomicU64::new(
@@ -139,7 +179,9 @@ impl ClientBuilder {
             regenerate_transaction_ids: AtomicBool::new(regenerate_transaction_ids),
             network_update_tx,
             backoff: RwLock::new(backoff),
-        }))
+        }));
+
+        Ok(client)
     }
 }
 
@@ -175,9 +217,9 @@ impl Client {
         let client = match network {
             config::Either::Left(network) => Client::for_network(network)?,
             config::Either::Right(it) => match it {
-                config::NetworkName::Mainnet => Client::for_mainnet(),
-                config::NetworkName::Testnet => Client::for_testnet(),
-                config::NetworkName::Previewnet => Client::for_previewnet(),
+                config::NetworkName::Mainnet => Client::for_mainnet()?,
+                config::NetworkName::Testnet => Client::for_testnet()?,
+                config::NetworkName::Previewnet => Client::for_previewnet()?,
             },
         };
 
@@ -234,7 +276,7 @@ impl Client {
     /// # async fn main() {
     /// use hedera::Client;
     ///
-    /// let client = Client::for_testnet();
+    /// let client = Client::for_testnet().unwrap();
     ///
     /// // note: This isn't *guaranteed* in a semver sense, but this is the current result.
     /// let expected = Vec::from(["testnet.mirrornode.hedera.com:443".to_owned()]);
@@ -264,23 +306,21 @@ impl Client {
     /// # Errors
     /// - [`Error::BasicParse`] if an error occurs parsing the configuration.
     // allowed for API compatibility.
-    #[allow(clippy::needless_pass_by_value)]
     pub fn for_network(network: HashMap<String, AccountId>) -> crate::Result<Self> {
-        let network =
-            ManagedNetwork::new(Network::from_addresses(&network)?, MirrorNetwork::default());
-
-        Ok(ClientBuilder::new(network).disable_network_updating().build())
+        ClientBuilder::for_addresses(network).build()
     }
 
     /// Construct a client from a select mirror network
     pub async fn for_mirror_network(mirror_networks: Vec<String>) -> crate::Result<Self> {
         let network_addresses: HashMap<String, AccountId> = HashMap::new();
         let network = ManagedNetwork::new(
-            Network::from_addresses(&network_addresses)?,
+            Network::from_addresses(EndpointConfig::default(), &network_addresses)?,
             MirrorNetwork::from_addresses(mirror_networks.into_iter().map(Cow::Owned).collect()),
         );
 
-        let client = ClientBuilder::new(network).build();
+        let network_builder = ManagedNetworkBuilder::Network(network);
+
+        let client = ClientBuilder::new(network_builder).build()?;
         let address_book = NodeAddressBookQuery::default().execute(&client).await?;
 
         client.set_network_from_address_book(address_book);
@@ -289,23 +329,18 @@ impl Client {
     }
 
     /// Construct a Hiero client pre-configured for mainnet access.
-    #[must_use]
-    pub fn for_mainnet() -> Self {
-        ClientBuilder::new(ManagedNetwork::mainnet()).ledger_id(Some(LedgerId::mainnet())).build()
+    pub fn for_mainnet() -> crate::Result<Self> {
+        ClientBuilder::for_mainnet().build()
     }
 
     /// Construct a Hiero client pre-configured for testnet access.
-    #[must_use]
-    pub fn for_testnet() -> Self {
-        ClientBuilder::new(ManagedNetwork::testnet()).ledger_id(Some(LedgerId::testnet())).build()
+    pub fn for_testnet() -> crate::Result<Self> {
+        ClientBuilder::for_testnet().build()
     }
 
     /// Construct a Hiero client pre-configured for previewnet access.
-    #[must_use]
-    pub fn for_previewnet() -> Self {
-        ClientBuilder::new(ManagedNetwork::previewnet())
-            .ledger_id(Some(LedgerId::previewnet()))
-            .build()
+    pub fn for_previewnet() -> crate::Result<Self> {
+        ClientBuilder::for_previewnet().build()
     }
 
     /// Updates the network to use the given address book.
@@ -381,9 +416,9 @@ impl Client {
     /// - [`Error::BasicParse`] if the network name is not a supported network name.
     pub fn for_name(name: &str) -> crate::Result<Self> {
         match name {
-            "mainnet" => Ok(Self::for_mainnet()),
-            "testnet" => Ok(Self::for_testnet()),
-            "previewnet" => Ok(Self::for_previewnet()),
+            "mainnet" => Ok(Self::for_mainnet()?),
+            "testnet" => Ok(Self::for_testnet()?),
+            "previewnet" => Ok(Self::for_previewnet()?),
             "localhost" => {
                 let mut network: HashMap<String, AccountId> = HashMap::new();
                 network.insert("127.0.0.1:50211".to_string(), AccountId::new(0, 0, 3));

@@ -31,9 +31,9 @@ fn client() -> Client {
     let config = &*CONFIG;
 
     let client = match &*config.network_name {
-        "mainnet" => Client::for_mainnet(),
-        "testnet" => Client::for_testnet(),
-        "previewnet" => Client::for_previewnet(),
+        "mainnet" => Client::for_mainnet().unwrap(),
+        "testnet" => Client::for_testnet().unwrap(),
+        "previewnet" => Client::for_previewnet().unwrap(),
         "localhost" => for_local_node(),
         _ => {
             // to ensure we don't spam the logs with `Error creating client: ...`,
@@ -48,7 +48,7 @@ fn client() -> Client {
                 );
             }
 
-            Client::for_testnet()
+            Client::for_testnet().unwrap()
         }
     };
 
