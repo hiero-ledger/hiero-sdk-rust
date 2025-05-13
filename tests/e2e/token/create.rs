@@ -12,6 +12,7 @@ use hedera::{
     Status,
     TokenCreateTransaction,
     TokenId,
+    TokenInfoQuery,
     TokenType,
 };
 use time::{
@@ -609,5 +610,61 @@ async fn royalty_fee() -> anyhow::Result<()> {
 
     token.delete(&client).await?;
     account.delete(&client).await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn auto_renew_account() -> anyhow::Result<()> {
+    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+        return Ok(());
+    };
+
+    let account = Account::create(Hbar::new(0), &client).await?;
+
+    let token_id = TokenCreateTransaction::new()
+        .name("ffff")
+        .symbol("F")
+        .treasury_account_id(account.id)
+        .auto_renew_account_id(account.id)
+        .expiration_time(OffsetDateTime::now_utc() + Duration::minutes(5))
+        .sign(account.key.clone())
+        .execute(&client)
+        .await?
+        .get_receipt(&client)
+        .await?
+        .token_id
+        .unwrap();
+
+    let info = TokenInfoQuery::new().token_id(token_id).execute(&client).await?;
+
+    // auto renew account should be set to operator account
+    assert_eq!(info.auto_renew_account.unwrap(), account.id);
+    Ok(())
+}
+
+#[tokio::test]
+async fn autoset_auto_renew_account() -> anyhow::Result<()> {
+    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+        return Ok(());
+    };
+
+    let account = Account::create(Hbar::new(0), &client).await?;
+
+    let token_id = TokenCreateTransaction::new()
+        .name("ffff")
+        .symbol("F")
+        .treasury_account_id(account.id)
+        .expiration_time(OffsetDateTime::now_utc() + Duration::minutes(5))
+        .sign(account.key.clone())
+        .execute(&client)
+        .await?
+        .get_receipt(&client)
+        .await?
+        .token_id
+        .unwrap();
+
+    let info = TokenInfoQuery::new().token_id(token_id).execute(&client).await?;
+    // auto renew account should be set to operator account
+    assert_eq!(info.auto_renew_account.unwrap(), client.get_operator_account_id().unwrap());
     Ok(())
 }
