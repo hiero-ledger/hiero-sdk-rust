@@ -48,7 +48,7 @@ tokio = { version = "1.44.2", features = ["time"] }
 tonic = "0.12.3"
 tinystr = { version = "0.7.0", default-features = false }
 arc-swap = "1.6.0"
-rlp = "0.5.2"
+rlp = "0.6.1"
 bytes = { version = "1.2.1", default-features = false }
 pin-project-lite = "0.2.9"
 unsize = "1.1.0"
