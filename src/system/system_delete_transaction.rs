@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use hedera_proto::services;
 use hedera_proto::services::file_service_client::FileServiceClient;
@@ -45,16 +27,16 @@ use crate::{
     ValidateChecksums,
 };
 
-/// Delete a file or smart contract - can only be done by a Hedera admin.
+/// Delete a file or smart contract - can only be done by a Hiero admin.
 pub type SystemDeleteTransaction = Transaction<SystemDeleteTransactionData>;
 
-/// Delete a file or smart contract - can only be done by a Hedera admin.
+/// Delete a file or smart contract - can only be done by a Hiero admin.
 ///
 /// When it is deleted, it immediately disappears from the system as seen by the user,
 /// but is still stored internally until the expiration time, at which time it
 /// is truly and permanently deleted.
 ///
-/// Until that time, it can be undeleted by the Hedera admin.
+/// Until that time, it can be undeleted by the Hiero admin.
 /// When a smart contract is deleted, the cryptocurrency account within it continues
 /// to exist, and is not affected by the expiration time here.
 ///
@@ -113,6 +95,7 @@ impl SystemDeleteTransaction {
 impl TransactionData for SystemDeleteTransactionData {}
 
 impl TransactionExecute for SystemDeleteTransactionData {
+    #[allow(deprecated)]
     fn execute(
         &self,
         channel: Channel,

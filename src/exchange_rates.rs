@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use hedera_proto::services;
 use time::OffsetDateTime;
@@ -75,6 +57,9 @@ pub struct ExchangeRate {
 
     /// Expiration time of this exchange rate.
     pub expiration_time: OffsetDateTime,
+
+    /// Exchange rate in cents
+    pub exchange_rate_in_cents: f64,
 }
 
 impl ExchangeRate {
@@ -90,7 +75,14 @@ impl FromProtobuf<services::ExchangeRate> for ExchangeRate {
         let hbars = pb.hbar_equiv as u32;
         let cents = pb.cent_equiv as u32;
 
-        Ok(Self { hbars, cents, expiration_time: pb_getf!(pb, expiration_time)?.into() })
+        let exchange_rate_in_cents = f64::from(cents) / f64::from(hbars);
+
+        Ok(Self {
+            hbars,
+            cents,
+            exchange_rate_in_cents,
+            expiration_time: pb_getf!(pb, expiration_time)?.into(),
+        })
     }
 }
 
@@ -126,11 +118,13 @@ mod tests {
                     hbars: 30000,
                     cents: 580150,
                     expiration_time: 2022-02-24 15:00:00.0 +00:00:00,
+                    exchange_rate_in_cents: 19.338333333333335,
                 },
                 next_rate: ExchangeRate {
                     hbars: 30000,
                     cents: 587660,
                     expiration_time: 2022-02-24 16:00:00.0 +00:00:00,
+                    exchange_rate_in_cents: 19.588666666666665,
                 },
             }
         "#]]

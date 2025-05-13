@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use hedera_proto::services;
 use time::{
@@ -24,6 +6,7 @@ use time::{
     OffsetDateTime,
 };
 
+use crate::custom_fixed_fee::CustomFixedFee;
 use crate::protobuf::ToProtobuf;
 use crate::{
     AccountId,
@@ -67,6 +50,15 @@ pub struct TopicInfo {
 
     /// The ledger ID the response was returned from
     pub ledger_id: LedgerId,
+
+    /// Access control for update/delete of custom fees.
+    pub fee_schedule_key: Option<Key>,
+
+    /// If the transaction contains a signer from this list, no custom fees are applied.
+    pub fee_exempt_keys: Vec<Key>,
+
+    /// List of custom fees.
+    pub custom_fees: Vec<CustomFixedFee>,
 }
 
 impl TopicInfo {
@@ -109,6 +101,17 @@ impl FromProtobuf<services::ConsensusGetTopicInfoResponse> for TopicInfo {
         let auto_renew_period = info.auto_renew_period.map(Into::into);
         let auto_renew_account_id = Option::from_protobuf(info.auto_renew_account)?;
         let ledger_id = LedgerId::from_bytes(info.ledger_id);
+        let fee_schedule_key = Option::from_protobuf(info.fee_schedule_key)?;
+
+        let mut fee_exempt_keys = Vec::new();
+        for pb_key in info.fee_exempt_key_list {
+            fee_exempt_keys.push(Key::from_protobuf(pb_key)?);
+        }
+
+        let mut custom_fees = Vec::new();
+        for pb_fee in info.custom_fees {
+            custom_fees.push(CustomFixedFee::from_protobuf(pb_fee)?);
+        }
 
         Ok(Self {
             topic_id: TopicId::from_protobuf(topic_id)?,
@@ -121,6 +124,9 @@ impl FromProtobuf<services::ConsensusGetTopicInfoResponse> for TopicInfo {
             expiration_time,
             topic_memo: info.memo,
             ledger_id,
+            fee_schedule_key,
+            fee_exempt_keys,
+            custom_fees,
         })
     }
 }
@@ -141,6 +147,9 @@ impl ToProtobuf for TopicInfo {
                 auto_renew_period: self.auto_renew_period.to_protobuf(),
                 auto_renew_account: self.auto_renew_account_id.to_protobuf(),
                 ledger_id: self.ledger_id.to_bytes(),
+                custom_fees: vec![],
+                fee_exempt_key_list: vec![],
+                fee_schedule_key: None,
             }),
             header: None,
         }
@@ -181,6 +190,9 @@ mod tests {
                     account: Some(services::account_id::Account::AccountNum(4)),
                 }),
                 ledger_id: LedgerId::testnet().to_bytes(),
+                custom_fees: vec![],
+                fee_exempt_key_list: vec![],
+                fee_schedule_key: None,
             }),
         }
     }
@@ -218,6 +230,9 @@ mod tests {
                     },
                 ),
                 ledger_id: "testnet",
+                fee_schedule_key: None,
+                fee_exempt_keys: [],
+                custom_fees: [],
             }
         "#]]
         .assert_debug_eq(&TopicInfo::from_protobuf(make_info()).unwrap())
@@ -351,6 +366,9 @@ mod tests {
                         ledger_id: [
                             1,
                         ],
+                        fee_schedule_key: None,
+                        fee_exempt_key_list: [],
+                        custom_fees: [],
                     },
                 ),
             }
@@ -391,6 +409,9 @@ mod tests {
                     },
                 ),
                 ledger_id: "testnet",
+                fee_schedule_key: None,
+                fee_exempt_keys: [],
+                custom_fees: [],
             }
         "#]]
         .assert_debug_eq(&TopicInfo::from_bytes(&make_info().encode_to_vec()).unwrap())

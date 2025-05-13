@@ -1,22 +1,4 @@
-/*
- * ‌
- * Hedera Rust SDK
- * ​
- * Copyright (C) 2022 - 2023 Hedera Hashgraph, LLC
- * ​
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * ‍
- */
+// SPDX-License-Identifier: Apache-2.0
 
 use std::env;
 use std::fs::{
@@ -30,8 +12,6 @@ use regex::RegexBuilder;
 
 const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
 const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobufs/services";
-const EVENT_FOLDER: &str = "./services/hapi/hedera-protobufs/platform/event";
-// const SERVICES_ROOT_FOLDER: &str = "./services/hapi/hedera-protobufs/";
 
 fn main() -> anyhow::Result<()> {
     // services is the "base" module for the hedera protobufs
@@ -65,34 +45,8 @@ fn main() -> anyhow::Result<()> {
     )?;
     fs::rename(out_path.join("services"), &services_tmp_path)?;
 
-    let event_path = Path::new(EVENT_FOLDER);
-    println!("cargo:rerun-if-changed={}", EVENT_FOLDER);
-
-    if !event_path.is_dir() {
-        anyhow::bail!(
-            "Folder {EVENT_FOLDER} does not exist; do you need to `git submodule update --init`?"
-        );
-    }
-
-    let event_tmp_path = out_path.join("event");
-
-    // // Ensure we start fresh
-    let _ = fs::remove_dir_all(&event_tmp_path);
-
-    create_dir_all(&event_tmp_path)?;
-
-    // Copy the event folder
-    fs_extra::copy_items(
-        &[event_path],
-        &services_tmp_path,
-        &fs_extra::dir::CopyOptions::new().overwrite(true).copy_inside(false),
-    )?;
-    fs::rename(out_path.join("event"), &event_tmp_path)?;
-    let _ = fs::remove_dir_all(&event_tmp_path);
-
     let services: Vec<_> = read_dir(&services_tmp_path)?
         .chain(read_dir(&services_tmp_path.join("auxiliary").join("tss"))?)
-        .chain(read_dir(&services_tmp_path.join("event"))?)
         .filter_map(|entry| {
             let entry = entry.ok()?;
 
@@ -108,14 +62,12 @@ fn main() -> anyhow::Result<()> {
         // ensure that every `package _` entry is `package proto;`
         let contents = re_package.replace(&contents, "package proto;");
 
-        // remove com.hedera.hapi.node.addressbook. prefix
         let contents = contents.replace("com.hedera.hapi.node.addressbook.", "");
-
-        // remove com.hedera.hapi.services.auxiliary.tss. prefix
+        let contents = contents.replace("com.hedera.hapi.services.auxiliary.history.", "");
         let contents = contents.replace("com.hedera.hapi.services.auxiliary.tss.", "");
-
-        // remove com.hedera.hapi.platform.event. prefix
         let contents = contents.replace("com.hedera.hapi.platform.event.", "");
+
+        let contents = remove_unused_types(&contents);
 
         fs::write(service, &*contents)?;
     }
@@ -169,16 +121,14 @@ fn main() -> anyhow::Result<()> {
     cfg = cfg.type_attribute(
         "proto.ResponseCodeEnum",
         r#"#[doc = "
- Returned in `TransactionReceipt`, `Error::PreCheckStatus`, and `Error::ReceiptStatus`.
- 
- The success variant is `Success` which is what a `TransactionReceipt` will contain for a
- successful transaction.
-     "]"#,
+  Returned in `TransactionReceipt`, `Error::PreCheckStatus`, and `Error::ReceiptStatus`.
+  
+  The success variant is `Success` which is what a `TransactionReceipt` will contain for a
+  successful transaction.
+      "]"#,
     );
 
-    cfg.compile_protos(&services, &[services_tmp_path])?;
-
-    println!("here");
+    cfg.compile_protos(&services, &[services_tmp_path.clone()])?;
 
     // NOTE: prost generates rust doc comments and fails to remove the leading * line
     remove_useless_comments(&Path::new(&env::var("OUT_DIR")?).join("proto.rs"))?;
@@ -304,7 +254,7 @@ fn main() -> anyhow::Result<()> {
 
     cfg.out_dir(&sdk_out_dir).compile_protos(
         &["./sdk/transaction_list.proto"],
-        &["./sdk/", "./services/hapi/hedera-protobufs/services/"],
+        &["./sdk/", services_tmp_path.as_os_str().to_str().unwrap()],
     )?;
 
     // see note wrt services.
@@ -320,9 +270,49 @@ fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
     contents = contents.replace("/// *\n", "");
     contents = contents.replace("/// UNDOCUMENTED", "");
 
+    // Remove code examples in comments
+    let re = regex::Regex::new(r"/// ```[\s\S]*?/// ```\n").unwrap();
+    contents = re.replace_all(&contents, "").to_string();
+
     fs::write(path, contents)?;
 
     Ok(())
+}
+
+// Temporary function to remove unused types in transaction.proto
+fn remove_unused_types(contents: &str) -> String {
+    let contents = contents.replace(
+        "import \"event/state_signature_transaction.proto\";",
+        "// import \"event/state_signature_transaction.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"auxiliary/history/history_proof_vote.proto\";",
+        "// import \"auxiliary/history/history_proof_vote.proto\";",
+    );
+    let contents = contents.replace(
+        "import \"auxiliary/history/history_proof_signature.proto\";",
+        "// import \"auxiliary/history/history_proof_signature.proto\";",
+    );
+    let contents = contents.replace(
+        "import \"auxiliary/history/history_proof_key_publication.proto\";",
+        "// import \"auxiliary/history/history_proof_key_publication.proto\";",
+    );
+
+    let contents = contents.replace("StateSignatureTransaction", "// StateSignatureTransaction");
+
+    let contents =
+        contents.replace("HistoryProofSignatureTransaction", "// HistoryProofSignatureTransaction");
+
+    let contents = contents.replace(
+        "HistoryProofKeyPublicationTransaction",
+        "// HistoryProofKeyPublicationTransaction",
+    );
+
+    let contents =
+        contents.replace("HistoryProofVoteTransaction", "// HistoryProofVoteTransaction");
+
+    contents
 }
 
 trait BuilderExtensions {

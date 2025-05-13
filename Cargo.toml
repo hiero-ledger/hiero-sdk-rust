@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "hedera"
 readme = "README.md"
 repository = "https://github.com/hashgraph/hedera-sdk-rust"
-version = "0.31.0"
+version = "0.32.0"
 
 [lib]
 bench = false
@@ -27,7 +27,7 @@ fraction = { version = "0.15.1", default-features = false }
 futures-core = "0.3.21"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.6"
-hedera-proto = { path = "./protobufs", version = "0.15.0", features = [
+hedera-proto = { path = "./protobufs", version = "0.16.0", features = [
   "time_0_3",
   "fraction",
 ] }
@@ -44,7 +44,7 @@ sha2 = "0.10.2"
 sha3 = "0.10.2"
 thiserror = "1.0.31"
 time = "0.3.9"
-tokio = { version = "1.24.2", features = ["time"] }
+tokio = { version = "1.44.2", features = ["time"] }
 tonic = "0.12.3"
 tinystr = { version = "0.7.0", default-features = false }
 arc-swap = "1.6.0"
@@ -56,13 +56,13 @@ parking_lot = "0.12.0"
 serde_json = { version = "1.0.96", optional = true }
 serde = { version = "1.0.163", optional = true }
 serde_derive = { version = "1.0.163", optional = true }
-pem = "3.0.1"
+pem = "3.0.5"
 cbc = "0.1.2"
 aes = "0.8.3"
 md5 = "0.7.0"
 sec1 = { version = "0.7.3", features = ["der"] }
 tower = { version = "0.5.2", features = ["util"] }
-openssl = "0.10.70"
+openssl = "0.10.72"
 hyper-util = "0.1.10"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
 
@@ -72,7 +72,7 @@ version = "0.3.21"
 default-features = false
 
 [dependencies.prost]
-version = "0.13.4"
+version = "0.13.5"
 default-features = false
 features = ["std"]
 
@@ -82,7 +82,7 @@ default-features = false
 features = ["std"]
 
 [dependencies.k256]
-version = "0.13.0"
+version = "0.13.4"
 default-features = false
 features = ["ecdsa", "precomputed-tables", "std"]
 
@@ -97,20 +97,20 @@ default-features = false
 features = ["std", "arc-swap", "unsize"]
 
 [dev-dependencies]
-anyhow = "1.0.57"
+anyhow = "1.0.98"
 assert_matches = "1.5.0"
 clap = { version = "4.0.0", features = ["derive", "env"] }
 dotenvy = "0.15.5"
-expect-test = "1.4.0"
-hex-literal = "0.4.0"
+expect-test = "1.5.1"
+hex-literal = "1.0.0"
 miniserde = "0.1.30"
 parking_lot = "0.12.0"
 
 [dev-dependencies.tokio]
-version = "1.24.2"
+version = "1.44.2"
 features = ["rt-multi-thread", "macros", "parking_lot"]
 
 [dev-dependencies.env_logger]
-version = "0.11.3"
+version = "0.11.6"
 default-features = false
 features = ["auto-color", "color", "humantime"]

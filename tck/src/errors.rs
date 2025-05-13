@@ -14,7 +14,7 @@ pub fn from_hedera_error(error: Error) -> ErrorObjectOwned {
         | Error::ReceiptStatus { status, .. }
         | Error::TransactionPreCheckStatus { status, .. } => ErrorObject::owned(
             HEDERA_ERROR,
-            "Hedera error".to_string(),
+            "Hiero error".to_string(),
             Some(json!({
                 "status": status.as_str_name().to_string(),
                 "message": error.to_string(),
