@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "hedera"
 readme = "README.md"
 repository = "https://github.com/hashgraph/hedera-sdk-rust"
-version = "0.32.0"
+version = "0.33.0"
 
 [lib]
 bench = false
