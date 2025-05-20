@@ -20,7 +20,7 @@ serde = ["dep:serde", "dep:serde_derive", "dep:serde_json"]
 mnemonic = []
 
 [dependencies]
-async-stream = "0.3.3"
+async-stream = "0.3.6"
 backoff = "0.4.0"
 ed25519-dalek = { version = "2.0.0", features = ["rand_core"] }
 fraction = { version = "0.15.1", default-features = false }
