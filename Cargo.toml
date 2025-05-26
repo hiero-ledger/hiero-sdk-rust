@@ -24,7 +24,7 @@ async-stream = "0.3.6"
 backoff = "0.4.0"
 ed25519-dalek = { version = "2.0.0", features = ["rand_core"] }
 fraction = { version = "0.15.1", default-features = false }
-futures-core = "0.3.21"
+futures-core = "0.3.31"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.6"
 hedera-proto = { path = "./protobufs", version = "0.16.0", features = [
