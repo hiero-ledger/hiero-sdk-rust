@@ -24,7 +24,7 @@ async-stream = "0.3.6"
 backoff = "0.4.0"
 ed25519-dalek = { version = "2.0.0", features = ["rand_core"] }
 fraction = { version = "0.15.1", default-features = false }
-futures-core = "0.3.21"
+futures-core = "0.3.31"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.6"
 hedera-proto = { path = "./protobufs", version = "0.16.0", features = [
@@ -63,7 +63,7 @@ md5 = "0.7.0"
 sec1 = { version = "0.7.3", features = ["der"] }
 tower = { version = "0.5.2", features = ["util"] }
 openssl = "0.10.72"
-hyper-util = "0.1.10"
+hyper-util = "0.1.12"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
 
 
