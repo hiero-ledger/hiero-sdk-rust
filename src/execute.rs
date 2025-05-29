@@ -55,7 +55,7 @@ pub(crate) trait Execute: ValidateChecksums {
     fn operator_account_id(&self) -> Option<&AccountId>;
 
     /// Get the _explicit_ nodes that this request will be submitted to.
-    fn node_account_ids(&self) -> Option<&[AccountId]>;
+    fn node_account_ids(&self) -> Option<&[Option<AccountId>]>;
 
     /// Get the _explicit_ transaction ID that this request will use.
     fn transaction_id(&self) -> Option<TransactionId>;
@@ -222,7 +222,11 @@ where
     // of the given nodes (in a random order)
     let explicit_node_indexes = executable
         .node_account_ids()
-        .map(|ids| ctx.network.node_indexes_for_ids(ids))
+        .map(|ids| {
+            ctx.network.node_indexes_for_ids(
+                &ids.iter().filter_map(Option::as_ref).cloned().collect::<Vec<_>>().as_slice(),
+            )
+        })
         .transpose()?;
 
     let explicit_node_indexes = explicit_node_indexes.as_deref();

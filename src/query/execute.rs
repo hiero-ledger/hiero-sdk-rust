@@ -7,20 +7,8 @@ use tonic::transport::Channel;
 
 use crate::entity_id::ValidateChecksums;
 use crate::execute::Execute;
-use crate::query::{
-    AnyQueryData,
-    ToQueryProtobuf,
-};
-use crate::{
-    AccountId,
-    BoxGrpcFuture,
-    Error,
-    FromProtobuf,
-    Hbar,
-    Query,
-    Status,
-    TransactionId,
-};
+use crate::query::{AnyQueryData, ToQueryProtobuf};
+use crate::{AccountId, BoxGrpcFuture, Error, FromProtobuf, Hbar, Query, Status, TransactionId};
 
 /// Describes a specific query that can be executed on the Hiero network.
 pub trait QueryExecute:
@@ -82,7 +70,7 @@ where
 
     type Context = ();
 
-    fn node_account_ids(&self) -> Option<&[AccountId]> {
+    fn node_account_ids(&self) -> Option<&[Option<AccountId>]> {
         self.payment.node_account_ids()
     }
 

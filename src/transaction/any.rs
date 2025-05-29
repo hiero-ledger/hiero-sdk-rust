@@ -7,6 +7,7 @@ use super::chunked::ChunkInfo;
 use super::{
     TransactionData,
     TransactionExecuteChunked,
+    AccountId
 };
 use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
@@ -82,12 +83,10 @@ mod data {
         TokenUnfreezeTransactionData as TokenUnfreeze,
         TokenUnpauseTransactionData as TokenUnpause,
         TokenUpdateNftsTransactionData as TokenUpdateNfts,
-        TokenUpdateTransactionData as TokenUpdate,
-        TokenWipeTransactionData as TokenWipe,
+        TokenUpdateTransactionData as TokenUpdate, TokenWipeTransactionData as TokenWipe,
     };
     pub(super) use crate::topic::{
-        TopicCreateTransactionData as TopicCreate,
-        TopicDeleteTransactionData as TopicDelete,
+        TopicCreateTransactionData as TopicCreate, TopicDeleteTransactionData as TopicDelete,
         TopicMessageSubmitTransactionData as TopicMessageSubmit,
         TopicUpdateTransactionData as TopicUpdate,
     };
@@ -843,19 +842,45 @@ impl AnyTransaction {
         first_body: services::TransactionBody,
         data_chunks: Vec<services::transaction_body::Data>,
     ) -> crate::Result<Self> {
+        let transaction_id = match first_body.transaction_id {
+            Some(id) => match TransactionId::from_protobuf(id) {
+                Ok(id) => Some(id),
+                Err(_) => None, // Or handle the error differently
+            },
+            None => None,
+        };
+
+        let node_account_ids = match first_body.node_account_id {
+            Some(id) => match AccountId::from_protobuf(id) {
+                Ok(id) => Some(vec![Some(id)]),
+                Err(_) => None, // Handle error gracefully
+            },
+            None => None,
+        };
+
+        // Default to 0 tinybars if transaction_fee is missing
+        let transaction_fee = Hbar::from_tinybars(first_body.transaction_fee as i64);
+
+        // Check if data_chunks is empty and handle gracefully
+        if data_chunks.is_empty() {
+            return Err(Error::from_protobuf("Transaction data is missing"));
+        }
+
+        let transaction_data = match AnyTransactionData::from_protobuf(
+            ServicesTransactionDataList::from_protobuf(data_chunks)?,
+        ) {
+            Ok(data) => data,
+            Err(e) => return Err(e),
+        };
+
         Ok(Transaction {
             body: TransactionBody {
-                data: AnyTransactionData::from_protobuf(
-                    ServicesTransactionDataList::from_protobuf(data_chunks)?,
-                )?,
-                node_account_ids: None,
+                data: transaction_data,
+                node_account_ids,
                 transaction_valid_duration: first_body.transaction_valid_duration.map(Into::into),
-                max_transaction_fee: Some(Hbar::from_tinybars(first_body.transaction_fee as i64)),
+                max_transaction_fee: Some(transaction_fee),
                 transaction_memo: first_body.memo,
-                transaction_id: Some(TransactionId::from_protobuf(pb_getf!(
-                    first_body,
-                    transaction_id
-                )?)?),
+                transaction_id,
                 operator: None,
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),

@@ -159,7 +159,7 @@ where
 
     type Response = TransactionResponse;
 
-    fn node_account_ids(&self) -> Option<&[AccountId]> {
+    fn node_account_ids(&self) -> Option<&[Option<AccountId>]> {
         self.body.node_account_ids.as_deref()
     }
 
@@ -278,7 +278,7 @@ where
                     .into(),
             ),
             memo: self.body.transaction_memo.clone(),
-            node_account_id: Some(chunk_info.node_account_id.to_protobuf()),
+            node_account_id: chunk_info.node_account_id.map(|it| it.to_protobuf()),
             generate_record: false,
             transaction_fee,
             max_custom_fees: vec![],
@@ -348,8 +348,13 @@ struct SourceTransactionExecuteView<'a, D> {
 
 impl<'a, D> SourceTransactionExecuteView<'a, D> {
     fn new(transaction: &'a Transaction<D>, chunk: SourceChunk<'a>) -> Self {
-        let indecies_by_node_id =
-            chunk.node_ids().iter().copied().enumerate().map(|it| (it.1, it.0)).collect();
+        let indecies_by_node_id = chunk
+            .node_ids()
+            .iter()
+            .copied()
+            .enumerate()
+            .filter_map(|(index, node_id)| node_id.map(|id| (id, index)))
+            .collect();
         Self { transaction, chunk, indecies_by_node_id }
     }
 }
@@ -369,12 +374,12 @@ impl<'a, D: TransactionExecute> Execute for SourceTransactionExecuteView<'a, D> 
 
     type Response = <Transaction<D> as Execute>::Response;
 
-    fn node_account_ids(&self) -> Option<&[AccountId]> {
+    fn node_account_ids(&self) -> Option<&[Option<AccountId>]> {
         Some(self.chunk.node_ids())
     }
 
     fn transaction_id(&self) -> Option<TransactionId> {
-        Some(self.chunk.transaction_id())
+        self.chunk.transaction_id()
     }
 
     fn requires_transaction_id(&self) -> bool {

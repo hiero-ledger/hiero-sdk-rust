@@ -9,12 +9,7 @@ use prost::Message;
 
 use crate::protobuf::FromProtobuf;
 use crate::signer::AnySigner;
-use crate::{
-    AccountId,
-    Error,
-    TransactionHash,
-    TransactionId,
-};
+use crate::{AccountId, Error, TransactionHash, TransactionId};
 
 pub(crate) struct SourceChunk<'a> {
     map: &'a TransactionSources,
@@ -26,7 +21,7 @@ impl<'a> SourceChunk<'a> {
         self.map.chunks[self.index].clone()
     }
 
-    pub(crate) fn transaction_id(&self) -> TransactionId {
+    pub(crate) fn transaction_id(&self) -> Option<TransactionId> {
         self.map.transaction_ids[self.index]
     }
 
@@ -41,7 +36,7 @@ impl<'a> SourceChunk<'a> {
     /// Returns The node account IDs for this chunk.
     ///
     /// Note: Every chunk has the same node account IDs.
-    pub(crate) fn node_ids(&self) -> &'a [AccountId] {
+    pub(crate) fn node_ids(&self) -> &'a [Option<AccountId>] {
         &self.map.node_ids
     }
 
@@ -60,10 +55,10 @@ pub struct TransactionSources {
     chunks: Vec<Range<usize>>,
 
     /// Ordered list of transaction IDs (1 per chunk)
-    transaction_ids: Vec<TransactionId>,
+    transaction_ids: Vec<Option<TransactionId>>,
 
     /// Ordered list of node account IDs (all per chunk, same ordering)
-    node_ids: Vec<AccountId>,
+    node_ids: Vec<Option<AccountId>>,
 
     transaction_hashes: OnceCell<Vec<TransactionHash>>,
 }
@@ -127,10 +122,18 @@ impl TransactionSources {
                 services::TransactionBody::decode(it.body_bytes.as_slice())
                     .map_err(Error::from_protobuf)
                     .and_then(|body| {
-                        Ok((
-                            TransactionId::from_protobuf(pb_getf!(body, transaction_id)?)?,
-                            AccountId::from_protobuf(pb_getf!(body, node_account_id)?)?,
-                        ))
+                        // Keep None values for optional fields
+                        let transaction_id = body
+                            .transaction_id
+                            .map(|id| TransactionId::from_protobuf(id))
+                            .transpose()?;
+
+                        let node_account_id = body
+                            .node_account_id
+                            .map(|id| AccountId::from_protobuf(id))
+                            .transpose()?;
+
+                        Ok((transaction_id, node_account_id))
                     })
             })
             .collect();
@@ -138,7 +141,7 @@ impl TransactionSources {
         let transaction_info = transaction_info?;
 
         let (chunks, transaction_ids, node_ids) = {
-            let mut current: Option<&TransactionId> = None;
+            let mut current: Option<&Option<TransactionId>> = None;
 
             let chunk_starts =
                 transaction_info.iter().enumerate().filter_map(move |(index, (id, _))| {
@@ -168,31 +171,16 @@ impl TransactionSources {
                 chunks.push(start..transaction_info.len());
             }
 
-            let chunks = chunks;
-
-            let mut transaction_ids = Vec::with_capacity(chunks.len());
+            let mut transaction_ids: Vec<Option<TransactionId>> = Vec::with_capacity(chunks.len());
             let mut node_ids: Vec<_> = Vec::new();
 
-            for chunk in &chunks {
-                if transaction_ids.contains(&transaction_info[chunk.start].0) {
-                    return Err(Error::from_protobuf(
-                        "duplicate transaction ID between chunked transaction chunks",
-                    ));
-                }
-
-                transaction_ids.push(transaction_info[chunk.start].0);
-
-                // else ifs acting on different kinds of conditions are
-                // personally more confusing than having the extra layer of nesting.
-                #[allow(clippy::collapsible_else_if)]
-                if node_ids.is_empty() {
-                    node_ids = transaction_info[chunk.clone()].iter().map(|it| it.1).collect();
+            for (transaction_id, node_id) in transaction_info {
+                if let Some(node_id) = node_id {
+                    transaction_ids.push(transaction_id.clone());
+                    node_ids.push(Some(node_id.clone()));
                 } else {
-                    if node_ids.iter().ne(transaction_info[chunk.clone()].iter().map(|it| &it.1)) {
-                        return Err(Error::from_protobuf(
-                            "TransactionList has inconsistent node account IDs",
-                        ));
-                    }
+                    transaction_ids.push(None);
+                    node_ids.push(None);
                 }
             }
 
@@ -276,11 +264,11 @@ impl TransactionSources {
         (0..self.chunks.len()).map(|index| SourceChunk { map: self, index })
     }
 
-    pub(super) fn _transaction_ids(&self) -> &[TransactionId] {
+    pub(super) fn _transaction_ids(&self) -> &[Option<TransactionId>] {
         &self.transaction_ids
     }
 
-    pub(super) fn node_ids(&self) -> &[AccountId] {
+    pub(super) fn node_ids(&self) -> &[Option<AccountId>] {
         &self.node_ids
     }
 
