@@ -4,28 +4,14 @@ use hedera_proto::services;
 use tonic::transport::Channel;
 
 use super::chunked::ChunkInfo;
-use super::{
-    TransactionData,
-    TransactionExecuteChunked,
-    AccountId
-};
+use super::{AccountId, TransactionData, TransactionExecuteChunked};
 use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
-use crate::transaction::{
-    ToTransactionDataProtobuf,
-    TransactionBody,
-    TransactionExecute,
-};
-use crate::{
-    BoxGrpcFuture,
-    Error,
-    Hbar,
-    Transaction,
-    TransactionId,
-};
+use crate::transaction::{ToTransactionDataProtobuf, TransactionBody, TransactionExecute};
+use crate::{BoxGrpcFuture, Error, Hbar, Transaction, TransactionId};
 
 mod data {
     pub(super) use crate::account::{
@@ -36,8 +22,7 @@ mod data {
         AccountUpdateTransactionData as AccountUpdate,
     };
     pub(super) use crate::address_book::{
-        NodeCreateTransactionData as NodeCreate,
-        NodeDeleteTransactionData as NodeDelete,
+        NodeCreateTransactionData as NodeCreate, NodeDeleteTransactionData as NodeDelete,
         NodeUpdateTransactionData as NodeUpdate,
     };
     pub(super) use crate::contract::{
@@ -48,10 +33,8 @@ mod data {
     };
     pub(super) use crate::ethereum::EthereumTransactionData as Ethereum;
     pub(super) use crate::file::{
-        FileAppendTransactionData as FileAppend,
-        FileCreateTransactionData as FileCreate,
-        FileDeleteTransactionData as FileDelete,
-        FileUpdateTransactionData as FileUpdate,
+        FileAppendTransactionData as FileAppend, FileCreateTransactionData as FileCreate,
+        FileDeleteTransactionData as FileDelete, FileUpdateTransactionData as FileUpdate,
     };
     pub(super) use crate::prng_transaction::PrngTransactionData as Prng;
     pub(super) use crate::schedule::{
@@ -60,28 +43,21 @@ mod data {
         ScheduleSignTransactionData as ScheduleSign,
     };
     pub(super) use crate::system::{
-        FreezeTransactionData as Freeze,
-        SystemDeleteTransactionData as SystemDelete,
+        FreezeTransactionData as Freeze, SystemDeleteTransactionData as SystemDelete,
         SystemUndeleteTransactionData as SystemUndelete,
     };
     pub(super) use crate::token::{
         TokenAirdropTransactionData as TokenAirdrop,
-        TokenAssociateTransactionData as TokenAssociate,
-        TokenBurnTransactionData as TokenBurn,
+        TokenAssociateTransactionData as TokenAssociate, TokenBurnTransactionData as TokenBurn,
         TokenCancelAirdropTransactionData as TokenCancelAirdrop,
         TokenClaimAirdropTransactionData as TokenClaimAirdrop,
-        TokenCreateTransactionData as TokenCreate,
-        TokenDeleteTransactionData as TokenDelete,
+        TokenCreateTransactionData as TokenCreate, TokenDeleteTransactionData as TokenDelete,
         TokenDissociateTransactionData as TokenDissociate,
         TokenFeeScheduleUpdateTransactionData as TokenFeeScheduleUpdate,
-        TokenFreezeTransactionData as TokenFreeze,
-        TokenGrantKycTransactionData as TokenGrantKyc,
-        TokenMintTransactionData as TokenMint,
-        TokenPauseTransactionData as TokenPause,
-        TokenRejectTransactionData as TokenReject,
-        TokenRevokeKycTransactionData as TokenRevokeKyc,
-        TokenUnfreezeTransactionData as TokenUnfreeze,
-        TokenUnpauseTransactionData as TokenUnpause,
+        TokenFreezeTransactionData as TokenFreeze, TokenGrantKycTransactionData as TokenGrantKyc,
+        TokenMintTransactionData as TokenMint, TokenPauseTransactionData as TokenPause,
+        TokenRejectTransactionData as TokenReject, TokenRevokeKycTransactionData as TokenRevokeKyc,
+        TokenUnfreezeTransactionData as TokenUnfreeze, TokenUnpauseTransactionData as TokenUnpause,
         TokenUpdateNftsTransactionData as TokenUpdateNfts,
         TokenUpdateTransactionData as TokenUpdate, TokenWipeTransactionData as TokenWipe,
     };
@@ -877,12 +853,12 @@ impl AnyTransaction {
             body: TransactionBody {
                 data: transaction_data,
                 node_account_ids,
-                transaction_valid_duration: first_body.transaction_valid_duration.map(Into::into),
+                transaction_valid_duration: Some(first_body.transaction_valid_duration.map(Into::into)),
                 max_transaction_fee: Some(transaction_fee),
                 transaction_memo: first_body.memo,
                 transaction_id,
                 operator: None,
-                is_frozen: true,
+                is_frozen: false,
                 regenerate_transaction_id: Some(false),
                 custom_fee_limits: first_body
                     .max_custom_fees
