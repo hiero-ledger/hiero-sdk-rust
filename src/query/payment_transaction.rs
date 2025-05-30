@@ -5,20 +5,9 @@ use hedera_proto::services::crypto_service_client::CryptoServiceClient;
 use tonic::transport::Channel;
 
 use crate::transaction::{
-    AnyTransactionData,
-    ChunkInfo,
-    ToTransactionDataProtobuf,
-    TransactionData,
-    TransactionExecute,
+    AnyTransactionData, ChunkInfo, ToTransactionDataProtobuf, TransactionData, TransactionExecute,
 };
-use crate::{
-    BoxGrpcFuture,
-    Error,
-    Hbar,
-    ToProtobuf,
-    Transaction,
-    ValidateChecksums,
-};
+use crate::{BoxGrpcFuture, Error, Hbar, ToProtobuf, Transaction, ValidateChecksums};
 
 pub type PaymentTransaction = Transaction<PaymentTransactionData>;
 
@@ -82,7 +71,7 @@ impl ToTransactionDataProtobuf for PaymentTransactionData {
             transfers: Some(services::TransferList {
                 account_amounts: vec![
                     services::AccountAmount {
-                        account_id: Some(node_account_id.to_protobuf()),
+                        account_id: node_account_id.to_protobuf(),
                         amount: amount.to_tinybars(),
                         is_approval: false,
                     },

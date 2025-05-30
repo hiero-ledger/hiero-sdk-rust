@@ -24,11 +24,12 @@ use crate::{
 /// It's also ideally smaller/faster than any other query, by virtue of just...
 pub(crate) struct PingQuery {
     node_account_id: AccountId,
+    node_account_ids: Option<Vec<Option<AccountId>>>,
 }
 
 impl PingQuery {
     pub(crate) fn new(node_account_id: AccountId) -> Self {
-        Self { node_account_id }
+        Self { node_account_id, node_account_ids: Some(vec![Some(node_account_id)]) }
     }
 
     pub(crate) async fn execute(
@@ -58,8 +59,8 @@ impl Execute for PingQuery {
 
     type Response = ();
 
-    fn node_account_ids(&self) -> Option<&[AccountId]> {
-        Some(std::slice::from_ref(&self.node_account_id))
+    fn node_account_ids(&self) -> Option<&[Option<AccountId>]> {
+        self.node_account_ids.as_deref()
     }
 
     fn transaction_id(&self) -> Option<crate::TransactionId> {

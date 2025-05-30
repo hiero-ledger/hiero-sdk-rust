@@ -6,14 +6,7 @@ use time::Duration;
 use crate::execute::execute;
 use crate::query::cost::QueryCost;
 use crate::query::payment_transaction::PaymentTransaction;
-use crate::{
-    AccountId,
-    Client,
-    Error,
-    Hbar,
-    TransactionId,
-    TransactionReceiptQuery,
-};
+use crate::{AccountId, Client, Error, Hbar, TransactionId, TransactionReceiptQuery};
 
 mod any;
 mod cost;
@@ -22,14 +15,8 @@ pub(super) mod payment_transaction;
 mod protobuf;
 
 pub(crate) use any::AnyQueryData;
-pub use any::{
-    AnyQuery,
-    AnyQueryResponse,
-};
-pub(crate) use execute::{
-    response_header,
-    QueryExecute,
-};
+pub use any::{AnyQuery, AnyQueryResponse};
+pub(crate) use execute::{response_header, QueryExecute};
 pub(crate) use protobuf::ToQueryProtobuf;
 
 /// A query that can be executed on the Hiero network.
@@ -63,7 +50,7 @@ where
     /// Defaults to the full list of nodes configured on the client; or, the node account IDs
     /// configured on the query payment transaction (if explicitly provided).
     #[must_use]
-    pub fn get_node_account_ids(&self) -> Option<&[AccountId]> {
+    pub fn get_node_account_ids(&self) -> Option<&[Option<AccountId>]> {
         self.payment.get_node_account_ids()
     }
 

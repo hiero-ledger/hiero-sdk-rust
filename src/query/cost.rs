@@ -47,7 +47,7 @@ where
 
     type Context = ();
 
-    fn node_account_ids(&self) -> Option<&[AccountId]> {
+    fn node_account_ids(&self) -> Option<&[Option<AccountId>]> {
         Execute::node_account_ids(self.0)
     }
 
