@@ -211,7 +211,7 @@ impl TransactionSources {
             if signed_transactions
                 .first()
                 .as_ref()
-                .and_then(|it| it.sig_map.as_ref())
+                .and_then(|it| Some(it.sig_map.as_ref()))
                 .map_or(false, |it| it.sig_pair.iter().any(|it| pk.starts_with(&it.pub_key_prefix)))
             {
                 continue;
