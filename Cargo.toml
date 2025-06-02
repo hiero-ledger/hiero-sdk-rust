@@ -37,7 +37,7 @@ hmac = "0.12.1"
 hyper = { version = "1.6", default-features = false }
 log = "0.4.17"
 num-bigint = "0.4.3"
-once_cell = "1.10.0"
+once_cell = "1.21.3"
 pbkdf2 = { version = "0.12.0", default-features = false }
 rand = "0.8.5"
 sha2 = "0.10.2"
