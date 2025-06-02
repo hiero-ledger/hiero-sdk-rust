@@ -26,7 +26,7 @@ ed25519-dalek = { version = "2.0.0", features = ["rand_core"] }
 fraction = { version = "0.15.1", default-features = false }
 futures-core = "0.3.31"
 # Transitive dependency of tonic 0.12
-h2 = "0.4.6"
+h2 = "0.4.10"
 hedera-proto = { path = "./protobufs", version = "0.16.0", features = [
   "time_0_3",
   "fraction",
