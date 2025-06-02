@@ -27,6 +27,7 @@ use crate::{
     PrivateKey,
     PublicKey,
     ScheduleCreateTransaction,
+    ToProtobuf,
     TransactionHash,
     TransactionId,
     TransactionResponse,
@@ -44,21 +45,10 @@ mod tests;
 
 pub use any::AnyTransaction;
 pub(crate) use any::AnyTransactionData;
-pub(crate) use chunked::{
-    ChunkData,
-    ChunkInfo,
-    ChunkedTransactionData,
-};
+pub(crate) use chunked::{ChunkData, ChunkInfo, ChunkedTransactionData};
 pub(crate) use cost::CostTransaction;
-pub(crate) use execute::{
-    TransactionData,
-    TransactionExecute,
-    TransactionExecuteChunked,
-};
-pub(crate) use protobuf::{
-    ToSchedulableTransactionDataProtobuf,
-    ToTransactionDataProtobuf,
-};
+pub(crate) use execute::{TransactionData, TransactionExecute, TransactionExecuteChunked};
+pub(crate) use protobuf::{ToSchedulableTransactionDataProtobuf, ToTransactionDataProtobuf};
 pub(crate) use source::TransactionSources;
 
 const DEFAULT_TRANSACTION_VALID_DURATION: Duration = Duration::seconds(120);
@@ -495,44 +485,11 @@ impl<D: TransactionExecute> Transaction<D> {
     /// # Panics
     /// - If `!self.is_frozen()`
     fn make_transaction_list(&self) -> crate::Result<Vec<services::Transaction>> {
-        assert!(self.is_frozen());
-
-        let operator = || self.body.operator.as_ref().ok_or(Error::NoPayerAccountOrTransactionId);
-
-        // todo: fix this with chunked transactions.
-        let initial_transaction_id = match self.get_transaction_id() {
-            Some(id) => id,
-            None => operator()?.generate_transaction_id(),
-        };
-
-        let used_chunks = self.data().maybe_chunk_data().map_or(1, ChunkData::used_chunks);
-        let node_account_ids = self.body.node_account_ids.as_deref().unwrap();
-
-        let mut transaction_list = Vec::with_capacity(used_chunks * node_account_ids.len());
-
-        // Note: This ordering is *important*,
-        // there's no documentation for it but `TransactionList` is sorted by chunk number,
-        // then `node_id` (in the order they were added to the transaction)
-        for chunk in 0..used_chunks {
-            let current_transaction_id = match chunk {
-                0 => initial_transaction_id,
-                _ => operator()?.generate_transaction_id(),
-            };
-
-            for node_account_id in node_account_ids.iter().copied() {
-                let chunk_info = ChunkInfo {
-                    current: chunk,
-                    total: used_chunks,
-                    initial_transaction_id,
-                    current_transaction_id,
-                    node_account_id,
-                };
-
-                transaction_list.push(self.make_request_inner(&chunk_info).0);
-            }
+        if self.data().maybe_chunk_data().is_some() {
+            self.make_transaction_list_chunked()
+        } else {
+            self.make_transaction_list_non_chunked()
         }
-
-        Ok(transaction_list)
     }
 
     pub(crate) fn make_sources(&self) -> crate::Result<Cow<'_, TransactionSources>> {
@@ -553,12 +510,7 @@ impl<D: TransactionExecute> Transaction<D> {
     /// # Panics
     /// - If `!self.is_frozen()`.
     pub fn to_bytes(&self) -> crate::Result<Vec<u8>> {
-        assert!(self.is_frozen(), "Transaction must be frozen to call `to_bytes`");
-
-        let transaction_list = self
-            .signed_sources()
-            .map_or_else(|| self.make_transaction_list(), |it| Ok(it.transactions().to_vec()))?;
-
+        let transaction_list = self.make_transaction_list()?;
         Ok(hedera_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
     }
 
@@ -689,6 +641,188 @@ impl<D: TransactionExecute> Transaction<D> {
             .map(|(node, it)| (*node, TransactionHash::new(&it.signed_transaction_bytes)));
 
         Ok(iter.collect())
+    }
+    
+    #[allow(deprecated)]
+    fn make_transaction_list_chunked(&self) -> crate::Result<Vec<services::Transaction>> {
+        // i want to see how many chunks are in the data
+        let chunks_number = self.data().maybe_chunk_data().unwrap().used_chunks();
+        let mut transaction_list = Vec::with_capacity(chunks_number);
+
+        for chunk in 0..chunks_number {
+            let transaction_body = services::TransactionBody {
+                transaction_id: self.get_transaction_id().map(|it| it.to_protobuf()),
+                generate_record: false,
+                memo: self.body.transaction_memo.clone(),
+                transaction_valid_duration: self
+                    .get_transaction_valid_duration()
+                    .map(|it| it.to_protobuf()),
+                data: Some(self.body.data.to_transaction_data_protobuf(&ChunkInfo {
+                    current: chunk,
+                    total: chunks_number,
+                    initial_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
+                    current_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
+                    node_account_id: Some(AccountId::new(0, 0, 0)),
+                })),
+                node_account_id: Some(AccountId::new(0, 0, 0).to_protobuf()),
+                transaction_fee: self
+                    .body
+                    .max_transaction_fee
+                    .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
+                    .to_tinybars() as u64,
+                max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
+            };
+
+            let body_bytes = transaction_body.encode_to_vec();
+
+            let mut signatures = Vec::with_capacity(1 + self.signers.len());
+
+            if let Some(operator) = &self.body.operator {
+                let operator_signature = operator.sign(&body_bytes);
+                let (pk, sig) = operator_signature;
+                signatures.push(services::SignaturePair {
+                    pub_key_prefix: pk.to_bytes_raw(),
+                    signature: Some(match pk.kind() {
+                        crate::key::KeyKind::Ed25519 => {
+                            services::signature_pair::Signature::Ed25519(sig)
+                        }
+                        crate::key::KeyKind::Ecdsa => {
+                            services::signature_pair::Signature::EcdsaSecp256k1(sig)
+                        }
+                    }),
+                });
+            }
+
+            for signer in &self.signers {
+                let public_key = signer.public_key().to_bytes();
+                if !signatures.iter().any(|it| public_key.starts_with(&it.pub_key_prefix)) {
+                    let (pk, sig) = signer.sign(&body_bytes);
+                    signatures.push(services::SignaturePair {
+                        pub_key_prefix: pk.to_bytes_raw(),
+                        signature: Some(match pk.kind() {
+                            crate::key::KeyKind::Ed25519 => {
+                                services::signature_pair::Signature::Ed25519(sig)
+                            }
+                            crate::key::KeyKind::Ecdsa => {
+                                services::signature_pair::Signature::EcdsaSecp256k1(sig)
+                            }
+                        }),
+                    });
+                }
+            }
+
+            let signed_transaction = services::SignedTransaction {
+                body_bytes,
+                sig_map: Some(services::SignatureMap { sig_pair: signatures }),
+            };
+
+            let signed_transaction_bytes = signed_transaction.encode_to_vec();
+            transaction_list.push(services::Transaction {
+                signed_transaction_bytes,
+                ..services::Transaction::default()
+            });
+        }
+        Ok(transaction_list)
+    }
+
+    #[allow(clippy::too_many_lines)]
+    #[allow(deprecated)]
+    fn make_transaction_list_non_chunked(&self) -> crate::Result<Vec<services::Transaction>> {
+        let node_account_ids = match &self.get_node_account_ids() {
+            Some(ids) => ids.iter().collect::<Vec<_>>(),
+            None => vec![], // Default if none specified
+        };
+
+        let mut transaction_list = Vec::new();
+
+        let create_transaction =
+            |node_opt: Option<&AccountId>, list: &mut Vec<services::Transaction>| {
+                let transaction_body = services::TransactionBody {
+                    transaction_id: self.get_transaction_id().map(|it| it.to_protobuf()),
+                    generate_record: false,
+                    memo: self.body.transaction_memo.clone(),
+                    data: Some(self.body.data.to_transaction_data_protobuf(&ChunkInfo {
+                        current: 0,
+                        total: 1,
+                        initial_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
+                        current_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
+                        node_account_id: node_opt.cloned(),
+                    })),
+                    transaction_valid_duration: self.get_transaction_valid_duration().to_protobuf(),
+                    node_account_id: node_opt.map(|id| id.to_protobuf()),
+                    transaction_fee: self
+                        .body
+                        .max_transaction_fee
+                        .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
+                        .to_tinybars() as u64,
+                    max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
+                };
+
+                let body_bytes = transaction_body.encode_to_vec();
+                let mut signatures = Vec::with_capacity(1 + self.signers.len());
+
+                if let Some(operator) = &self.body.operator {
+                    let operator_signature = operator.sign(&body_bytes);
+                    let (pk, sig) = operator_signature;
+                    signatures.push(services::SignaturePair {
+                        pub_key_prefix: pk.to_bytes_raw(),
+                        signature: Some(match pk.kind() {
+                            crate::key::KeyKind::Ed25519 => {
+                                services::signature_pair::Signature::Ed25519(sig)
+                            }
+                            crate::key::KeyKind::Ecdsa => {
+                                services::signature_pair::Signature::EcdsaSecp256k1(sig)
+                            }
+                        }),
+                    });
+                }
+
+                for signer in &self.signers {
+                    let public_key = signer.public_key().to_bytes();
+                    if !signatures.iter().any(|it| public_key.starts_with(&it.pub_key_prefix)) {
+                        let (pk, sig) = signer.sign(&body_bytes);
+                        signatures.push(services::SignaturePair {
+                            pub_key_prefix: pk.to_bytes_raw(),
+                            signature: Some(match pk.kind() {
+                                crate::key::KeyKind::Ed25519 => {
+                                    services::signature_pair::Signature::Ed25519(sig)
+                                }
+                                crate::key::KeyKind::Ecdsa => {
+                                    services::signature_pair::Signature::EcdsaSecp256k1(sig)
+                                }
+                            }),
+                        });
+                    }
+                }
+                let body_bytes = body_bytes.clone();
+                let body_bytes_clone = body_bytes.clone();
+
+                let signed_transaction = services::SignedTransaction {
+                    body_bytes,
+                    sig_map: Some(services::SignatureMap { sig_pair: signatures }),
+                };
+
+                let signed_transaction_bytes = signed_transaction.encode_to_vec();
+                list.push(services::Transaction {
+                    signed_transaction_bytes,
+                    body: None,
+                    sigs: None,
+                    sig_map: None,
+                    body_bytes: body_bytes_clone,
+                });
+            };
+
+        if node_account_ids.is_empty() {
+            // Handle case with no node IDs
+            create_transaction(None, &mut transaction_list);
+        } else {
+            // Handle case with node IDs
+            for node_account_id in node_account_ids {
+                create_transaction(Some(node_account_id), &mut transaction_list);
+            }
+        }
+
+        Ok(transaction_list)
     }
 }
 
@@ -910,7 +1044,7 @@ impl AnyTransaction {
     /// - [`Error::FromProtobuf`] if a valid transaction cannot be parsed from the bytes.
     #[allow(deprecated)]
     pub fn from_bytes(bytes: &[u8]) -> crate::Result<Self> {
-        let list =
+        let list: hedera_proto::sdk::TransactionList =
             hedera_proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
 
         let list = if list.transaction_list.is_empty() {
@@ -924,8 +1058,9 @@ impl AnyTransaction {
         let transaction_bodies: Result<Vec<_>, _> = sources
             .signed_transactions()
             .iter()
-            .map(|it| {
-                services::TransactionBody::decode(&*it.body_bytes).map_err(Error::from_protobuf)
+            .map(|transaction| {
+                services::TransactionBody::decode(&*transaction.body_bytes)
+                    .map_err(Error::from_protobuf)
             })
             .collect();
 
@@ -957,11 +1092,12 @@ impl AnyTransaction {
             data?
         };
 
-        // note: this creates the transaction in a frozen state.
         let mut res = Self::from_protobuf(transaction_bodies[0].clone(), transaction_data)?;
 
         // note: this doesn't check freeze for obvious reasons.
-        res.body.node_account_ids = Some(sources.node_ids().to_vec());
+
+        let node_ids = sources.node_ids().to_vec();
+        res.body.node_account_ids = if node_ids.is_empty() { None } else { Some(node_ids) };
         res.sources = Some(sources);
 
         Ok(res)
@@ -1125,22 +1261,11 @@ where
 pub(crate) mod test_helpers {
     use hedera_proto::services;
     use prost::Message;
-    use time::{
-        Duration,
-        OffsetDateTime,
-    };
+    use time::{Duration, OffsetDateTime};
 
     use super::TransactionExecute;
     use crate::protobuf::ToProtobuf;
-    use crate::{
-        AccountId,
-        Hbar,
-        NftId,
-        PrivateKey,
-        TokenId,
-        Transaction,
-        TransactionId,
-    };
+    use crate::{AccountId, Hbar, NftId, PrivateKey, TokenId, Transaction, TransactionId};
 
     impl<D: Default> Transaction<D> {
         // todo: bikeshed name, idc.
@@ -1203,7 +1328,7 @@ pub(crate) mod test_helpers {
 
         assert_eq!(transaction_id, Some(TEST_TX_ID.to_protobuf()));
 
-        assert!(TEST_NODE_ACCOUNT_IDS.iter().any(|it| it.to_protobuf() == node_account_id));
+        assert!(TEST_NODE_ACCOUNT_IDS.iter().any(|it| it.to_protobuf() == node_account_id.clone()));
 
         assert_eq!(transaction_fee, Hbar::new(2).to_tinybars() as u64);
         assert_eq!(transaction_valid_duration, Some(services::Duration { seconds: 120 }));

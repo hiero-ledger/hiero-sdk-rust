@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::ops::Range;
 
-use hedera_proto::services;
+use hedera_proto::services::{self, SignedTransaction};
 use once_cell::sync::OnceCell;
 use prost::Message;
 
@@ -26,7 +26,7 @@ impl<'a> SourceChunk<'a> {
         self.map.chunks[self.index].clone()
     }
 
-    pub(crate) fn transaction_id(&self) -> TransactionId {
+    pub(crate) fn transaction_id(&self) -> Option<TransactionId> {
         self.map.transaction_ids[self.index]
     }
 
@@ -60,7 +60,7 @@ pub struct TransactionSources {
     chunks: Vec<Range<usize>>,
 
     /// Ordered list of transaction IDs (1 per chunk)
-    transaction_ids: Vec<TransactionId>,
+    transaction_ids: Vec<Option<TransactionId>>,
 
     /// Ordered list of node account IDs (all per chunk, same ordering)
     node_ids: Vec<AccountId>,
@@ -74,22 +74,18 @@ impl TransactionSources {
             return Err(Error::from_protobuf("`TransactionList` had no transactions"));
         }
 
-        let signed_transactions: Result<Vec<_>, _> = transactions
-            .iter()
-            .map(|transaction| {
-                if !transaction.signed_transaction_bytes.is_empty() {
-                    let tx =
-                        services::SignedTransaction::decode(&*transaction.signed_transaction_bytes)
-                            .map_err(Error::from_protobuf)?;
-
-                    return Ok(tx);
-                }
-
-                Err(Error::from_protobuf("Transaction had no signed transaction bytes"))
-            })
-            .collect();
-
-        let signed_transactions = signed_transactions?;
+        let signed_transactions: Vec<SignedTransaction> = transactions
+    .iter()
+    .filter_map(|transaction| {
+        if !transaction.signed_transaction_bytes.is_empty() {
+            SignedTransaction::decode(&*transaction.signed_transaction_bytes)
+                .map_err(Error::from_protobuf)
+                .ok()
+        } else {
+            None
+        }
+    })
+    .collect();
 
         // ensure all signers (if any) are consistent for all signed transactions.
         // this doesn't compare or validate the signatures,
@@ -127,10 +123,18 @@ impl TransactionSources {
                 services::TransactionBody::decode(it.body_bytes.as_slice())
                     .map_err(Error::from_protobuf)
                     .and_then(|body| {
-                        Ok((
-                            TransactionId::from_protobuf(pb_getf!(body, transaction_id)?)?,
-                            AccountId::from_protobuf(pb_getf!(body, node_account_id)?)?,
-                        ))
+                        // Keep None values for optional fields
+                        let transaction_id = body
+                            .transaction_id
+                            .map(|id| TransactionId::from_protobuf(id))
+                            .transpose()?;
+
+                        let node_account_id = body
+                            .node_account_id
+                            .map(|id| AccountId::from_protobuf(id))
+                            .transpose()?;
+
+                        Ok((transaction_id, node_account_id))
                     })
             })
             .collect();
@@ -138,7 +142,7 @@ impl TransactionSources {
         let transaction_info = transaction_info?;
 
         let (chunks, transaction_ids, node_ids) = {
-            let mut current: Option<&TransactionId> = None;
+            let mut current: Option<&Option<TransactionId>> = None;
 
             let chunk_starts =
                 transaction_info.iter().enumerate().filter_map(move |(index, (id, _))| {
@@ -168,31 +172,15 @@ impl TransactionSources {
                 chunks.push(start..transaction_info.len());
             }
 
-            let chunks = chunks;
-
-            let mut transaction_ids = Vec::with_capacity(chunks.len());
+            let mut transaction_ids: Vec<Option<TransactionId>> = Vec::with_capacity(chunks.len());
             let mut node_ids: Vec<_> = Vec::new();
 
-            for chunk in &chunks {
-                if transaction_ids.contains(&transaction_info[chunk.start].0) {
-                    return Err(Error::from_protobuf(
-                        "duplicate transaction ID between chunked transaction chunks",
-                    ));
-                }
-
-                transaction_ids.push(transaction_info[chunk.start].0);
-
-                // else ifs acting on different kinds of conditions are
-                // personally more confusing than having the extra layer of nesting.
-                #[allow(clippy::collapsible_else_if)]
-                if node_ids.is_empty() {
-                    node_ids = transaction_info[chunk.clone()].iter().map(|it| it.1).collect();
+            for (transaction_id, node_id) in transaction_info {
+                if let Some(node_id) = node_id {
+                    transaction_ids.push(transaction_id.clone());
+                    node_ids.push(node_id.clone());
                 } else {
-                    if node_ids.iter().ne(transaction_info[chunk.clone()].iter().map(|it| &it.1)) {
-                        return Err(Error::from_protobuf(
-                            "TransactionList has inconsistent node account IDs",
-                        ));
-                    }
+                    transaction_ids.push(None);
                 }
             }
 
@@ -223,8 +211,10 @@ impl TransactionSources {
             if signed_transactions
                 .first()
                 .as_ref()
-                .and_then(|it| it.sig_map.as_ref())
-                .map_or(false, |it| it.sig_pair.iter().any(|it| pk.starts_with(&it.pub_key_prefix)))
+                .and_then(|it| Some(it.sig_map.as_ref()))
+                .map_or(false, |it| {
+                    it.unwrap().sig_pair.iter().any(|it| pk.starts_with(&it.pub_key_prefix))
+                })
             {
                 continue;
             }
@@ -276,7 +266,7 @@ impl TransactionSources {
         (0..self.chunks.len()).map(|index| SourceChunk { map: self, index })
     }
 
-    pub(super) fn _transaction_ids(&self) -> &[TransactionId] {
+    pub(super) fn _transaction_ids(&self) -> &[Option<TransactionId>] {
         &self.transaction_ids
     }
 

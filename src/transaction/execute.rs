@@ -278,7 +278,7 @@ where
                     .into(),
             ),
             memo: self.body.transaction_memo.clone(),
-            node_account_id: Some(chunk_info.node_account_id.to_protobuf()),
+            node_account_id: chunk_info.node_account_id.to_protobuf(),
             generate_record: false,
             transaction_fee,
             max_custom_fees: vec![],
@@ -374,7 +374,7 @@ impl<'a, D: TransactionExecute> Execute for SourceTransactionExecuteView<'a, D> 
     }
 
     fn transaction_id(&self) -> Option<TransactionId> {
-        Some(self.chunk.transaction_id())
+        self.chunk.transaction_id()
     }
 
     fn requires_transaction_id(&self) -> bool {
