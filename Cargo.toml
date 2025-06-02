@@ -54,7 +54,7 @@ pin-project-lite = "0.2.16"
 unsize = "1.1.0"
 parking_lot = "0.12.0"
 serde_json = { version = "1.0.96", optional = true }
-serde = { version = "1.0.163", optional = true }
+serde = { version = "1.0.219", optional = true }
 serde_derive = { version = "1.0.163", optional = true }
 pem = "3.0.5"
 cbc = "0.1.2"
