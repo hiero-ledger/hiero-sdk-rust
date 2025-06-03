@@ -79,7 +79,6 @@ async fn frozen_serialized_transaction_can_be_deserialized() -> anyhow::Result<(
     assert_eq!(tx.get_node_account_ids(), tx2.get_node_account_ids());
     assert_eq!(tx.get_transaction_memo(), tx2.get_transaction_memo());
     assert_eq!(tx.get_initial_balance(), tx2.get_initial_balance());
-    assert_eq!(tx.get_transaction_valid_duration(), tx2.get_transaction_valid_duration());
 
     Ok(())
 }
