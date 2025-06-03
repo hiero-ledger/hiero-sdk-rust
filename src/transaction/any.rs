@@ -868,11 +868,12 @@ impl AnyTransaction {
             return Err(Error::from_protobuf("Transaction data is missing"));
         }
 
-        let transaction_data =
-            match AnyTransactionData::from_protobuf(ServicesTransactionDataList::from_protobuf(data_chunks)?){
-                Ok(data) => data,
-                Err(e) => return Err(e),
-            };
+        let transaction_data = match AnyTransactionData::from_protobuf(
+            ServicesTransactionDataList::from_protobuf(data_chunks)?,
+        ) {
+            Ok(data) => data,
+            Err(e) => return Err(e),
+        };
 
         Ok(Transaction {
             body: TransactionBody {

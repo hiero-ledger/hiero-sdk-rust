@@ -3,7 +3,10 @@
 use std::borrow::Cow;
 use std::ops::Range;
 
-use hedera_proto::services::{self, SignedTransaction};
+use hedera_proto::services::{
+    self,
+    SignedTransaction,
+};
 use once_cell::sync::OnceCell;
 use prost::Message;
 
@@ -75,17 +78,17 @@ impl TransactionSources {
         }
 
         let signed_transactions: Vec<SignedTransaction> = transactions
-    .iter()
-    .filter_map(|transaction| {
-        if !transaction.signed_transaction_bytes.is_empty() {
-            SignedTransaction::decode(&*transaction.signed_transaction_bytes)
-                .map_err(Error::from_protobuf)
-                .ok()
-        } else {
-            None
-        }
-    })
-    .collect();
+            .iter()
+            .filter_map(|transaction| {
+                if !transaction.signed_transaction_bytes.is_empty() {
+                    SignedTransaction::decode(&*transaction.signed_transaction_bytes)
+                        .map_err(Error::from_protobuf)
+                        .ok()
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         // ensure all signers (if any) are consistent for all signed transactions.
         // this doesn't compare or validate the signatures,

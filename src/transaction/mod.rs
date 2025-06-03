@@ -45,10 +45,21 @@ mod tests;
 
 pub use any::AnyTransaction;
 pub(crate) use any::AnyTransactionData;
-pub(crate) use chunked::{ChunkData, ChunkInfo, ChunkedTransactionData};
+pub(crate) use chunked::{
+    ChunkData,
+    ChunkInfo,
+    ChunkedTransactionData,
+};
 pub(crate) use cost::CostTransaction;
-pub(crate) use execute::{TransactionData, TransactionExecute, TransactionExecuteChunked};
-pub(crate) use protobuf::{ToSchedulableTransactionDataProtobuf, ToTransactionDataProtobuf};
+pub(crate) use execute::{
+    TransactionData,
+    TransactionExecute,
+    TransactionExecuteChunked,
+};
+pub(crate) use protobuf::{
+    ToSchedulableTransactionDataProtobuf,
+    ToTransactionDataProtobuf,
+};
 pub(crate) use source::TransactionSources;
 
 const DEFAULT_TRANSACTION_VALID_DURATION: Duration = Duration::seconds(120);
@@ -640,7 +651,7 @@ impl<D: TransactionExecute> Transaction<D> {
 
         Ok(iter.collect())
     }
-    
+
     #[allow(deprecated)]
     fn make_transaction_list_chunked(&self) -> crate::Result<Vec<services::Transaction>> {
         let operator = || self.body.operator.as_ref().ok_or(Error::NoPayerAccountOrTransactionId);
