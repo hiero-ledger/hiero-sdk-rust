@@ -71,8 +71,6 @@ where
         &self,
         chunk_info: &ChunkInfo,
     ) -> (services::Transaction, TransactionHash) {
-        assert!(self.is_frozen());
-
         let transaction_body = self.to_transaction_body_protobuf(chunk_info);
 
         let body_bytes = transaction_body.encode_to_vec();
@@ -256,7 +254,6 @@ where
 {
     #[allow(deprecated)]
     fn to_transaction_body_protobuf(&self, chunk_info: &ChunkInfo) -> services::TransactionBody {
-        assert!(self.is_frozen());
         let data = self.body.data.to_transaction_data_protobuf(chunk_info);
 
         let transaction_fee = if self.body.data.for_cost_estimate() {

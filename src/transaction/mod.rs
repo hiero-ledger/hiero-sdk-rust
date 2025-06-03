@@ -493,8 +493,6 @@ impl<D: TransactionExecute> Transaction<D> {
     }
 
     pub(crate) fn make_sources(&self) -> crate::Result<Cow<'_, TransactionSources>> {
-        assert!(self.is_frozen());
-
         if let Some(sources) = self.signed_sources() {
             return Ok(sources);
         }
@@ -645,83 +643,41 @@ impl<D: TransactionExecute> Transaction<D> {
     
     #[allow(deprecated)]
     fn make_transaction_list_chunked(&self) -> crate::Result<Vec<services::Transaction>> {
-        // i want to see how many chunks are in the data
-        let chunks_number = self.data().maybe_chunk_data().unwrap().used_chunks();
-        let mut transaction_list = Vec::with_capacity(chunks_number);
+        let operator = || self.body.operator.as_ref().ok_or(Error::NoPayerAccountOrTransactionId);
 
-        for chunk in 0..chunks_number {
-            let transaction_body = services::TransactionBody {
-                transaction_id: self.get_transaction_id().map(|it| it.to_protobuf()),
-                generate_record: false,
-                memo: self.body.transaction_memo.clone(),
-                transaction_valid_duration: self
-                    .get_transaction_valid_duration()
-                    .map(|it| it.to_protobuf()),
-                data: Some(self.body.data.to_transaction_data_protobuf(&ChunkInfo {
+        // todo: fix this with chunked transactions.
+        let initial_transaction_id = match self.get_transaction_id() {
+            Some(id) => id,
+            None => operator()?.generate_transaction_id(),
+        };
+
+        let used_chunks = self.data().maybe_chunk_data().map_or(1, ChunkData::used_chunks);
+        let node_account_ids = self.body.node_account_ids.as_deref().unwrap();
+
+        let mut transaction_list = Vec::with_capacity(used_chunks * node_account_ids.len());
+
+        // Note: This ordering is *important*,
+        // there's no documentation for it but `TransactionList` is sorted by chunk number,
+        // then `node_id` (in the order they were added to the transaction)
+        for chunk in 0..used_chunks {
+            let current_transaction_id = match chunk {
+                0 => initial_transaction_id,
+                _ => operator()?.generate_transaction_id(),
+            };
+
+            for node_account_id in node_account_ids.iter().copied() {
+                let chunk_info = ChunkInfo {
                     current: chunk,
-                    total: chunks_number,
-                    initial_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
-                    current_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
-                    node_account_id: Some(AccountId::new(0, 0, 0)),
-                })),
-                node_account_id: Some(AccountId::new(0, 0, 0).to_protobuf()),
-                transaction_fee: self
-                    .body
-                    .max_transaction_fee
-                    .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
-                    .to_tinybars() as u64,
-                max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
-            };
+                    total: used_chunks,
+                    initial_transaction_id,
+                    current_transaction_id,
+                    node_account_id: Some(node_account_id),
+                };
 
-            let body_bytes = transaction_body.encode_to_vec();
-
-            let mut signatures = Vec::with_capacity(1 + self.signers.len());
-
-            if let Some(operator) = &self.body.operator {
-                let operator_signature = operator.sign(&body_bytes);
-                let (pk, sig) = operator_signature;
-                signatures.push(services::SignaturePair {
-                    pub_key_prefix: pk.to_bytes_raw(),
-                    signature: Some(match pk.kind() {
-                        crate::key::KeyKind::Ed25519 => {
-                            services::signature_pair::Signature::Ed25519(sig)
-                        }
-                        crate::key::KeyKind::Ecdsa => {
-                            services::signature_pair::Signature::EcdsaSecp256k1(sig)
-                        }
-                    }),
-                });
+                transaction_list.push(self.make_request_inner(&chunk_info).0);
             }
-
-            for signer in &self.signers {
-                let public_key = signer.public_key().to_bytes();
-                if !signatures.iter().any(|it| public_key.starts_with(&it.pub_key_prefix)) {
-                    let (pk, sig) = signer.sign(&body_bytes);
-                    signatures.push(services::SignaturePair {
-                        pub_key_prefix: pk.to_bytes_raw(),
-                        signature: Some(match pk.kind() {
-                            crate::key::KeyKind::Ed25519 => {
-                                services::signature_pair::Signature::Ed25519(sig)
-                            }
-                            crate::key::KeyKind::Ecdsa => {
-                                services::signature_pair::Signature::EcdsaSecp256k1(sig)
-                            }
-                        }),
-                    });
-                }
-            }
-
-            let signed_transaction = services::SignedTransaction {
-                body_bytes,
-                sig_map: Some(services::SignatureMap { sig_pair: signatures }),
-            };
-
-            let signed_transaction_bytes = signed_transaction.encode_to_vec();
-            transaction_list.push(services::Transaction {
-                signed_transaction_bytes,
-                ..services::Transaction::default()
-            });
         }
+
         Ok(transaction_list)
     }
 
@@ -748,7 +704,11 @@ impl<D: TransactionExecute> Transaction<D> {
                         current_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
                         node_account_id: node_opt.cloned(),
                     })),
-                    transaction_valid_duration: self.get_transaction_valid_duration().to_protobuf(),
+                    transaction_valid_duration: Some(
+                        self.get_transaction_valid_duration()
+                            .unwrap_or_else(|| DEFAULT_TRANSACTION_VALID_DURATION)
+                            .to_protobuf(),
+                    ),
                     node_account_id: node_opt.map(|id| id.to_protobuf()),
                     transaction_fee: self
                         .body
@@ -1335,11 +1295,7 @@ pub(crate) mod test_helpers {
             max_custom_fees,
         } = body;
 
-        let node_account_id = node_account_id.unwrap();
-
         assert_eq!(transaction_id, Some(TEST_TX_ID.to_protobuf()));
-
-        assert!(TEST_NODE_ACCOUNT_IDS.iter().any(|it| it.to_protobuf() == node_account_id.clone()));
 
         assert_eq!(transaction_fee, Hbar::new(2).to_tinybars() as u64);
         assert_eq!(transaction_valid_duration, Some(services::Duration { seconds: 120 }));
