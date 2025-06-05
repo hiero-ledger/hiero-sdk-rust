@@ -82,7 +82,7 @@ impl ToTransactionDataProtobuf for PaymentTransactionData {
             transfers: Some(services::TransferList {
                 account_amounts: vec![
                     services::AccountAmount {
-                        account_id: Some(node_account_id.to_protobuf()),
+                        account_id: node_account_id.to_protobuf(),
                         amount: amount.to_tinybars(),
                         is_approval: false,
                     },

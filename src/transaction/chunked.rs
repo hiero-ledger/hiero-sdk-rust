@@ -87,12 +87,12 @@ pub struct ChunkInfo {
     pub(crate) current_transaction_id: TransactionId,
 
     /// ID for the account this transaction will be submitted to.
-    pub(crate) node_account_id: AccountId,
+    pub(crate) node_account_id: Option<AccountId>,
 }
 
 impl ChunkInfo {
     #[must_use]
-    pub(crate) fn assert_single_transaction(&self) -> (TransactionId, AccountId) {
+    pub(crate) fn assert_single_transaction(&self) -> (TransactionId, Option<AccountId>) {
         assert!(self.current == 0 && self.total == 1);
         (self.current_transaction_id, self.node_account_id)
     }
@@ -117,7 +117,7 @@ impl ChunkInfo {
             total,
             initial_transaction_id: transaction_id,
             current_transaction_id: transaction_id,
-            node_account_id,
+            node_account_id: Some(node_account_id),
         }
     }
 }
@@ -272,7 +272,7 @@ where
             total: self.total_chunks,
             current: self.current_chunk,
             initial_transaction_id: self.initial_transaction_id,
-            node_account_id,
+            node_account_id: Some(node_account_id),
             current_transaction_id: *transaction_id.ok_or(Error::NoPayerAccountOrTransactionId)?,
         }))
     }
