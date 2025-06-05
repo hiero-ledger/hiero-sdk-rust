@@ -23,6 +23,7 @@ use hedera::{
     AccountId,
     AnyTransaction,
     Hbar,
+    PrivateKey,
     Status,
     TransactionId,
 };
@@ -100,9 +101,10 @@ async fn serialized_deserialized_transaction_can_be_executed() -> anyhow::Result
     };
 
     let mut tx = AccountCreateTransaction::new();
-
+    let key = PrivateKey::generate_ed25519();
     let _ = tx
         .initial_balance(Hbar::from_tinybars(100))
+        .key(key.public_key())
         .transaction_memo("HIP-745 test")
         .freeze_with(&client);
 

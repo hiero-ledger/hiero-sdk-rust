@@ -120,7 +120,7 @@ impl TransactionSources {
             }
         }
 
-        let transaction_info: Result<Vec<_>, _> = signed_transactions
+        let transaction_info: Result<Vec<_>, _> = transactions
             .iter()
             .map(|it| {
                 services::TransactionBody::decode(it.body_bytes.as_slice())
@@ -279,7 +279,7 @@ impl TransactionSources {
 
     fn transaction_hashes(&self) -> &[TransactionHash] {
         self.transaction_hashes.get_or_init(|| {
-            self.signed_transactions.iter().map(|it| TransactionHash::new(&it.body_bytes)).collect()
+            self.transactions().iter().map(|it| TransactionHash::new(&it.body_bytes)).collect()
         })
     }
 }
