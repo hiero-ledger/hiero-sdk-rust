@@ -20,6 +20,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use tonic::metadata::AsciiMetadataValue;
 use tonic::transport::Channel;
+use tonic::Request;
 use triomphe::Arc;
 
 use crate::client::NetworkData;
@@ -79,6 +80,12 @@ pub(crate) trait Execute: ValidateChecksums {
     #[allow(unused_variables)]
     fn should_retry(&self, response: &Self::GrpcResponse) -> bool {
         false
+    }
+
+    /// Add metadata to the request.
+    fn add_metadata(&self, metadata: &mut tonic::metadata::MetadataMap) {
+        metadata.insert("user-agent-id", "hiero-sdk-rust".parse().unwrap());
+        metadata.insert("version", "1.0.0".parse().unwrap()); // Replace with your version constant if available
     }
 
     /// Create a new request for execution.
@@ -366,7 +373,10 @@ async fn execute_single<E: Execute + Sync>(
         type_name::<E>()
     );
 
-    let fut = executable.execute(channel, request);
+    let mut req = Request::new(request);
+    executable.add_metadata(req.metadata_mut());
+
+    let fut = executable.execute(channel, req.into_inner());
 
     let response = match ctx.grpc_timeout {
         Some(it) => match tokio::time::timeout(it, fut).await {
