@@ -844,7 +844,7 @@ impl AnyTransaction {
         first_body: services::TransactionBody,
         data_chunks: Vec<services::transaction_body::Data>,
     ) -> crate::Result<Self> {
-        let transaction_id = match first_body.transaction_id {
+        let transaction_id: Option<TransactionId> = match first_body.transaction_id {
             Some(id) => match TransactionId::from_protobuf(id) {
                 Ok(id) => Some(id),
                 Err(_) => None, // Or handle the error differently

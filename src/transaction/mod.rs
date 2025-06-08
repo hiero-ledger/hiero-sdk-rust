@@ -1011,9 +1011,9 @@ impl AnyTransaction {
 
         let sources = TransactionSources::new(list)?;
 
-        let transaction_bodies: Result<Vec<_>, _> = if !sources.transactions().is_empty() {
+        let transaction_bodies: Result<Vec<_>, _> = if !sources.signed_transactions().is_empty() {
             sources
-                .transactions()
+                .signed_transactions()
                 .iter()
                 .map(|transaction| {
                     services::TransactionBody::decode(&*transaction.body_bytes)
@@ -1022,7 +1022,7 @@ impl AnyTransaction {
                 .collect()
         } else {
             sources
-                .signed_transactions()
+                .transactions()
                 .iter()
                 .map(|transaction| {
                     services::TransactionBody::decode(&*transaction.body_bytes)
@@ -1071,7 +1071,7 @@ impl AnyTransaction {
         // note: this doesn't check freeze for obvious reasons.
 
         let node_ids = sources.node_ids().to_vec();
-        res.body.transaction_id = sources._transaction_ids().first().unwrap().clone();
+
         res.body.node_account_ids = if node_ids.is_empty() { None } else { Some(node_ids) };
         res.sources = Some(sources);
 
