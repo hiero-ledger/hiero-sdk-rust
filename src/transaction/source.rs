@@ -72,6 +72,7 @@ pub struct TransactionSources {
 }
 
 impl TransactionSources {
+    #[allow(deprecated)]
     pub(crate) fn new(transactions: Vec<services::Transaction>) -> crate::Result<Self> {
         if transactions.is_empty() {
             return Err(Error::from_protobuf("`TransactionList` had no transactions"));
@@ -123,7 +124,13 @@ impl TransactionSources {
         let transaction_info: Result<Vec<_>, _> = transactions
             .iter()
             .map(|it| {
-                services::TransactionBody::decode(it.body_bytes.as_slice())
+                let body_bytes = if it.body_bytes.len() == 0 {
+                    SignedTransaction::decode(&*it.signed_transaction_bytes).unwrap().body_bytes
+                } else {
+                    it.body_bytes.clone()
+                };
+
+                services::TransactionBody::decode(body_bytes.as_slice())
                     .map_err(Error::from_protobuf)
                     .and_then(|body| {
                         // Keep None values for optional fields

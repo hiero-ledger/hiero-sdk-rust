@@ -1011,14 +1011,25 @@ impl AnyTransaction {
 
         let sources = TransactionSources::new(list)?;
 
-        let transaction_bodies: Result<Vec<_>, _> = sources
-            .transactions()
-            .iter()
-            .map(|transaction| {
-                services::TransactionBody::decode(&*transaction.body_bytes)
-                    .map_err(Error::from_protobuf)
-            })
-            .collect();
+        let transaction_bodies: Result<Vec<_>, _> = if !sources.transactions().is_empty() {
+            sources
+                .transactions()
+                .iter()
+                .map(|transaction| {
+                    services::TransactionBody::decode(&*transaction.body_bytes)
+                        .map_err(Error::from_protobuf)
+                })
+                .collect()
+        } else {
+            sources
+                .signed_transactions()
+                .iter()
+                .map(|transaction| {
+                    services::TransactionBody::decode(&*transaction.body_bytes)
+                        .map_err(Error::from_protobuf)
+                })
+                .collect()
+        };
 
         let transaction_bodies = transaction_bodies?;
         {
@@ -1037,11 +1048,18 @@ impl AnyTransaction {
         let transaction_data = {
             let data: Result<_, _> = sources
                 .chunks()
-                .filter_map(|it| it.transactions().first())
                 .map(|it| {
-                    services::TransactionBody::decode(&*it.body_bytes)
-                        .map_err(Error::from_protobuf)
-                        .and_then(|pb| pb_getf!(pb, data))
+                    if it.transactions().first().unwrap().body_bytes.len() == 0 {
+                        services::TransactionBody::decode(
+                            &*it.signed_transactions().first().unwrap().body_bytes,
+                        )
+                    } else {
+                        services::TransactionBody::decode(
+                            &*it.transactions().first().unwrap().body_bytes,
+                        )
+                    }
+                    .map_err(Error::from_protobuf)
+                    .and_then(|pb| pb_getf!(pb, data))
                 })
                 .collect();
 
@@ -1053,6 +1071,7 @@ impl AnyTransaction {
         // note: this doesn't check freeze for obvious reasons.
 
         let node_ids = sources.node_ids().to_vec();
+        res.body.transaction_id = sources._transaction_ids().first().unwrap().clone();
         res.body.node_account_ids = if node_ids.is_empty() { None } else { Some(node_ids) };
         res.sources = Some(sources);
 
