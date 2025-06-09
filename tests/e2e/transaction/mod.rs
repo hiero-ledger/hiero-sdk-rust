@@ -121,3 +121,30 @@ async fn serialized_deserialized_transaction_can_be_executed() -> anyhow::Result
 
     Ok(())
 }
+
+#[tokio::test]
+async fn serialized_deserialized_transaction_can_be_executed_non_frozen() -> anyhow::Result<()> {
+    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+        return Ok(());
+    };
+
+    let mut tx = AccountCreateTransaction::new();
+    let key = PrivateKey::generate_ed25519();
+    let _ = tx
+        .initial_balance(Hbar::from_tinybars(100))
+        .key(key.public_key())
+        .transaction_memo("HIP-745 test");
+
+    let bytes = tx.to_bytes().expect("Failed to serialize transaction");
+
+    let mut tx2 = AnyTransaction::from_bytes(&bytes)
+        .expect("Failed to deserialize transaction")
+        .downcast::<AccountCreateTransaction>()
+        .unwrap();
+
+    let receipt = tx2.execute(&client).await?.get_receipt(&client).await?;
+
+    assert_eq!(receipt.status, Status::Success);
+
+    Ok(())
+}

@@ -419,7 +419,7 @@ impl<D: ValidateChecksums> Transaction<D> {
 
         // set transaction id if not set based on client operator
         if self.get_transaction_id().is_none() {
-            let operator =
+            let operator: Arc<Operator> =
                 client.and_then(Client::full_load_operator).expect("Client must have an operator");
             let transaction_id = TransactionId::generate(operator.account_id);
             self.transaction_id(transaction_id);
@@ -840,9 +840,20 @@ where
         self.freeze_with(Some(client))?;
 
         if let Some(sources) = self.sources() {
-            return self::execute::SourceTransaction::new(self, sources)
-                .execute(client, timeout)
-                .await;
+            // Check if sources are "empty" (no transaction IDs and no node IDs)
+            let has_transaction_ids =
+                sources.chunks().any(|chunk| chunk.transaction_id().is_some());
+            let has_node_ids = !sources.node_ids().is_empty();
+
+            if has_transaction_ids || has_node_ids {
+                // Sources have useful data, use them
+                return self::execute::SourceTransaction::new(self, sources)
+                    .execute(client, timeout)
+                    .await;
+            } else {
+                // Sources are empty, clear them and use regular execution
+                self.sources = None;
+            }
         }
 
         if let Some(chunk_data) = self.data().maybe_chunk_data() {
@@ -960,9 +971,20 @@ where
 
         // fixme: dedup this with `execute_with_optional_timeout`
         if let Some(sources) = self.sources() {
-            return self::execute::SourceTransaction::new(self, sources)
-                .execute_all(client, timeout_per_chunk)
-                .await;
+            // Check if sources are "empty" (no transaction IDs and no node IDs)
+            let has_transaction_ids =
+                sources.chunks().any(|chunk| chunk.transaction_id().is_some());
+            let has_node_ids = !sources.node_ids().is_empty();
+
+            if has_transaction_ids || has_node_ids {
+                // Sources have useful data, use them
+                return self::execute::SourceTransaction::new(self, sources)
+                    .execute_all(client, timeout_per_chunk)
+                    .await;
+            } else {
+                // Sources are empty, clear them and use regular execution
+                self.sources = None;
+            }
         }
 
         // sorry for the mess: this can technically infinite loop

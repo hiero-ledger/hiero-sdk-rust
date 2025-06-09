@@ -367,7 +367,12 @@ impl<'a, D: TransactionExecute> Execute for SourceTransactionExecuteView<'a, D> 
     type Response = <Transaction<D> as Execute>::Response;
 
     fn node_account_ids(&self) -> Option<&[AccountId]> {
-        Some(self.chunk.node_ids())
+        let node_ids = self.chunk.node_ids();
+        if node_ids.is_empty() {
+            None // Use client's default nodes
+        } else {
+            Some(node_ids)
+        }
     }
 
     fn transaction_id(&self) -> Option<TransactionId> {
@@ -383,7 +388,7 @@ impl<'a, D: TransactionExecute> Execute for SourceTransactionExecuteView<'a, D> 
     }
 
     fn regenerate_transaction_id(&self) -> Option<bool> {
-        Some(false)
+        Some(self.chunk.transaction_id().is_none())
     }
 
     fn make_request(
