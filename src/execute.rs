@@ -85,7 +85,7 @@ pub(crate) trait Execute: ValidateChecksums {
     /// Add metadata to the request.
     fn add_metadata(&self, metadata: &mut tonic::metadata::MetadataMap) {
         metadata.insert("user-agent-id", "hiero-sdk-rust".parse().unwrap());
-        metadata.insert("version", "1.0.0".parse().unwrap()); // Replace with your version constant if available
+        metadata.insert("version", env!("CARGO_PKG_VERSION").parse().unwrap());
     }
 
     /// Create a new request for execution.
