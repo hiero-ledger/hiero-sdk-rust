@@ -71,8 +71,6 @@ where
         &self,
         chunk_info: &ChunkInfo,
     ) -> (services::Transaction, TransactionHash) {
-        assert!(self.is_frozen());
-
         let transaction_body = self.to_transaction_body_protobuf(chunk_info);
 
         let body_bytes = transaction_body.encode_to_vec();
@@ -256,7 +254,6 @@ where
 {
     #[allow(deprecated)]
     fn to_transaction_body_protobuf(&self, chunk_info: &ChunkInfo) -> services::TransactionBody {
-        assert!(self.is_frozen());
         let data = self.body.data.to_transaction_data_protobuf(chunk_info);
 
         let transaction_fee = if self.body.data.for_cost_estimate() {
@@ -278,7 +275,7 @@ where
                     .into(),
             ),
             memo: self.body.transaction_memo.clone(),
-            node_account_id: Some(chunk_info.node_account_id.to_protobuf()),
+            node_account_id: chunk_info.node_account_id.to_protobuf(),
             generate_record: false,
             transaction_fee,
             max_custom_fees: vec![],
@@ -370,11 +367,16 @@ impl<'a, D: TransactionExecute> Execute for SourceTransactionExecuteView<'a, D> 
     type Response = <Transaction<D> as Execute>::Response;
 
     fn node_account_ids(&self) -> Option<&[AccountId]> {
-        Some(self.chunk.node_ids())
+        let node_ids = self.chunk.node_ids();
+        if node_ids.is_empty() {
+            None // Use client's default nodes
+        } else {
+            Some(node_ids)
+        }
     }
 
     fn transaction_id(&self) -> Option<TransactionId> {
-        Some(self.chunk.transaction_id())
+        self.chunk.transaction_id()
     }
 
     fn requires_transaction_id(&self) -> bool {
@@ -386,7 +388,7 @@ impl<'a, D: TransactionExecute> Execute for SourceTransactionExecuteView<'a, D> 
     }
 
     fn regenerate_transaction_id(&self) -> Option<bool> {
-        Some(false)
+        Some(self.chunk.transaction_id().is_none())
     }
 
     fn make_request(
