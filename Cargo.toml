@@ -45,7 +45,7 @@ sha3 = "0.10.2"
 thiserror = "1.0.31"
 time = "0.3.41"
 tokio = { version = "1.44.2", features = ["time"] }
-tonic = "0.12.3"
+tonic = "0.13.1"
 tinystr = { version = "0.7.0", default-features = false }
 arc-swap = "1.6.0"
 rlp = "0.6.1"
