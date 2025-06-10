@@ -99,7 +99,7 @@ features = ["std", "arc-swap", "unsize"]
 [dev-dependencies]
 anyhow = "1.0.98"
 assert_matches = "1.5.0"
-clap = { version = "4.0.0", features = ["derive", "env"] }
+clap = { version = "4.5.39", features = ["derive", "env"] }
 dotenvy = "0.15.5"
 expect-test = "1.5.1"
 hex-literal = "1.0.0"
