@@ -1,5 +1,8 @@
 # Hiero™ Rust SDK
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/hiero-ledger/hiero-sdk-rust/badge)](https://api.scorecard.dev/projects/github.com/hiero-ledger/hiero-sdk-rust)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/10697/badge)](https://bestpractices.coreinfrastructure.org/projects/10697)
+
 > The SDK for interacting with Hiero: the official distributed
 > consensus platform built using the Hashgraph consensus algorithm for fast,
 > fair and secure transactions. Hiero enables and empowers developers to
@@ -126,6 +129,14 @@ Lastly, run the tests using `cargo test`
 ## Contributing
 
 Contributions are welcome. Please see the [contributing guide](https://github.com/hashgraph/.github/blob/main/CONTRIBUTING.md) to see how you can get involved.
+
+## Help/Community
+
+- Join our [community discussions](https://discord.lfdecentralizedtrust.org/) on discord.
+
+## About Users and Maintainers
+
+- Users and Maintainers guidelies are located in **[Hiero-Ledger's roles and groups guidelines](https://github.com/hiero-ledger/governance/blob/main/roles-and-groups.md#maintainers).**
 
 ## Code of Conduct
 
