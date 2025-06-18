@@ -73,6 +73,12 @@ pub struct NodeUpdateTransactionData {
 
     /// An administrative key controlled by the node operator.
     admin_key: Option<Key>,
+
+    /// A flag indicating whether the node operator declines rewards.
+    decline_reward: Option<bool>,
+
+    /// A service endpoint for gRPC proxy.
+    grpc_proxy_endpoint: Option<ServiceEndpoint>,
 }
 
 impl NodeUpdateTransaction {
@@ -279,6 +285,17 @@ impl FromProtobuf<services::NodeUpdateTransactionBody> for NodeUpdateTransaction
             gossip_ca_certificate: pb.gossip_ca_certificate,
             grpc_certificate_hash: pb.grpc_certificate_hash,
             admin_key: Option::from_protobuf(pb.admin_key)?,
+            decline_reward: pb.decline_reward,
+            grpc_proxy_endpoint: pb.grpc_proxy_endpoint.map(|it| ServiceEndpoint {
+                ip_address_v4: Some(Ipv4Addr::new(
+                    it.ip_address_v4[0],
+                    it.ip_address_v4[1],
+                    it.ip_address_v4[2],
+                    it.ip_address_v4[3],
+                )),
+                port: it.port,
+                domain_name: it.domain_name.clone(),
+            }),
         })
     }
 }
@@ -301,6 +318,8 @@ impl ToProtobuf for NodeUpdateTransactionData {
             gossip_ca_certificate: self.gossip_ca_certificate.clone(),
             grpc_certificate_hash: self.grpc_certificate_hash.clone(),
             admin_key: self.admin_key.to_protobuf(),
+            decline_reward: self.decline_reward,
+            grpc_proxy_endpoint: self.grpc_proxy_endpoint.as_ref().map(|it| it.to_protobuf()),
         }
     }
 }
@@ -390,6 +409,7 @@ mod tests {
 
     #[test]
     fn from_proto_body() {
+        let grpc_proxy_endpoint = make_ip_address_list().into_iter().next().unwrap();
         let tx = services::NodeUpdateTransactionBody {
             node_id: 1,
             account_id: Some(TEST_ACCOUNT_ID.to_protobuf()),
@@ -405,6 +425,8 @@ mod tests {
             gossip_ca_certificate: Some(TEST_GOSSIP_CA_CERTIFICATE.to_vec()),
             grpc_certificate_hash: Some(TEST_GRPC_CERTIFICATE_HASH.to_vec()),
             admin_key: Some(unused_private_key().public_key().to_protobuf()),
+            decline_reward: Some(false),
+            grpc_proxy_endpoint: Some(grpc_proxy_endpoint.to_protobuf()),
         };
 
         let data = NodeUpdateTransactionData::from_protobuf(tx).unwrap();
@@ -416,6 +438,8 @@ mod tests {
         assert_eq!(data.gossip_ca_certificate, Some(TEST_GOSSIP_CA_CERTIFICATE.to_vec()));
         assert_eq!(data.grpc_certificate_hash, Some(TEST_GRPC_CERTIFICATE_HASH.to_vec()));
         assert_eq!(data.admin_key, Some(Key::from(unused_private_key().public_key())));
+        assert_eq!(data.decline_reward, Some(false));
+        assert_eq!(data.grpc_proxy_endpoint, Some(grpc_proxy_endpoint));
     }
 
     #[test]

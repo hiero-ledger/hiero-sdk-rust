@@ -59,6 +59,10 @@ pub struct NodeCreateTransactionData {
 
     /// An administrative key controlled by the node operator.
     admin_key: Option<Key>,
+
+    decline_reward: bool,
+
+    grpc_proxy_endpoint: Option<ServiceEndpoint>,
 }
 
 impl NodeCreateTransaction {
@@ -252,6 +256,17 @@ impl FromProtobuf<services::NodeCreateTransactionBody> for NodeCreateTransaction
             gossip_ca_certificate: pb.gossip_ca_certificate,
             grpc_certificate_hash: pb.grpc_certificate_hash,
             admin_key: Option::from_protobuf(pb.admin_key)?,
+            decline_reward: pb.decline_reward,
+            grpc_proxy_endpoint: pb.grpc_proxy_endpoint.map(|it| ServiceEndpoint {
+                ip_address_v4: Some(Ipv4Addr::new(
+                    it.ip_address_v4[0],
+                    it.ip_address_v4[1],
+                    it.ip_address_v4[2],
+                    it.ip_address_v4[3],
+                )),
+                port: it.port,
+                domain_name: it.domain_name.clone(),
+            }),
         })
     }
 }
@@ -273,6 +288,8 @@ impl ToProtobuf for NodeCreateTransactionData {
             gossip_ca_certificate: self.gossip_ca_certificate.clone(),
             grpc_certificate_hash: self.grpc_certificate_hash.clone(),
             admin_key: self.admin_key.to_protobuf(),
+            decline_reward: self.decline_reward,
+            grpc_proxy_endpoint: self.grpc_proxy_endpoint.as_ref().map(|it| it.to_protobuf()),
         }
     }
 }
@@ -369,6 +386,8 @@ mod tests {
             gossip_ca_certificate: TEST_GOSSIP_CA_CERTIFICATE.to_vec(),
             grpc_certificate_hash: TEST_GRPC_CERTIFICATE_HASH.to_vec(),
             admin_key: Some(unused_private_key().public_key().to_protobuf()),
+            decline_reward: false,
+            grpc_proxy_endpoint: None,
         };
 
         let data = NodeCreateTransactionData::from_protobuf(tx).unwrap();
