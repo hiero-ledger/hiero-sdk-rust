@@ -173,6 +173,30 @@ impl NodeCreateTransaction {
         self.data_mut().admin_key = Some(key.into());
         self
     }
+
+    /// Returns the decline reward.
+    #[must_use]
+    pub fn get_decline_reward(&self) -> bool {
+        self.data().decline_reward
+    }
+
+    /// Sets the decline reward.
+    pub fn decline_reward(&mut self, decline_reward: bool) -> &mut Self {
+        self.data_mut().decline_reward = decline_reward;
+        self
+    }
+
+    /// Returns the grpc proxy endpoint.
+    #[must_use]
+    pub fn get_grpc_proxy_endpoint(&self) -> Option<&ServiceEndpoint> {
+        self.data().grpc_proxy_endpoint.as_ref()
+    }
+
+    /// Sets the grpc proxy endpoint.
+    pub fn grpc_proxy_endpoint(&mut self, grpc_proxy_endpoint: ServiceEndpoint) -> &mut Self {
+        self.data_mut().grpc_proxy_endpoint = Some(grpc_proxy_endpoint);
+        self
+    }
 }
 
 impl TransactionData for NodeCreateTransactionData {}
@@ -487,5 +511,22 @@ mod tests {
     #[should_panic]
     fn get_set_admin_key_frozen_panic() {
         make_transaction().admin_key(Key::from(unused_private_key().public_key()));
+    }
+
+    #[test]
+    fn get_set_decline_reward() {
+        let mut tx = NodeCreateTransaction::new();
+        tx.decline_reward(true);
+
+        assert_eq!(tx.get_decline_reward(), true);
+    }
+
+    #[test]
+    fn get_set_grpc_proxy_endpoint() {
+        let grpc_proxy_endpoint = make_ip_address_list().into_iter().next().unwrap();
+        let mut tx = NodeCreateTransaction::new();
+        tx.grpc_proxy_endpoint(grpc_proxy_endpoint.clone());
+
+        assert_eq!(tx.get_grpc_proxy_endpoint(), Some(&grpc_proxy_endpoint));
     }
 }
