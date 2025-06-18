@@ -72,12 +72,19 @@ fn main() -> anyhow::Result<()> {
         fs::write(service, &*contents)?;
     }
 
-    let mut cfg = tonic_build::configure()
-        // We have already emitted a cargo directive to trigger a rerun on the source folder
-        // that the copy this builds is based on. If the directives are not suppressed, the
-        // crate will rebuild on every compile due to the modified time stamps post-dating
-        // the start time of the compile action.
-        .emit_rerun_if_changed(false);
+    // Check if we're building for WASM
+    let target = env::var("TARGET").unwrap_or_default();
+    let is_wasm = target.contains("wasm");
+
+    let mut cfg = if is_wasm {
+        // Configure for WASM build
+        tonic_build::configure()
+            .build_server(false)
+            .build_transport(false)
+            .emit_rerun_if_changed(false)
+    } else {
+        tonic_build::configure().emit_rerun_if_changed(false)
+    };
 
     // most of the protobufs in "basic types" should be Eq + Hash + Copy
     // any protobufs that would typically be used as parameter, that meet the requirements of those
@@ -128,6 +135,11 @@ fn main() -> anyhow::Result<()> {
       "]"#,
     );
 
+    // Add WASM-specific attributes if building for WASM
+    if is_wasm {
+        cfg = cfg.type_attribute(".", "#[cfg_attr(target_arch = \"wasm32\", wasm_bindgen)]");
+    }
+
     cfg.compile_protos(&services, &[services_tmp_path.clone()])?;
 
     // NOTE: prost generates rust doc comments and fails to remove the leading * line
@@ -138,35 +150,64 @@ fn main() -> anyhow::Result<()> {
     let mirror_out_dir = Path::new(&env::var("OUT_DIR")?).join("mirror");
     create_dir_all(&mirror_out_dir)?;
 
-    tonic_build::configure()
-        .build_server(false)
-        .extern_path(".proto.Timestamp", "crate::services::Timestamp")
-        .extern_path(".proto.TopicID", "crate::services::TopicId")
-        .extern_path(".proto.FileID", "crate::services::FileId")
-        .extern_path(".proto.NodeAddress", "crate::services::NodeAddress")
-        .extern_path(
-            ".proto.ConsensusMessageChunkInfo",
-            "crate::services::ConsensusMessageChunkInfo",
-        )
-        .out_dir(&mirror_out_dir)
-        .compile_protos(
-            &["./mirror/consensus_service.proto", "./mirror/mirror_network_service.proto"],
-            &["./mirror/", "./services/hapi/hedera-protobufs/services/"],
-        )?;
+    let mut mirror_cfg = if is_wasm {
+        tonic_build::configure()
+            .build_server(false)
+            .build_transport(false)
+            .extern_path(".proto.Timestamp", "crate::services::Timestamp")
+            .extern_path(".proto.TopicID", "crate::services::TopicId")
+            .extern_path(".proto.FileID", "crate::services::FileId")
+            .extern_path(".proto.NodeAddress", "crate::services::NodeAddress")
+            .extern_path(
+                ".proto.ConsensusMessageChunkInfo",
+                "crate::services::ConsensusMessageChunkInfo",
+            )
+            .out_dir(&mirror_out_dir)
+    } else {
+        tonic_build::configure()
+            .build_server(false)
+            .extern_path(".proto.Timestamp", "crate::services::Timestamp")
+            .extern_path(".proto.TopicID", "crate::services::TopicId")
+            .extern_path(".proto.FileID", "crate::services::FileId")
+            .extern_path(".proto.NodeAddress", "crate::services::NodeAddress")
+            .extern_path(
+                ".proto.ConsensusMessageChunkInfo",
+                "crate::services::ConsensusMessageChunkInfo",
+            )
+            .out_dir(&mirror_out_dir)
+    };
+
+    if is_wasm {
+        mirror_cfg =
+            mirror_cfg.type_attribute(".", "#[cfg_attr(target_arch = \"wasm32\", wasm_bindgen)]");
+    }
+
+    mirror_cfg.compile_protos(
+        &["./mirror/consensus_service.proto", "./mirror/mirror_network_service.proto"],
+        &["./mirror/", "./services/hapi/hedera-protobufs/services/"],
+    )?;
 
     remove_useless_comments(&mirror_out_dir.join("proto.rs"))?;
 
     // streams
     // NOTE: must be compiled in a separate folder otherwise it will overwrite the previous build
-
     let streams_out_dir = Path::new(&env::var("OUT_DIR")?).join("streams");
     create_dir_all(&streams_out_dir)?;
 
     // NOTE: **ALL** protobufs defined in basic_types must be specified here
-    let cfg = tonic_build::configure();
-    let cfg = builder::extern_basic_types(cfg);
+    let mut streams_cfg = if is_wasm {
+        tonic_build::configure().build_server(false).build_transport(false)
+    } else {
+        tonic_build::configure()
+    };
+    streams_cfg = builder::extern_basic_types(streams_cfg);
 
-    cfg.out_dir(&streams_out_dir).compile_protos(
+    if is_wasm {
+        streams_cfg =
+            streams_cfg.type_attribute(".", "#[cfg_attr(target_arch = \"wasm32\", wasm_bindgen)]");
+    }
+
+    streams_cfg.out_dir(&streams_out_dir).compile_protos(
         &["./services/hapi/hedera-protobufs/streams/account_balance_file.proto"],
         &[
             "./services/hapi/hedera-protobufs/streams/",
@@ -184,8 +225,12 @@ fn main() -> anyhow::Result<()> {
 
     // note:
     // almost everything in services must be specified here.
-    let cfg = tonic_build::configure();
-    let cfg = builder::extern_basic_types(cfg)
+    let mut sdk_cfg = if is_wasm {
+        tonic_build::configure().build_server(false).build_transport(false)
+    } else {
+        tonic_build::configure()
+    };
+    sdk_cfg = builder::extern_basic_types(sdk_cfg)
         .services_same("AssessedCustomFee")
         .services_same("ConsensusCreateTopicTransactionBody")
         .services_same("ConsensusDeleteTopicTransactionBody")
@@ -252,7 +297,12 @@ fn main() -> anyhow::Result<()> {
         .services_same("UtilPrngTransactionBody")
         .services_same("VirtualAddress");
 
-    cfg.out_dir(&sdk_out_dir).compile_protos(
+    if is_wasm {
+        sdk_cfg =
+            sdk_cfg.type_attribute(".", "#[cfg_attr(target_arch = \"wasm32\", wasm_bindgen)]");
+    }
+
+    sdk_cfg.out_dir(&sdk_out_dir).compile_protos(
         &["./sdk/transaction_list.proto"],
         &["./sdk/", services_tmp_path.as_os_str().to_str().unwrap()],
     )?;
