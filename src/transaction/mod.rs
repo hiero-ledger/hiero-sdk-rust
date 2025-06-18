@@ -729,6 +729,7 @@ impl<D: TransactionExecute> Transaction<D> {
                 .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
                 .to_tinybars() as u64,
             max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
+            batch_key: None, // todo: add batch key
         };
 
         let body_bytes = transaction_body.encode_to_vec();
