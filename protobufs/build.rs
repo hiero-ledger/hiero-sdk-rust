@@ -299,16 +299,10 @@ fn remove_unused_types(contents: &str) -> String {
         "// import \"services/auxiliary/hints/crs_publication.proto\";",
     );
 
-    let contents = contents.replace(
-        "StateSignatureTransaction", 
-        "// StateSignatureTransaction"
-    );
+    let contents = contents.replace("StateSignatureTransaction", "// StateSignatureTransaction");
 
     let contents =
-        contents.replace(
-        "HistoryProofSignatureTransaction", 
-        "// HistoryProofSignatureTransaction"
-    );
+        contents.replace("HistoryProofSignatureTransaction", "// HistoryProofSignatureTransaction");
 
     let contents = contents.replace(
         "HistoryProofKeyPublicationTransaction",
@@ -316,33 +310,26 @@ fn remove_unused_types(contents: &str) -> String {
     );
 
     let contents =
-        contents.replace(
-        "HistoryProofVoteTransaction",
-        "// HistoryProofVoteTransaction"
+        contents.replace("HistoryProofVoteTransaction", "// HistoryProofVoteTransaction");
+
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.HintsPreprocessingVoteTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.HintsPreprocessingVoteTransactionBody",
     );
 
-    let contents =
-    contents.replace(
-    "com.hedera.hapi.services.auxiliary.hints.HintsPreprocessingVoteTransactionBody", 
-    "// com.hedera.hapi.services.auxiliary.hints.HintsPreprocessingVoteTransactionBody"
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.HintsKeyPublicationTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.HintsKeyPublicationTransactionBody",
     );
 
-    let contents =
-    contents.replace(
-    "com.hedera.hapi.services.auxiliary.hints.HintsKeyPublicationTransactionBody", 
-    "// com.hedera.hapi.services.auxiliary.hints.HintsKeyPublicationTransactionBody"
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.HintsPartialSignatureTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.HintsPartialSignatureTransactionBody",
     );
 
-    let contents =
-    contents.replace(
-    "com.hedera.hapi.services.auxiliary.hints.HintsPartialSignatureTransactionBody", 
-    "// com.hedera.hapi.services.auxiliary.hints.HintsPartialSignatureTransactionBody"
-    );
-
-    let contents =
-    contents.replace(
-    "com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody", 
-    "// com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody"
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody",
     );
 
     contents
