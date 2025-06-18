@@ -282,6 +282,7 @@ where
             generate_record: false,
             transaction_fee,
             max_custom_fees: vec![],
+            batch_key: None,
         }
     }
 }

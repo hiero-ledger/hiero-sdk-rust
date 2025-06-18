@@ -984,6 +984,7 @@ fn pb_transaction_body_eq(
         memo,
         data,
         max_custom_fees,
+        batch_key: _,
     } = rhs;
 
     if &lhs.transaction_fee != transaction_fee {
@@ -1197,6 +1198,7 @@ pub(crate) mod test_helpers {
             memo,
             data,
             max_custom_fees,
+            batch_key: _,
         } = body;
 
         let node_account_id = node_account_id.unwrap();
