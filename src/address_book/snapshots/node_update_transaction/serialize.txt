@@ -117,5 +117,7 @@ NodeUpdate(
                 ),
             },
         ),
+        decline_reward: None,
+        grpc_proxy_endpoint: None,
     },
 )

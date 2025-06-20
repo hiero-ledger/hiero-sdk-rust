@@ -668,6 +668,11 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
                     "unsupported transaction `NodeStakeUpdateTransaction`",
                 ))
             }
+            Data::AtomicBatch(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `AtomicBatchTransaction`",
+                ))
+            }
         };
 
         Ok(data)
@@ -1041,6 +1046,9 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                 return Err(Error::from_protobuf(
                     "unsupported transaction `NodeStakeUpdateTransaction`",
                 ))
+            }
+            Data::AtomicBatch(_) => {
+                return Err(Error::from_protobuf("AtomicBatch transactions are not supported"))
             }
         };
 

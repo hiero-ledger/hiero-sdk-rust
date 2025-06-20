@@ -90,5 +90,7 @@ NodeCreate(
                 ),
             },
         ),
+        decline_reward: false,
+        grpc_proxy_endpoint: None,
     },
 )
