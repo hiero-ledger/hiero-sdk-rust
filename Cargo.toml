@@ -14,6 +14,7 @@ version = "0.34.0"
 bench = false
 
 [features]
+wasm = ["dep:wasm-bindgen"]
 default = ["mnemonic", "serde"]
 # Enables config
 serde = ["dep:serde", "dep:serde_derive", "dep:serde_json"]
@@ -46,6 +47,8 @@ thiserror = "1.0.31"
 time = "0.3.41"
 tokio = { version = "1.44.2", features = ["time"] }
 tonic = "0.12.3"
+tonic-web-wasm-client = "0.7.0"
+wasm-bindgen = { version = "0.2", optional = true }
 tinystr = { version = "0.7.0", default-features = false }
 arc-swap = "1.6.0"
 rlp = "0.6.1"
