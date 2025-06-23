@@ -92,7 +92,7 @@ default-features = false
 features = ["encryption"]
 
 [dependencies.triomphe]
-version = "0.1.8"
+version = "0.1.14"
 default-features = false
 features = ["std", "arc-swap", "unsize"]
 
