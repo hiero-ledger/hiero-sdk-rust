@@ -4,10 +4,11 @@ use std::env;
 use std::fs::{self, create_dir_all, read_dir};
 use std::path::Path;
 
+use anyhow::Ok;
 use regex::RegexBuilder;
 
 const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
-const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobufs/services";
+const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
 
 fn main() -> anyhow::Result<()> {
     // services is the "base" module for the hedera protobufs
@@ -26,7 +27,7 @@ fn main() -> anyhow::Result<()> {
 
     let out_dir = env::var("OUT_DIR")?;
     let out_path = Path::new(&out_dir);
-    let services_tmp_path = out_path.join("services_src");
+    let services_tmp_path = out_path.join("services");
 
     // ensure we start fresh
     let _ = fs::remove_dir_all(&services_tmp_path);
@@ -124,7 +125,7 @@ fn main() -> anyhow::Result<()> {
       "]"#,
     );
 
-    cfg.compile_protos(&services, &[services_tmp_path.clone()])?;
+    cfg.compile_protos(&services, &[out_path.to_str().unwrap()])?;
 
     // NOTE: prost generates rust doc comments and fails to remove the leading * line
     remove_useless_comments(&Path::new(&env::var("OUT_DIR")?).join("proto.rs"))?;
@@ -147,31 +148,10 @@ fn main() -> anyhow::Result<()> {
         .out_dir(&mirror_out_dir)
         .compile_protos(
             &["./mirror/consensus_service.proto", "./mirror/mirror_network_service.proto"],
-            &["./mirror/", "./services/hapi/hedera-protobufs/services/"],
+            &["./mirror/", out_path.to_str().unwrap()],
         )?;
 
     remove_useless_comments(&mirror_out_dir.join("proto.rs"))?;
-
-    // streams
-    // NOTE: must be compiled in a separate folder otherwise it will overwrite the previous build
-
-    let streams_out_dir = Path::new(&env::var("OUT_DIR")?).join("streams");
-    create_dir_all(&streams_out_dir)?;
-
-    // NOTE: **ALL** protobufs defined in basic_types must be specified here
-    let cfg = tonic_build::configure();
-    let cfg = builder::extern_basic_types(cfg);
-
-    cfg.out_dir(&streams_out_dir).compile_protos(
-        &["./services/hapi/hedera-protobufs/streams/account_balance_file.proto"],
-        &[
-            "./services/hapi/hedera-protobufs/streams/",
-            "./services/hapi/hedera-protobufs/services/",
-        ],
-    )?;
-
-    // see note wrt services.
-    remove_useless_comments(&streams_out_dir.join("proto.rs"))?;
 
     // sdk
     // NOTE: must be compiled in a separate folder otherwise it will overwrite the previous build
@@ -251,7 +231,7 @@ fn main() -> anyhow::Result<()> {
     // disable emitting for the generated proto files
     cfg.out_dir(&sdk_out_dir).emit_rerun_if_changed(false).compile_protos(
         &["./sdk/transaction_list.proto"],
-        &["./sdk/", services_tmp_path.as_os_str().to_str().unwrap()],
+        &["./sdk/", out_path.to_str().unwrap()],
     )?;
 
     //  check if the "./sdk" folder has changed
@@ -282,21 +262,41 @@ fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
 // Temporary function to remove unused types in transaction.proto
 fn remove_unused_types(contents: &str) -> String {
     let contents = contents.replace(
-        "import \"event/state_signature_transaction.proto\";",
-        "// import \"event/state_signature_transaction.proto\";",
+        "import \"platform/event/state_signature_transaction.proto\";",
+        "// import \"platform/event/state_signature_transaction.proto\";",
     );
 
     let contents = contents.replace(
-        "import \"auxiliary/history/history_proof_vote.proto\";",
-        "// import \"auxiliary/history/history_proof_vote.proto\";",
+        "import \"services/auxiliary/history/history_proof_vote.proto\";",
+        "// import \"services/auxiliary/history/history_proof_vote.proto\";",
     );
     let contents = contents.replace(
-        "import \"auxiliary/history/history_proof_signature.proto\";",
-        "// import \"auxiliary/history/history_proof_signature.proto\";",
+        "import \"services/auxiliary/history/history_proof_signature.proto\";",
+        "// import \"services/auxiliary/history/history_proof_signature.proto\";",
     );
     let contents = contents.replace(
-        "import \"auxiliary/history/history_proof_key_publication.proto\";",
-        "// import \"auxiliary/history/history_proof_key_publication.proto\";",
+        "import \"services/auxiliary/history/history_proof_key_publication.proto\";",
+        "// import \"services/auxiliary/history/history_proof_key_publication.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"services/auxiliary/hints/hints_key_publication.proto\";",
+        "// import \"services/auxiliary/hints/hints_key_publication.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"services/auxiliary/hints/hints_preprocessing_vote.proto\";",
+        "// import \"services/auxiliary/hints/hints_preprocessing_vote.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"services/auxiliary/hints/hints_partial_signature.proto\";",
+        "// import \"services/auxiliary/hints/hints_partial_signature.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"services/auxiliary/hints/crs_publication.proto\";",
+        "// import \"services/auxiliary/hints/crs_publication.proto\";",
     );
 
     let contents = contents.replace("StateSignatureTransaction", "// StateSignatureTransaction");
@@ -311,6 +311,26 @@ fn remove_unused_types(contents: &str) -> String {
 
     let contents =
         contents.replace("HistoryProofVoteTransaction", "// HistoryProofVoteTransaction");
+
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.HintsPreprocessingVoteTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.HintsPreprocessingVoteTransactionBody",
+    );
+
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.HintsKeyPublicationTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.HintsKeyPublicationTransactionBody",
+    );
+
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.HintsPartialSignatureTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.HintsPartialSignatureTransactionBody",
+    );
+
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody",
+    );
 
     contents
 }
