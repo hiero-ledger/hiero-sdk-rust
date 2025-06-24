@@ -729,6 +729,7 @@ impl<D: TransactionExecute> Transaction<D> {
                 .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
                 .to_tinybars() as u64,
             max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
+            batch_key: None, // todo: add batch key
         };
 
         let body_bytes = transaction_body.encode_to_vec();
@@ -1117,6 +1118,7 @@ fn pb_transaction_body_eq(
         memo,
         data,
         max_custom_fees,
+        batch_key: _,
     } = rhs;
 
     if &lhs.transaction_fee != transaction_fee {
@@ -1328,6 +1330,7 @@ pub(crate) mod test_helpers {
             memo,
             data,
             max_custom_fees,
+            batch_key: _,
         } = body;
 
         assert_eq!(transaction_id, Some(TEST_TX_ID.to_protobuf()));
