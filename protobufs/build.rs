@@ -146,10 +146,13 @@ fn main() -> anyhow::Result<()> {
             "crate::services::ConsensusMessageChunkInfo",
         )
         .out_dir(&mirror_out_dir)
+        .emit_rerun_if_changed(false)
         .compile_protos(
             &["./mirror/consensus_service.proto", "./mirror/mirror_network_service.proto"],
             &["./mirror/", out_path.to_str().unwrap()],
         )?;
+
+    println!("cargo:rerun-if-changed={}", "./mirror");
 
     remove_useless_comments(&mirror_out_dir.join("proto.rs"))?;
 
