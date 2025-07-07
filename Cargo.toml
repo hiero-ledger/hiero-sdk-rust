@@ -68,7 +68,7 @@ hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
 
 
 [dependencies.futures-util]
-version = "0.3.21"
+version = "0.3.31"
 default-features = false
 
 [dependencies.prost]
