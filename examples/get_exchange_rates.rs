@@ -14,7 +14,7 @@ struct Args {
     #[clap(long, env, default_value = "testnet")]
     hedera_network: String,
 
-    #[clap(long, env, default_value_t = FileId::EXCHANGE_RATES)]
+    #[clap(long, env, default_value_t = FileId::get_exchange_rates_file_id_for(0, 0))]
     hedera_exchange_rates_file: FileId,
 }
 
