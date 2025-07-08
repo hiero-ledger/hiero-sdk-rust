@@ -41,17 +41,38 @@ pub struct FileId {
 
 impl FileId {
     /// Address of the public [node address book](crate::NodeAddressBook) for the current network.
+    #[deprecated(note = "use `get_address_book_file_id_for` instead")]
     pub const ADDRESS_BOOK: Self = Self::new(0, 0, 102);
 
     /// Address of the current fee schedule for the network.
+    #[deprecated(note = "use `get_fee_schedule_file_id_for` instead")]
     pub const FEE_SCHEDULE: Self = Self::new(0, 0, 111);
 
     /// Address of the [current exchange rate](crate::ExchangeRates) of HBAR to USD.
+    #[deprecated(note = "use `get_exchange_rates_file_id_for` instead")]
     pub const EXCHANGE_RATES: Self = Self::new(0, 0, 112);
 
     /// Create a `FileId` with the given `shard.realm.num`.
     pub const fn new(shard: u64, realm: u64, num: u64) -> Self {
         Self { shard, realm, num, checksum: None }
+    }
+
+    /// Address of the public [node address book](crate::NodeAddressBook) for the current network.
+    pub fn get_address_book_file_id_for(realm: u64, shard: u64) -> Self {
+        let address_book_num = 102;
+        Self::new(shard, realm, address_book_num)
+    }
+
+    /// Address of the current fee schedule for the network.
+    pub fn get_fee_schedule_file_id_for(realm: u64, shard: u64) -> Self {
+        let fee_schedule_num = 111;
+        Self::new(shard, realm, fee_schedule_num)
+    }
+
+    /// Address of the [current exchange rate](crate::ExchangeRates) of HBAR to USD.
+    pub fn get_exchange_rates_file_id_for(realm: u64, shard: u64) -> Self {
+        let exchange_rates_num = 112;
+        Self::new(shard, realm, exchange_rates_num)
     }
 
     /// Create a new `FileId` from protobuf-encoded `bytes`.
