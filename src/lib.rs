@@ -261,6 +261,7 @@ pub use node_address::NodeAddress;
 pub use node_address_book::NodeAddressBook;
 pub use node_address_book_query::NodeAddressBookQuery;
 pub(crate) use node_address_book_query::NodeAddressBookQueryData;
+pub use pending_airdrop_id::PendingAirdropId;
 pub use pending_airdrop_record::PendingAirdropRecord;
 pub use prng_transaction::PrngTransaction;
 pub(crate) use protobuf::{
@@ -360,7 +361,6 @@ pub(crate) use transaction_record_query::TransactionRecordQueryData;
 pub use transaction_response::TransactionResponse;
 pub use transfer::Transfer;
 pub use transfer_transaction::TransferTransaction;
-pub use pending_airdrop_id::PendingAirdropId;
 
 /// Like [`arc_swap::ArcSwapOption`] but with a [`triomphe::Arc`].
 pub(crate) type ArcSwapOption<T> = arc_swap::ArcSwapAny<Option<triomphe::Arc<T>>>;

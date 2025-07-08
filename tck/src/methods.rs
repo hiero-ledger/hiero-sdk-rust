@@ -1,27 +1,52 @@
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    Arc,
+    Mutex,
+};
 
 use hedera::{
-    AccountCreateTransaction, AccountId, AccountUpdateTransaction, Client, EvmAddress, Hbar, NftId,
-    PendingAirdropId, PrivateKey, TokenCancelAirdropTransaction, TokenClaimAirdropTransaction,
+    AccountCreateTransaction,
+    AccountId,
+    AccountUpdateTransaction,
+    Client,
+    EvmAddress,
+    Hbar,
+    NftId,
+    PendingAirdropId,
+    PrivateKey,
+    TokenCancelAirdropTransaction,
+    TokenClaimAirdropTransaction,
     TokenId,
 };
 use jsonrpsee::core::async_trait;
 use jsonrpsee::proc_macros::rpc;
 use jsonrpsee::types::error::INTERNAL_ERROR_CODE;
-use jsonrpsee::types::{ErrorObject, ErrorObjectOwned};
+use jsonrpsee::types::{
+    ErrorObject,
+    ErrorObjectOwned,
+};
 use once_cell::sync::Lazy;
 use serde_json::Value;
-use time::{Duration, OffsetDateTime};
+use time::{
+    Duration,
+    OffsetDateTime,
+};
 
 use crate::errors::from_hedera_error;
-use crate::helpers::{fill_common_transaction_params, generate_key_helper, get_hedera_key};
-use crate::responses::{AccountCreateResponse, AccountUpdateResponse, GenerateKeyResponse};
+use crate::helpers::{
+    fill_common_transaction_params,
+    generate_key_helper,
+    get_hedera_key,
+};
+use crate::responses::{
+    AccountCreateResponse,
+    AccountUpdateResponse,
+    GenerateKeyResponse,
+};
 
-static GLOBAL_SDK_CLIENT: Lazy<Arc<Mutex<Option<Client>>>> = Lazy::new(|| {
-    Arc::new(Mutex::new(None))
-});
+static GLOBAL_SDK_CLIENT: Lazy<Arc<Mutex<Option<Client>>>> =
+    Lazy::new(|| Arc::new(Mutex::new(None)));
 
 #[rpc(server, client)]
 pub trait Rpc {
