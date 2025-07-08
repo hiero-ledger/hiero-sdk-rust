@@ -1,49 +1,23 @@
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::sync::{
-    Arc,
-    Mutex,
-};
+use std::sync::{Arc, Mutex};
 
 use hedera::{
-    AccountCreateTransaction,
-    AccountId,
-    AccountUpdateTransaction,
-    Client,
-    EvmAddress,
-    Hbar,
-    PrivateKey,
-    TokenClaimAirdropTransaction,
-    PendingAirdropId,
+    AccountCreateTransaction, AccountId, AccountUpdateTransaction, Client, EvmAddress, Hbar, NftId,
+    PendingAirdropId, PrivateKey, TokenCancelAirdropTransaction, TokenClaimAirdropTransaction,
     TokenId,
-    NftId,
-    TokenCancelAirdropTransaction,
 };
 use jsonrpsee::core::async_trait;
 use jsonrpsee::proc_macros::rpc;
 use jsonrpsee::types::error::INTERNAL_ERROR_CODE;
-use jsonrpsee::types::{
-    ErrorObject,
-    ErrorObjectOwned,
-};
+use jsonrpsee::types::{ErrorObject, ErrorObjectOwned};
 use once_cell::sync::Lazy;
 use serde_json::Value;
-use time::{
-    Duration,
-    OffsetDateTime,
-};
+use time::{Duration, OffsetDateTime};
 
 use crate::errors::from_hedera_error;
-use crate::helpers::{
-    fill_common_transaction_params,
-    generate_key_helper,
-    get_hedera_key,
-};
-use crate::responses::{
-    AccountCreateResponse,
-    AccountUpdateResponse,
-    GenerateKeyResponse,
-};
+use crate::helpers::{fill_common_transaction_params, generate_key_helper, get_hedera_key};
+use crate::responses::{AccountCreateResponse, AccountUpdateResponse, GenerateKeyResponse};
 
 static GLOBAL_SDK_CLIENT: Lazy<Arc<Mutex<Option<Client>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
@@ -474,32 +448,54 @@ impl RpcServer for RpcServerImpl {
         // Parse pending_airdrop_ids from HashMap<String, String> to PendingAirdropId
         let mut parsed_ids = Vec::new();
         for id_map in pending_airdrop_ids {
-            let sender_id = id_map.get("sender_id").ok_or_else(||
-                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>))?;
-            let receiver_id = id_map.get("receiver_id").ok_or_else(||
-                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>))?;
+            let sender_id = id_map.get("sender_id").ok_or_else(|| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>)
+            })?;
+            let receiver_id = id_map.get("receiver_id").ok_or_else(|| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>)
+            })?;
             let token_id = id_map.get("token_id");
             let nft_id = id_map.get("nft_id");
 
             let sender_id = AccountId::from_str(sender_id).map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid sender_id: {e}"), None::<()>)
+                ErrorObject::owned(
+                    INTERNAL_ERROR_CODE,
+                    format!("Invalid sender_id: {e}"),
+                    None::<()>,
+                )
             })?;
             let receiver_id = AccountId::from_str(receiver_id).map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid receiver_id: {e}"), None::<()>)
+                ErrorObject::owned(
+                    INTERNAL_ERROR_CODE,
+                    format!("Invalid receiver_id: {e}"),
+                    None::<()>,
+                )
             })?;
 
             let pending_id = if let Some(token_id) = token_id {
                 let token_id = TokenId::from_str(token_id).map_err(|e| {
-                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid token_id: {e}"), None::<()>)
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        format!("Invalid token_id: {e}"),
+                        None::<()>,
+                    )
                 })?;
                 PendingAirdropId::new_token_id(sender_id, receiver_id, token_id)
             } else if let Some(nft_id) = nft_id {
                 let nft_id = NftId::from_str(nft_id).map_err(|e| {
-                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid nft_id: {e}"), None::<()>)
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        format!("Invalid nft_id: {e}"),
+                        None::<()>,
+                    )
                 })?;
                 PendingAirdropId::new_nft_id(sender_id, receiver_id, nft_id)
             } else {
-                return Err(ErrorObject::owned(INTERNAL_ERROR_CODE, "Must provide either token_id or nft_id", None::<()>));
+                return Err(ErrorObject::owned(
+                    INTERNAL_ERROR_CODE,
+                    "Must provide either token_id or nft_id",
+                    None::<()>,
+                ));
             };
             parsed_ids.push(pending_id);
         }
@@ -522,11 +518,10 @@ impl RpcServer for RpcServerImpl {
         }
 
         let tx_response = tx.execute(&client).await.map_err(|e| from_hedera_error(e))?;
-        let tx_receipt = tx_response.get_receipt(&client).await.map_err(|e| from_hedera_error(e))?;
+        let tx_receipt =
+            tx_response.get_receipt(&client).await.map_err(|e| from_hedera_error(e))?;
 
-        Ok(HashMap::from([
-            ("status".to_string(), tx_receipt.status.as_str_name().to_string()),
-        ]))
+        Ok(HashMap::from([("status".to_string(), tx_receipt.status.as_str_name().to_string())]))
     }
 
     async fn token_cancel(
@@ -551,32 +546,54 @@ impl RpcServer for RpcServerImpl {
         // Parse pending_airdrop_ids from HashMap<String, String> to PendingAirdropId
         let mut parsed_ids = Vec::new();
         for id_map in pending_airdrop_ids {
-            let sender_id = id_map.get("sender_id").ok_or_else(||
-                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>))?;
-            let receiver_id = id_map.get("receiver_id").ok_or_else(||
-                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>))?;
+            let sender_id = id_map.get("sender_id").ok_or_else(|| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>)
+            })?;
+            let receiver_id = id_map.get("receiver_id").ok_or_else(|| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>)
+            })?;
             let token_id = id_map.get("token_id");
             let nft_id = id_map.get("nft_id");
 
             let sender_id = AccountId::from_str(sender_id).map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid sender_id: {e}"), None::<()> )
+                ErrorObject::owned(
+                    INTERNAL_ERROR_CODE,
+                    format!("Invalid sender_id: {e}"),
+                    None::<()>,
+                )
             })?;
             let receiver_id = AccountId::from_str(receiver_id).map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid receiver_id: {e}"), None::<()> )
+                ErrorObject::owned(
+                    INTERNAL_ERROR_CODE,
+                    format!("Invalid receiver_id: {e}"),
+                    None::<()>,
+                )
             })?;
 
             let pending_id = if let Some(token_id) = token_id {
                 let token_id = TokenId::from_str(token_id).map_err(|e| {
-                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid token_id: {e}"), None::<()> )
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        format!("Invalid token_id: {e}"),
+                        None::<()>,
+                    )
                 })?;
                 PendingAirdropId::new_token_id(sender_id, receiver_id, token_id)
             } else if let Some(nft_id) = nft_id {
                 let nft_id = NftId::from_str(nft_id).map_err(|e| {
-                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid nft_id: {e}"), None::<()> )
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        format!("Invalid nft_id: {e}"),
+                        None::<()>,
+                    )
                 })?;
                 PendingAirdropId::new_nft_id(sender_id, receiver_id, nft_id)
             } else {
-                return Err(ErrorObject::owned(INTERNAL_ERROR_CODE, "Must provide either token_id or nft_id", None::<()>));
+                return Err(ErrorObject::owned(
+                    INTERNAL_ERROR_CODE,
+                    "Must provide either token_id or nft_id",
+                    None::<()>,
+                ));
             };
             parsed_ids.push(pending_id);
         }
@@ -599,10 +616,9 @@ impl RpcServer for RpcServerImpl {
         }
 
         let tx_response = tx.execute(&client).await.map_err(|e| from_hedera_error(e))?;
-        let tx_receipt = tx_response.get_receipt(&client).await.map_err(|e| from_hedera_error(e))?;
+        let tx_receipt =
+            tx_response.get_receipt(&client).await.map_err(|e| from_hedera_error(e))?;
 
-        Ok(HashMap::from([
-            ("status".to_string(), tx_receipt.status.as_str_name().to_string()),
-        ]))
+        Ok(HashMap::from([("status".to_string(), tx_receipt.status.as_str_name().to_string())]))
     }
 }
