@@ -13,6 +13,11 @@ use hedera::{
     EvmAddress,
     Hbar,
     PrivateKey,
+    TokenClaimAirdropTransaction,
+    PendingAirdropId,
+    TokenId,
+    NftId,
+    TokenCancelAirdropTransaction,
 };
 use jsonrpsee::core::async_trait;
 use jsonrpsee::proc_macros::rpc;
@@ -118,6 +123,28 @@ pub trait Rpc {
         decline_staking_reward: Option<bool>,
         common_transaction_params: Option<HashMap<String, Value>>,
     ) -> Result<AccountUpdateResponse, ErrorObjectOwned>;
+
+    /*
+    / Specification:
+    / https://github.com/hiero-ledger/hiero-sdk-tck/blob/main/test-specifications/token-service/tokenClaimAirdropTransaction.md#tokenClaim
+    */
+    #[method(name = "tokenClaim")]
+    async fn token_claim(
+        &self,
+        pending_airdrop_ids: Vec<HashMap<String, String>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<HashMap<String, String>, ErrorObjectOwned>;
+
+    /*
+    / Specification:
+    / https://github.com/hiero-ledger/hiero-sdk-tck/blob/main/test-specifications/token-service/tokenCancelAirdropTransaction.md#tokenCancel
+    */
+    #[method(name = "tokenCancel")]
+    async fn token_cancel(
+        &self,
+        pending_airdrop_ids: Vec<HashMap<String, String>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<HashMap<String, String>, ErrorObjectOwned>;
 }
 
 pub struct RpcServerImpl;
@@ -423,5 +450,159 @@ impl RpcServer for RpcServerImpl {
             tx_response.get_receipt(&client).await.map_err(|e| from_hedera_error(e))?;
 
         Ok(AccountUpdateResponse { status: tx_receipt.status.as_str_name().to_string() })
+    }
+
+    async fn token_claim(
+        &self,
+        pending_airdrop_ids: Vec<HashMap<String, String>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<HashMap<String, String>, ErrorObjectOwned> {
+        let client = {
+            let guard = GLOBAL_SDK_CLIENT.lock().unwrap();
+            guard
+                .as_ref()
+                .ok_or_else(|| {
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        "Client not initialized".to_string(),
+                        None::<()>,
+                    )
+                })?
+                .clone()
+        };
+
+        // Parse pending_airdrop_ids from HashMap<String, String> to PendingAirdropId
+        let mut parsed_ids = Vec::new();
+        for id_map in pending_airdrop_ids {
+            let sender_id = id_map.get("sender_id").ok_or_else(||
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>))?;
+            let receiver_id = id_map.get("receiver_id").ok_or_else(||
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>))?;
+            let token_id = id_map.get("token_id");
+            let nft_id = id_map.get("nft_id");
+
+            let sender_id = AccountId::from_str(sender_id).map_err(|e| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid sender_id: {e}"), None::<()>)
+            })?;
+            let receiver_id = AccountId::from_str(receiver_id).map_err(|e| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid receiver_id: {e}"), None::<()>)
+            })?;
+
+            let pending_id = if let Some(token_id) = token_id {
+                let token_id = TokenId::from_str(token_id).map_err(|e| {
+                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid token_id: {e}"), None::<()>)
+                })?;
+                PendingAirdropId::new_token_id(sender_id, receiver_id, token_id)
+            } else if let Some(nft_id) = nft_id {
+                let nft_id = NftId::from_str(nft_id).map_err(|e| {
+                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid nft_id: {e}"), None::<()>)
+                })?;
+                PendingAirdropId::new_nft_id(sender_id, receiver_id, nft_id)
+            } else {
+                return Err(ErrorObject::owned(INTERNAL_ERROR_CODE, "Must provide either token_id or nft_id", None::<()>));
+            };
+            parsed_ids.push(pending_id);
+        }
+
+        let mut tx = TokenClaimAirdropTransaction::new();
+        tx.pending_airdrop_ids(parsed_ids);
+
+        if let Some(common_transaction_params) = &common_transaction_params {
+            let _ = fill_common_transaction_params(&mut tx, common_transaction_params);
+            tx.freeze_with(&client).map_err(|e| from_hedera_error(e.into()))?;
+            if let Some(signers) = common_transaction_params.get("signers") {
+                if let Value::Array(signers) = signers {
+                    for signer in signers {
+                        if let Value::String(signer_str) = signer {
+                            tx.sign(PrivateKey::from_str_der(signer_str).unwrap());
+                        }
+                    }
+                }
+            }
+        }
+
+        let tx_response = tx.execute(&client).await.map_err(|e| from_hedera_error(e))?;
+        let tx_receipt = tx_response.get_receipt(&client).await.map_err(|e| from_hedera_error(e))?;
+
+        Ok(HashMap::from([
+            ("status".to_string(), tx_receipt.status.as_str_name().to_string()),
+        ]))
+    }
+
+    async fn token_cancel(
+        &self,
+        pending_airdrop_ids: Vec<HashMap<String, String>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<HashMap<String, String>, ErrorObjectOwned> {
+        let client = {
+            let guard = GLOBAL_SDK_CLIENT.lock().unwrap();
+            guard
+                .as_ref()
+                .ok_or_else(|| {
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        "Client not initialized".to_string(),
+                        None::<()>,
+                    )
+                })?
+                .clone()
+        };
+
+        // Parse pending_airdrop_ids from HashMap<String, String> to PendingAirdropId
+        let mut parsed_ids = Vec::new();
+        for id_map in pending_airdrop_ids {
+            let sender_id = id_map.get("sender_id").ok_or_else(||
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>))?;
+            let receiver_id = id_map.get("receiver_id").ok_or_else(||
+                ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>))?;
+            let token_id = id_map.get("token_id");
+            let nft_id = id_map.get("nft_id");
+
+            let sender_id = AccountId::from_str(sender_id).map_err(|e| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid sender_id: {e}"), None::<()> )
+            })?;
+            let receiver_id = AccountId::from_str(receiver_id).map_err(|e| {
+                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid receiver_id: {e}"), None::<()> )
+            })?;
+
+            let pending_id = if let Some(token_id) = token_id {
+                let token_id = TokenId::from_str(token_id).map_err(|e| {
+                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid token_id: {e}"), None::<()> )
+                })?;
+                PendingAirdropId::new_token_id(sender_id, receiver_id, token_id)
+            } else if let Some(nft_id) = nft_id {
+                let nft_id = NftId::from_str(nft_id).map_err(|e| {
+                    ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid nft_id: {e}"), None::<()> )
+                })?;
+                PendingAirdropId::new_nft_id(sender_id, receiver_id, nft_id)
+            } else {
+                return Err(ErrorObject::owned(INTERNAL_ERROR_CODE, "Must provide either token_id or nft_id", None::<()>));
+            };
+            parsed_ids.push(pending_id);
+        }
+
+        let mut tx = TokenCancelAirdropTransaction::new();
+        tx.pending_airdrop_ids(parsed_ids);
+
+        if let Some(common_transaction_params) = &common_transaction_params {
+            let _ = fill_common_transaction_params(&mut tx, common_transaction_params);
+            tx.freeze_with(&client).map_err(|e| from_hedera_error(e.into()))?;
+            if let Some(signers) = common_transaction_params.get("signers") {
+                if let Value::Array(signers) = signers {
+                    for signer in signers {
+                        if let Value::String(signer_str) = signer {
+                            tx.sign(PrivateKey::from_str_der(signer_str).unwrap());
+                        }
+                    }
+                }
+            }
+        }
+
+        let tx_response = tx.execute(&client).await.map_err(|e| from_hedera_error(e))?;
+        let tx_receipt = tx_response.get_receipt(&client).await.map_err(|e| from_hedera_error(e))?;
+
+        Ok(HashMap::from([
+            ("status".to_string(), tx_receipt.status.as_str_name().to_string()),
+        ]))
     }
 }
