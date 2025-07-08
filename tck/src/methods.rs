@@ -19,8 +19,9 @@ use crate::errors::from_hedera_error;
 use crate::helpers::{fill_common_transaction_params, generate_key_helper, get_hedera_key};
 use crate::responses::{AccountCreateResponse, AccountUpdateResponse, GenerateKeyResponse};
 
-static GLOBAL_SDK_CLIENT: Lazy<Arc<Mutex<Option<Client>>>> =
-    Lazy::new(|| Arc::new(Mutex::new(None)));
+static GLOBAL_SDK_CLIENT: Lazy<Arc<Mutex<Option<Client>>>> = Lazy::new(|| {
+    Arc::new(Mutex::new(None))
+});
 
 #[rpc(server, client)]
 pub trait Rpc {
