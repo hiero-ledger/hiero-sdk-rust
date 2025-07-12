@@ -1,5 +1,6 @@
 name: "Publish Release"
 on:
+  INTENTIONALLY BREAK FLOW
   workflow_dispatch:
     inputs:
       tag:
