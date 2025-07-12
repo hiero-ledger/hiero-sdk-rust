@@ -7,7 +7,7 @@ edition = "2021"
 license = "Apache-2.0"
 name = "hedera"
 readme = "README.md"
-repository = "https://github.com/hashgraph/hedera-sdk-rust"
+repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
 version = "0.36.0"
 
 [lib]
@@ -65,7 +65,6 @@ tower = { version = "0.5.2", features = ["util"] }
 openssl = "0.10.72"
 hyper-util = "0.1.14"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
-
 
 [dependencies.futures-util]
 version = "0.3.31"
