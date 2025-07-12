@@ -43,10 +43,10 @@ jobs:
       proto-publish-required: ${{ steps.proto-required.outputs.proto-publish-required }}
 
       # tck subpackage
-      tck-version: ${{ steps.cargo-versions.outputs.sdk-tck-version }}
-      tck-prerelease: ${{ steps.tck-tag.outputs.prerelease }}
-      tck-type: ${{ steps.tck-tag.outputs.type }}
-      tck-publish-required: ${{ steps.tck-required.outputs.tck-publish-required }}
+#      tck-version: ${{ steps.cargo-versions.outputs.sdk-tck-version }}
+#      tck-prerelease: ${{ steps.tck-tag.outputs.prerelease }}
+#      tck-type: ${{ steps.tck-tag.outputs.type }}
+#      tck-publish-required: ${{ steps.tck-required.outputs.tck-publish-required }}
 
     steps:
       - name: Harden Runner
@@ -77,18 +77,18 @@ jobs:
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
-          components: rustfmt, toml-cli, cargo-info
+          components: toml-cli
     
       - name: Extract Cargo.toml Versions
         id: cargo-versions
         run: |
           SDK_PACKAGE_VERSION="$(toml get Cargo.toml package.version --raw)"
           SDK_PROTO_VERSION="$(toml get protobufs/Cargo.toml package.version --raw)"
-          SDK_TCK_VERSION="$(toml get tck/Cargo.toml package.version --raw)"
+#          SDK_TCK_VERSION="$(toml get tck/Cargo.toml package.version --raw)"
           
           echo "sdk-version=${SDK_PACKAGE_VERSION}" >>"${GITHUB_OUTPUT}"
           echo "sdk-proto-version=${SDK_PROTO_VERSION}" >>"${GITHUB_OUTPUT}"
-          echo "sdk-tck-version=${SDK_TCK_VERSION}" >>"${GITHUB_OUTPUT}"
+#          echo "sdk-tck-version=${SDK_TCK_VERSION}" >>"${GITHUB_OUTPUT}"
       
       - name: Proto Subpackage Publish Required
         id: proto-required
@@ -102,14 +102,14 @@ jobs:
           done
           echo "proto-publish-required=${PUBLISH_REQUIRED}" >>"${GITHUB_OUTPUT}"
 
-      - name: TCK Subpackage Publish Required
-        id: tck-required
-        run: |
-          PUBLISH_REQUIRED="false"
-          if ! curl -sSLf "https://crates.io/api/v1/crates/hiero-sdk-tck/${{ steps.cargo-versions.outputs.sdk-tck-version }}" >/dev/null 2>&1;
-            PUBLISH_REQUIRED="true"
-          fi
-          echo "tck-publish-required=${PUBLISH_REQUIRED}" >>"${GITHUB_OUTPUT}"
+#      - name: TCK Subpackage Publish Required
+#        id: tck-required
+#        run: |
+#          PUBLISH_REQUIRED="false"
+#          if ! curl -sSLf "https://crates.io/api/v1/crates/hiero-sdk-tck/${{ steps.cargo-versions.outputs.sdk-tck-version }}" >/dev/null 2>&1;
+#            PUBLISH_REQUIRED="true"
+#          fi
+#          echo "tck-publish-required=${PUBLISH_REQUIRED}" >>"${GITHUB_OUTPUT}"
 
       - name: Extract SDK Tag Information
         id: sdk-tag
@@ -184,38 +184,38 @@ jobs:
           echo "## Proto Subpackage Release Information" >> "${GITHUB_STEP_SUMMARY}"
           echo "SDK_PROTO_VERSION=${{ steps.cargo-versions.outputs.sdk-proto-version }}" >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Extract TCK Subpackage Information
-        id: tck-tag
-        run: |
-          IS_VALID_SEMVER="$(semver validate "${{ steps.cargo-versions.outputs.sdk-tck-version }}")"
-          
-          if [[ "${IS_VALID_SEMVER}" != "valid" ]]; then
-            echo "::error title=Invalid TCK Tag::The proto version '${{ steps.cargo-versions.outputs.sdk-tck-version }}' is not a valid SemVer tag."
-            exit 1
-          fi
-          
-          PREREL_VERSION="$(semver get prerel '${{ steps.cargo-versions.outputs.sdk-tck-version }}')"
-          PREREL_VERSION_LC="$(printf "%s" "${PREREL_VERSION}" | tr '[:upper:]' '[:lower:]')"
-          
-          IS_PRERELEASE="false"
-          [[ -n "${PREREL_VERSION}" ]] && IS_PRERELEASE="true"
-          
-          PREREL_TYPE="unknown"
-          if [[ "${IS_PRERELEASE}" == "true" ]]; then
-            if [[ "${PREREL_VERSION_LC}" =~ "beta" ]]; then
-              PREREL_TYPE="beta"
-            else
-              PREREL_TYPE="unknown"
-            fi
-          else
-            PREREL_TYPE="production"
-          fi
-
-          echo "prerelease=${IS_PRERELEASE}" >>"${GITHUB_OUTPUT}"
-          echo "type=${PREREL_TYPE}" >>"${GITHUB_OUTPUT}"
-          
-          echo "## TCK Subpackage Release Information" >> "${GITHUB_STEP_SUMMARY}"
-          echo "SDK_TCK_VERSION=${{ steps.cargo-versions.outputs.sdk-tck-version }}" >> "${GITHUB_STEP_SUMMARY}"
+#      - name: Extract TCK Subpackage Information
+#        id: tck-tag
+#        run: |
+#          IS_VALID_SEMVER="$(semver validate "${{ steps.cargo-versions.outputs.sdk-tck-version }}")"
+#
+#          if [[ "${IS_VALID_SEMVER}" != "valid" ]]; then
+#            echo "::error title=Invalid TCK Tag::The proto version '${{ steps.cargo-versions.outputs.sdk-tck-version }}' is not a valid SemVer tag."
+#            exit 1
+#          fi
+#
+#          PREREL_VERSION="$(semver get prerel '${{ steps.cargo-versions.outputs.sdk-tck-version }}')"
+#          PREREL_VERSION_LC="$(printf "%s" "${PREREL_VERSION}" | tr '[:upper:]' '[:lower:]')"
+#
+#          IS_PRERELEASE="false"
+#          [[ -n "${PREREL_VERSION}" ]] && IS_PRERELEASE="true"
+#
+#          PREREL_TYPE="unknown"
+#          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+#            if [[ "${PREREL_VERSION_LC}" =~ "beta" ]]; then
+#              PREREL_TYPE="beta"
+#            else
+#              PREREL_TYPE="unknown"
+#            fi
+#          else
+#            PREREL_TYPE="production"
+#          fi
+#
+#          echo "prerelease=${IS_PRERELEASE}" >>"${GITHUB_OUTPUT}"
+#          echo "type=${PREREL_TYPE}" >>"${GITHUB_OUTPUT}"
+#
+#          echo "## TCK Subpackage Release Information" >> "${GITHUB_STEP_SUMMARY}"
+#          echo "SDK_TCK_VERSION=${{ steps.cargo-versions.outputs.sdk-tck-version }}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Validate Tag and Cargo.toml Versions
         run: |
@@ -260,6 +260,7 @@ jobs:
     name: Publish SDK to crates.io
     needs:
       - validate-release
+      - run-safety-checks
     runs-on: hiero-client-sdk-linux-medium
     steps:
       - name: Harden Runner
@@ -277,11 +278,109 @@ jobs:
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
-          components: rustfmt, toml-cli
+          components: toml-cli
 
-      - name: Publish to crates.io
+      - name: Calculate Proto Subpackage Publish Arguments
+        id: proto-publish-args
+        working-directory: protobufs
+        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
+        run: |
+          PUBLISH_ARGS="--locked"
+          [[ "${{ github.event.inputs.dry-run-enabled }}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+          
+          echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
+      
+#      - name: Calculate TCK Subpackage Publish Arguments
+#        id: tck-publish-args
+#        working-directory: tck
+#        if: ${{ needs.validate-release.outputs.tck-publish-required == 'true' && !cancelled() && !failure() }}
+#        run: |
+#          PUBLISH_ARGS="--locked"
+#          [[ "${{ github.event.inputs.dry-run-enabled }}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+#
+#          echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
+
+      - name: Calculate SDK Publish Arguments
+        id: sdk-publish-args
+        if: ${{ !cancelled() && !failure() }}
+        run: |
+          PUBLISH_ARGS="--locked"
+          [[ "${{ github.event.inputs.dry-run-enabled }}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+          
+          echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
+
+      # Publish the hiero-sdk-proto package
+      - name: Publish Proto Subpackage to crates.io
+        working-directory: protobufs
         env:
           CARGO_HG_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
+          CARGO_HL_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
         run: |
+          echo "::group::Back up Cargo files"
+          cp Cargo.toml Cargo.toml.bak
+          cp Cargo.lock Cargo.lock.bak
+          echo "::endgroup::"
+          
+          echo "::group::Publish hedera-proto to crates.io"
           export CARGO_REGISTRY_TOKEN="${CARGO_HG_TOKEN}"
-          cargo publish --locked
+          cargo publish ${{ steps.proto-publish-args.outputs.args }}
+          echo "::endgroup::"
+          
+          echo "::group::Update Cargo.toml with new name"
+          toml set Cargo.toml package.name "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          cargo generate-lockfile
+          echo "::endgroup::"
+          
+          echo "::group::Publish hiero-sdk-proto to crates.io"
+          export CARGO_REGISTRY_TOKEN="${CARGO_HL_TOKEN}"
+          cargo publish ${{ steps.proto-publish-args.outputs.args }}
+          echo "::endgroup::"
+          
+          echo "::group::Restore Cargo files"
+          mv Cargo.toml.bak Cargo.toml
+          mv Cargo.lock.bak Cargo.lock
+          echo "::endgroup::"
+
+      # Hiero SDK depends on the hiero-sdk-proto package
+      - name: Publish SDK to crates.io
+        env:
+          CARGO_HG_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
+          CARGO_HL_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+        run: |
+          echo "::group::Back up Cargo files"
+          cp Cargo.toml Cargo.toml.bak
+          cp Cargo.lock Cargo.lock.bak
+          echo "::endgroup::"
+          
+          echo "::group::Publish hedera to crates.io"
+          export CARGO_REGISTRY_TOKEN="${CARGO_HG_TOKEN}"
+          cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+          echo "::endgroup::"
+          
+          echo "::group::Update Cargo.toml with new name"
+          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          toml set Cargo.toml dependencies.hedera-proto.hiero-sdk-proto "{ version = "${{ needs.validate-release.outputs.sdk-version }}" }" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          cargo generate-lockfile
+          echo "::endgroup::"
+          
+          echo "::group::Publish hiero-sdk to crates.io"
+          export CARGO_REGISTRY_TOKEN="${CARGO_HL_TOKEN}"
+          cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+          echo "::endgroup::"
+          
+          echo "::group::Restore Cargo files"
+          mv Cargo.toml.bak Cargo.toml
+          mv Cargo.lock.bak Cargo.lock
+          echo "::endgroup::"
+
+      # Publish the hiero-sdk-tck package which depends on hiero-sdk and hiero-sdk-proto
+#      - name: Publish TCK Subpackage to crates.io
+#        env:
+#          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+#        working-directory: tck
+#        if: ${{ needs.validate-release.outputs.tck-publish-required == 'true' && !cancelled() && !failure() }}
+#        run: |
+#          echo "::group::Publish hedera-tck to crates.io"
+#          cargo publish ${{ steps.tck-publish-args.outputs.args }}
+#          echo "::endgroup::"
