@@ -29,11 +29,24 @@ jobs:
 
     outputs:
       # Project tag
-      tag: ${{ steps.tag.outputs.name }}
+      tag: ${{ steps.sdk-tag.outputs.name }}
+
       # main package
-      sdk-version: ${{ steps.tag.outputs.version }}
-      sdk-prerelease: ${{ steps.tag.outputs.prerelease }}
-      sdk-type: ${{ steps.tag.outputs.type }}
+      sdk-version: ${{ steps.sdk-tag.outputs.version }}
+      sdk-prerelease: ${{ steps.sdk-tag.outputs.prerelease }}
+      sdk-type: ${{ steps.sdk-tag.outputs.type }}
+
+      # proto subpackage
+      proto-version: ${{ steps.cargo-versions.outputs.sdk-proto-version }}
+      proto-prerelease: ${{ steps.proto-tag.outputs.prerelease }}
+      proto-type: ${{ steps.proto-tag.outputs.type }}
+      proto-publish-required: ${{ steps.proto-required.outputs.proto-publish-required }}
+
+      # tck subpackage
+      tck-version: ${{ steps.cargo-versions.outputs.sdk-tck-version }}
+      tck-prerelease: ${{ steps.tck-tag.outputs.prerelease }}
+      tck-type: ${{ steps.tck-tag.outputs.type }}
+      tck-publish-required: ${{ steps.tck-required.outputs.tck-publish-required }}
 
     steps:
       - name: Harden Runner
@@ -89,8 +102,17 @@ jobs:
           done
           echo "proto-publish-required=${PUBLISH_REQUIRED}" >>"${GITHUB_OUTPUT}"
 
+      - name: TCK Subpackage Publish Required
+        id: tck-required
+        run: |
+          PUBLISH_REQUIRED="false"
+          if ! curl -sSLf "https://crates.io/api/v1/crates/hiero-sdk-tck/${{ steps.cargo-versions.outputs.sdk-tck-version }}" >/dev/null 2>&1;
+            PUBLISH_REQUIRED="true"
+          fi
+          echo "tck-publish-required=${PUBLISH_REQUIRED}" >>"${GITHUB_OUTPUT}"
+
       - name: Extract SDK Tag Information
-        id: tag
+        id: sdk-tag
         run: |
           REF_NAME="$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))"
           IS_VALID_SEMVER="$(semver validate "${REF_NAME}")"
@@ -98,9 +120,11 @@ jobs:
             echo "::error title=Invalid Tag::The tag '${REF_NAME}' is not a valid SemVer tag."
             exit 1
           fi
+
           RELEASE_VERSION="$(semver get release "${REF_NAME}")"
           PREREL_VERSION="$(semver get prerel "${REF_NAME}")"
           PREREL_VERSION_LC="$(printf "%s" "${PREREL_VERSION}" | tr '[:upper:]' '[:lower:]')"
+
           IS_PRERELEASE="false"
           [[ -n "${PREREL_VERSION}" ]] && IS_PRERELEASE="true"
           PREREL_TYPE="unknown"
@@ -113,13 +137,124 @@ jobs:
           else
             PREREL_TYPE="production"
           fi
+
           FINAL_VERSION="${RELEASE_VERSION}"
           [[ -n "${PREREL_VERSION}" ]] && FINAL_VERSION="${RELEASE_VERSION}-${PREREL_VERSION}"
+
           TAG_NAME="v${FINAL_VERSION}"
-          echo "name=${TAG_NAME}" >>"${GITHUB_OUTPUT}"
-          echo "version=${FINAL_VERSION}" >>"${GITHUB_OUTPUT}"
+          
+          echo "name=${TAG_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "version=${FINAL_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "prerelease=${IS_PRERELEASE}" >> "${GITHUB_OUTPUT}"
+          echo "type=${PREREL_TYPE}" >> "${GITHUB_OUTPUT}"
+          
+          echo "## Release Information" >> "${GITHUB_STEP_SUMMARY}"
+          echo "SDK_VERSION=${FINAL_VERSION}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Extract Proto Subpackage Information
+        id: proto-tag
+        run: |
+          IS_VALID_SEMVER="$(semver validate "${{ steps.cargo-versions.outputs.sdk-proto-version }}")"
+          
+          if [[ "${IS_VALID_SEMVER}" != "valid" ]]; then
+            echo "::error title=Invalid Proto Tag::The proto version '${{ steps.cargo-versions.outputs.sdk-proto-version }}' is not a valid SemVer tag."
+            exit 1
+          fi
+          
+          PREREL_VERSION="$(semver get prerel '${{ steps.cargo-versions.outputs.sdk-proto-version }}')"
+          PREREL_VERSION_LC="$(printf "%s" "${PREREL_VERSION}" | tr '[:upper:]' '[:lower:]')"
+          
+          IS_PRERELEASE="false"
+          [[ -n "${PREREL_VERSION}" ]] && IS_PRERELEASE="true"
+          
+          PREREL_TYPE="unknown"
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            if [[ "${PREREL_VERSION_LC}" =~ "beta" ]]; then
+              PREREL_TYPE="beta"
+            else
+              PREREL_TYPE="unknown"
+            fi
+          else
+            PREREL_TYPE="production"
+          fi
+
           echo "prerelease=${IS_PRERELEASE}" >>"${GITHUB_OUTPUT}"
           echo "type=${PREREL_TYPE}" >>"${GITHUB_OUTPUT}"
+          
+          echo "## Proto Subpackage Release Information" >> "${GITHUB_STEP_SUMMARY}"
+          echo "SDK_PROTO_VERSION=${{ steps.cargo-versions.outputs.sdk-proto-version }}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Extract TCK Subpackage Information
+        id: tck-tag
+        run: |
+          IS_VALID_SEMVER="$(semver validate "${{ steps.cargo-versions.outputs.sdk-tck-version }}")"
+          
+          if [[ "${IS_VALID_SEMVER}" != "valid" ]]; then
+            echo "::error title=Invalid TCK Tag::The proto version '${{ steps.cargo-versions.outputs.sdk-tck-version }}' is not a valid SemVer tag."
+            exit 1
+          fi
+          
+          PREREL_VERSION="$(semver get prerel '${{ steps.cargo-versions.outputs.sdk-tck-version }}')"
+          PREREL_VERSION_LC="$(printf "%s" "${PREREL_VERSION}" | tr '[:upper:]' '[:lower:]')"
+          
+          IS_PRERELEASE="false"
+          [[ -n "${PREREL_VERSION}" ]] && IS_PRERELEASE="true"
+          
+          PREREL_TYPE="unknown"
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            if [[ "${PREREL_VERSION_LC}" =~ "beta" ]]; then
+              PREREL_TYPE="beta"
+            else
+              PREREL_TYPE="unknown"
+            fi
+          else
+            PREREL_TYPE="production"
+          fi
+
+          echo "prerelease=${IS_PRERELEASE}" >>"${GITHUB_OUTPUT}"
+          echo "type=${PREREL_TYPE}" >>"${GITHUB_OUTPUT}"
+          
+          echo "## TCK Subpackage Release Information" >> "${GITHUB_STEP_SUMMARY}"
+          echo "SDK_TCK_VERSION=${{ steps.cargo-versions.outputs.sdk-tck-version }}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Validate Tag and Cargo.toml Versions
+        run: |
+          COMPARISON_RESULT="$(semver compare "${{ steps.cargo-versions.outputs.sdk-version }}" "{{ steps.sdk-tag.outputs.version }}")"
+          if [[ "${COMPARISON_RESULT}" -ne 0 ]]; then
+            echo "::error title=Version Mismatch::The Cargo.toml version '${{ steps.cargo-versions.outputs.sdk-version }}' does not match the tag version '${{ steps.sdk-tag.outputs.version }}'."
+            exit 1
+          fi
+          
+          if [[ "${{ steps.sdk-tag.outputs.prerelease }}" != "production" && "{{ steps.sdk-tag.outputs.prerelease }}" != "beta" ]]; then
+            echo "::error title=Invalid Prerelease Type::The prerelease type '${{ steps.sdk-tag.outputs.prerelease }}' is not valid. Expected 'production' or 'beta'."
+            exit 1
+          fi
+
+  run-safety-checks:
+    name: Safety Checks
+    runs-on: hiero-client-sdk-linux-medium
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.inputs.tag || '' }}
+          submodules: recursive
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        with:
+          toolchain: 1.88.0
+
+      - name: Run Safety Checks
+        run: |
+          echo "::group::Run Safety Checks"
+          cargo check
+          echo "::endgroup::"
 
   publish:
     name: Publish SDK to crates.io
