@@ -84,11 +84,11 @@ jobs:
         run: |
           SDK_PACKAGE_VERSION="$(toml get Cargo.toml package.version --raw)"
           SDK_PROTO_VERSION="$(toml get protobufs/Cargo.toml package.version --raw)"
-#          SDK_TCK_VERSION="$(toml get tck/Cargo.toml package.version --raw)"
+          # SDK_TCK_VERSION="$(toml get tck/Cargo.toml package.version --raw)"
           
           echo "sdk-version=${SDK_PACKAGE_VERSION}" >>"${GITHUB_OUTPUT}"
           echo "sdk-proto-version=${SDK_PROTO_VERSION}" >>"${GITHUB_OUTPUT}"
-#          echo "sdk-tck-version=${SDK_TCK_VERSION}" >>"${GITHUB_OUTPUT}"
+          # echo "sdk-tck-version=${SDK_TCK_VERSION}" >>"${GITHUB_OUTPUT}"
       
       - name: Proto Subpackage Publish Required
         id: proto-required
