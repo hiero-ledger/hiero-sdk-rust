@@ -91,7 +91,7 @@ jobs:
           PUBLISH_REQUIRED="false"
           CRATES=("hedera-proto" "hiero-sdk-proto")
           for CRATE in "${CRATES[@]}"; do
-            if ! curl -sSLf "https://crates.io/api/v1/crates/${CRATE}/${{ steps.cargo-versions.outputs.sdk-proto-version }}" >/dev/null 2>&1;
+            if ! curl -sSLf "https://crates.io/api/v1/crates/${CRATE}/${{ steps.cargo-versions.outputs.sdk-proto-version }}" >/dev/null 2>&1; then
                 PUBLISH_REQUIRED="true"
             fi
           done
@@ -231,7 +231,10 @@ jobs:
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
-          components: toml-cli
+
+      - name: Install components
+        run: |
+          cargo install toml-cli
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
