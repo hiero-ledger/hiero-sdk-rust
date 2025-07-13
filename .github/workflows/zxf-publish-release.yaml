@@ -57,15 +57,15 @@ jobs:
 
       - name: Install Semantic Version Tools
         run: |
-            echo "::group::Download Semver Binary"
-            sudo curl -L -o /usr/local/bin/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/master
-            echo "::endgroup::"
-            echo "::group::Change SemVer Binary Permissions"
-            sudo chmod -v +x /usr/local/bin/semver
-            echo "::endgroup::"
-            echo "::group::Show SemVer Binary Version Info"
-            semver --version
-            echo "::endgroup::"
+          echo "::group::Download SemVer Binary"
+          sudo curl -L -o /usr/local/bin/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
+          echo "::endgroup::"
+          echo "::group::Change SemVer Binary Permissions"
+          sudo chmod -v +x /usr/local/bin/semver
+          echo "::endgroup::"
+          echo "::group::Show SemVer Binary Version Info"
+          semver --version
+          echo "::endgroup::"
             
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
