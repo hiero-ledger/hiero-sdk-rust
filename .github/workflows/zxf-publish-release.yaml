@@ -72,7 +72,10 @@ jobs:
         with:
           toolchain: 1.88.0
 
-
+      - name: Install components
+        run: |
+          cargo install toml-cli
+          cargo install openssl-sys
     
       - name: Extract Cargo.toml Versions
         id: cargo-versions
