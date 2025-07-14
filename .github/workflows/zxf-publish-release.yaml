@@ -246,7 +246,7 @@ jobs:
         working-directory: protobufs
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
         run: |
-          PUBLISH_ARGS="--locked"
+          PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${{ github.event.inputs.dry-run-enabled }}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
           
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
@@ -255,7 +255,7 @@ jobs:
         id: sdk-publish-args
         if: ${{ !cancelled() && !failure() }}
         run: |
-          PUBLISH_ARGS="--locked"
+          PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${{ github.event.inputs.dry-run-enabled }}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
           
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
