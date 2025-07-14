@@ -374,7 +374,7 @@ jobs:
           
           echo "::group::Update TCK Cargo.toml with new dependencies"
           # Update the dependencies in the tck/Cargo.toml
-          sed -i "s/\bhedera =\b/hiero-sdk =/g" tck/Cargo.toml
+          sed -i "s/hedera =/hiero-sdk =/g" tck/Cargo.toml
           cat tck/Cargo.toml
           echo "::endgroup::"
           
