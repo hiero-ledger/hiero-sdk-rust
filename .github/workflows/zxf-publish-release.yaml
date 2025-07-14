@@ -11,6 +11,11 @@ on:
         type: boolean
         required: false
         default: false
+      dual-publish-enabled:
+        description: "Dual Publish Enabled"
+        type: boolean
+        required: false
+        default: false
   push:
     tags:
       - "v*.*.*"
@@ -264,12 +269,12 @@ jobs:
 
       # Publish the hiero-sdk-proto package
       - name: Publish Proto Subpackage to crates.io (hedera-proto)
-        working-directory: protobufs
+        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true'}}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
-        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
         run: |         
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
+        working-directory: protobufs
 
       # Publish the main SDK package
       - name: Publish SDK to crates.io (hedera)
@@ -280,6 +285,7 @@ jobs:
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
+        if: ${{ dual-publish-enabled == true }}
         run: |
           echo "::group::Back up Cargo files"
           if [[ -f "Cargo.toml" ]]; then
@@ -348,21 +354,22 @@ jobs:
           echo "::endgroup::"
 
       - name: Publish proto to crates.io (hiero-sdk-proto)
-        working-directory: protobufs
+        if: ${{ inputs.dual-publish-enabled == true && needs.validate-release.outputs.proto-publish-required == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
-        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
         run: |
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
+        working-directory: protobufs
 
       - name: Publish hiero-sdk-proto to crates.io
+        if: ${{ inputs.dual-publish-enabled == true }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: |
           cargo publish ${{ steps.sdk-publish-args.outputs.args }}
 
       - name: Restore Cargo files
-        if: ${{ always() }}
+        if: ${{ inputs.dual-publish-enabled == true && always() }}
         run: |
           echo "::group::Restore Cargo files"
           if [[ -f "Cargo.toml.bak" ]]; then
