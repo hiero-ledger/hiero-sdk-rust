@@ -294,6 +294,9 @@ jobs:
           toml set Cargo.toml package.name "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set ../Cargo.toml dependencies.hiero-sdk-proto.package "hedera-proto" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
           toml set ../Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
+          toml set ../Cargo.toml dependencies.hiero-sdk-proto.features "["time_0_3","fraction",]" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
+          sed -i '/^hedera-proto\s*=.*/d' ../Cargo.toml
+          cargo check
           echo "::endgroup::"
           
           echo "::group::Publish hiero-sdk-proto to crates.io"
@@ -340,8 +343,9 @@ jobs:
           toml set Cargo.toml dependencies.hiero-sdk-proto.features "["time_0_3","fraction",]" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
           # Remove the hedera-proto dependency from the main Cargo.toml
-          toml remove Cargo.toml dependencies.hedera-proto > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          sed -i '/^hedera-proto\s*=.*/d' Cargo.toml
           
+          cargo check
           cargo generate-lockfile
           echo "::endgroup::"
           
