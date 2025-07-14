@@ -331,9 +331,17 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Update Cargo.toml with new name"
+          # Update the package name in protobufs/Cargo.toml
           toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          # Update the dependencies in the main Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.package "hedera-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          toml set Cargo.toml dependencies.hiero-sdk-proto.features "["time_0_3","fraction",]" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          # Remove the hedera-proto dependency from the main Cargo.toml
+          toml remove Cargo.toml dependencies.hedera-proto > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
           cargo generate-lockfile
           echo "::endgroup::"
           
