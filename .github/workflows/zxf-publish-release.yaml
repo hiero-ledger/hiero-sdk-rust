@@ -172,13 +172,13 @@ jobs:
 
       - name: Validate Tag and Cargo.toml Versions
         run: |
-          COMPARISON_RESULT="$(semver compare "${{ steps.cargo-versions.outputs.sdk-version }}" "{{ steps.sdk-tag.outputs.version }}")"
+          COMPARISON_RESULT="$(semver compare "${{ steps.cargo-versions.outputs.sdk-version }}" "${{ steps.sdk-tag.outputs.version }}")"
           if [[ "${COMPARISON_RESULT}" -ne 0 ]]; then
             echo "::error title=Version Mismatch::The Cargo.toml version '${{ steps.cargo-versions.outputs.sdk-version }}' does not match the tag version '${{ steps.sdk-tag.outputs.version }}'."
             exit 1
           fi
           
-          if [[ "${{ steps.sdk-tag.outputs.prerelease }}" != "production" && "{{ steps.sdk-tag.outputs.prerelease }}" != "beta" ]]; then
+          if [[ "${{ steps.sdk-tag.outputs.prerelease }}" != "production" && "${{ steps.sdk-tag.outputs.prerelease }}" != "beta" ]]; then
             echo "::error title=Invalid Prerelease Type::The prerelease type '${{ steps.sdk-tag.outputs.prerelease }}' is not valid. Expected 'production' or 'beta'."
             exit 1
           fi
