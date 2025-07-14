@@ -56,7 +56,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.event.inputs.tag || '' }}
+          ref: ${{ inputs.tag || '' }}
           fetch-depth: 0
           submodules: recursive
 
@@ -200,7 +200,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.event.inputs.tag || '' }}
+          ref: ${{ inputs.tag || '' }}
           submodules: recursive
 
       - name: Set up Rust
@@ -234,7 +234,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.event.inputs.tag || '' }}
+          ref: ${{ inputs.tag || '' }}
           submodules: recursive
 
       - name: Set up Rust
@@ -250,20 +250,23 @@ jobs:
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
-        working-directory: protobufs
-        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
+        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' }}
+        env:
+          DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled }}
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
-          [[ "${{ github.event.inputs.dry-run-enabled }}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+          [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
           
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
+        working-directory: protobufs
 
       - name: Calculate SDK Publish Arguments
         id: sdk-publish-args
-        if: ${{ !cancelled() && !failure() }}
+        env:
+          DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled }}
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
-          [[ "${{ github.event.inputs.dry-run-enabled }}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+          [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
           
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
 
