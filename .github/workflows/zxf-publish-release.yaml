@@ -286,8 +286,6 @@ jobs:
           
           echo "::group::Update Cargo.toml with new name"
           toml set Cargo.toml package.name "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          toml set Cargo.toml dependencies.hedera-proto.hiero-sdk-proto "{ version = "${{ needs.validate-release.outputs.sdk-version }}" }" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          cargo generate-lockfile
           echo "::endgroup::"
           
           echo "::group::Publish hiero-sdk-proto to crates.io"
