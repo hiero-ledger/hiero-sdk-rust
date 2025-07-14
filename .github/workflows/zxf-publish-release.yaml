@@ -346,7 +346,7 @@ jobs:
         working-directory: protobufs
 
       # TODO: Remove this step once the hiero-sdk-proto is published
-      - name: Set up Cargo files for sdk Dual publish
+      - name: Set up Cargo files for SDK Dual publish
         if: ${{ inputs.dual-publish-enabled == true && always() }}
         run: |
           echo "::group::Reset Workspace"
