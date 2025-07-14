@@ -327,8 +327,9 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Update files with new names"
-          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera_proto\b/use hiero_sdk_proto/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/\bhedera_proto\b/hiero_sdk_proto/g" {} +
           find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
           echo "::endgroup::"
           
           echo "group::Verify Cargo.toml changes"
