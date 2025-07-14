@@ -239,6 +239,8 @@ jobs:
 
       - name: Install components
         run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
           cargo install toml-cli
 
       - name: Calculate Proto Subpackage Publish Arguments
