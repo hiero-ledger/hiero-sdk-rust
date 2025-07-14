@@ -291,11 +291,21 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Update Cargo.toml with new name"
+          # Update the package name in protobufs/Cargo.toml
           toml set Cargo.toml package.name "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          # Update the dependencies in the main Cargo.toml
           toml set ../Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
           toml set ../Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
-          toml set ../Cargo.toml dependencies.hiero-sdk-proto.features '["time_0_3","fraction"]' > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
+          toml set ../Cargo.toml dependencies.hiero-sdk-proto.features "[time_0_3, fraction]" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
+          
+          # Convert features from string to array format
+          sed -i -e 's/features = "\[\([^"]*\)\]"/features = [\1]/' -e 's/\([^", \[]\+\)/"\1"/g' ../Cargo.toml
+          
+          # Remove the hedera-proto dependency from the main Cargo.toml
           sed -i '/^hedera-proto\s*=.*/d' ../Cargo.toml
+          
+          # Ensure the Cargo.toml is valid
           cargo check
           echo "::endgroup::"
           
@@ -340,11 +350,16 @@ jobs:
           # Update the package name in protobufs/Cargo.toml
           toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
-          # Update the dependencies in the main Cargo.toml
+          # Update the dependencies in the protobugs/Cargo.toml
           toml set protobufs/Cargo.toml package.name "hiero-sdk-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
+          
+          # Update the dependencies in the main Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.package "hedera-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          toml set Cargo.toml dependencies.hiero-sdk-proto.features "["time_0_3","fraction",]" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          toml set Cargo.toml dependencies.hiero-sdk-proto.features "[time_0_3, fraction]" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          # Convert features from string to array format
+          sed -i -e 's/features = "\[\([^"]*\)\]"/features = [\1]/' -e 's/\([^", \[]\+\)/"\1"/g' Cargo.toml
           
           # Remove the hedera-proto dependency from the main Cargo.toml
           sed -i '/^hedera-proto\s*=.*/d' Cargo.toml
