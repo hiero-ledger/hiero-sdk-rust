@@ -303,7 +303,7 @@ jobs:
           sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" Cargo.toml
           
           # Remove the hedera-proto dependency from the main Cargo.toml
-          sed -i '/^hedera-proto\s*=.*/d' ../Cargo.toml
+          sed '/hedera-proto\s*=.*/d' ../Cargo.toml > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
           
           # Ensure the Cargo.toml is valid
           cargo check
@@ -362,7 +362,7 @@ jobs:
           sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" Cargo.toml
           
           # Remove the hedera-proto dependency from the main Cargo.toml
-          sed -i '/^hedera-proto\s*=.*/d' Cargo.toml
+          sed '/hedera-proto\s*=.*/d' Cargo.toml > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
           cargo check
           cargo generate-lockfile
