@@ -311,6 +311,7 @@ jobs:
           toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
           # Update the dependencies in the main Cargo.toml
+          toml set Cargo.toml dependencies.hiero-sdk-proto.path "protobufs" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.features "['time_0_3', 'fraction']" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
@@ -324,6 +325,7 @@ jobs:
           
           echo "::group::Update TCK Cargo.toml with new dependencies"
           # Update the dependencies in the tck/Cargo.toml
+          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.path "../protobufs" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
           toml set tck/Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
           toml set tck/Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
           toml set tck/Cargo.toml dependencies.hiero-sdk-proto.features "['time_0_3', 'fraction']" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
