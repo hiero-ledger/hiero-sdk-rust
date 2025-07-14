@@ -336,7 +336,7 @@ jobs:
           sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" tck/Cargo.toml
           
           # Remove the hedera-proto and hedera dependencies from the tck Cargo.toml file
-          sed '/hedera-proto.*/d' /tck/Cargo.toml > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          sed '/hedera-proto.*/d' tck/Cargo.toml > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
           sed '/hedera.*/d' tck/Cargo.toml > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
           echo "::endgroup::"
           

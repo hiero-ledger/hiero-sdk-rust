@@ -16,10 +16,7 @@ async-trait = "0.1.88"
 hyper = "1.6.0"
 tower-http = { version = "0.6.6", features = ["full"] }
 hedera = { path = "../." }
-hedera-proto = { path = "../protobufs", version = "0.17.0", features = [
-  "time_0_3",
-  "fraction",
-] }
+hedera-proto = { path = "../protobufs", version = "0.17.0", features = ["time_0_3", "fraction"] }
 once_cell = "1.21.3"
 futures-util = "0.3.31"
 serde_json = {version = "1.0.140", features = ["raw_value"] }
