@@ -263,71 +263,23 @@ jobs:
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
 
       # Publish the hiero-sdk-proto package
-      - name: Publish Proto Subpackage to crates.io
+      - name: Publish Proto Subpackage to crates.io (hedera-proto)
         working-directory: protobufs
         env:
-          CARGO_HG_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
-          CARGO_HL_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
-        run: |
-          echo "::group::Back up Cargo files"
-          if [[ -f "Cargo.toml" ]]; then
-            cp Cargo.toml Cargo.toml.bak
-          fi
-          if [[ -f "Cargo.lock" ]]; then
-            cp Cargo.lock Cargo.lock.bak
-          fi
-          if [[ -f "Cargo.toml" ]]; then
-            cp ../Cargo.toml ../Cargo.toml.bak
-          fi
-          if [[ -f "Cargo.lock" ]]; then
-            cp ../Cargo.lock ../Cargo.lock.bak
-          fi
-          echo "::endgroup::"
-          
-          echo "::group::Publish hedera-proto to crates.io"
-          export CARGO_REGISTRY_TOKEN="${CARGO_HG_TOKEN}"
+        run: |         
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
-          echo "::endgroup::"
-          
-          echo "::group::Update Cargo.toml with new name"
-          # Update the package name in protobufs/Cargo.toml
-          toml set Cargo.toml package.name "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
-          # Update the dependencies in the main Cargo.toml
-          toml set ../Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
-          toml set ../Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
-          toml set ../Cargo.toml dependencies.hiero-sdk-proto.features "['time_0_3', 'fraction']" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
-          
-          # Convert features from string to array format
-          sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" Cargo.toml
-          
-          # Remove the hedera-proto dependency from the main Cargo.toml
-          sed '/hedera-proto\s*=.*/d' ../Cargo.toml > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
-          
-          # Ensure the Cargo.toml is valid
-          cargo check
-          echo "::endgroup::"
-          
-          echo "::group::Publish hiero-sdk-proto to crates.io"
-          export CARGO_REGISTRY_TOKEN="${CARGO_HL_TOKEN}"
-          cargo publish ${{ steps.proto-publish-args.outputs.args }}
-          echo "::endgroup::"
-          
-          echo "::group::Restore Cargo files"
-          if [[ -f "Cargo.toml.bak" ]]; then
-            mv Cargo.toml.bak Cargo.toml
-          fi
-          if [[ -f "Cargo.lock.bak" ]]; then
-            mv Cargo.lock.bak Cargo.lock
-          fi
-          echo "::endgroup::"
 
-      # Hiero SDK depends on the hiero-sdk-proto package
-      - name: Publish SDK to crates.io
+      # Publish the main SDK package
+      - name: Publish SDK to crates.io (hedera)
         env:
-          CARGO_HG_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
-          CARGO_HL_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
+        run: |
+          cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+
+      # Update the Cargo.toml files for the hiero-sdk-* packages
+      - name: Update Cargo.toml for hiero publishing
         run: |
           echo "::group::Back up Cargo files"
           if [[ -f "Cargo.toml" ]]; then
@@ -339,22 +291,27 @@ jobs:
           if [[ -f "protobufs/Cargo.toml" ]]; then
             cp protobufs/Cargo.toml protobufs/Cargo.toml.bak
           fi
+          if [[ -f "protobufs/Cargo.lock" ]]; then
+            cp protobufs/Cargo.lock protobufs/Cargo.lock.bak
+          fi
+          if [[ -f "tck/Cargo.toml" ]]; then
+            cp tck/Cargo.toml tck/Cargo.toml.bak
+          fi
+          if [[ -f "tck/Cargo.lock" ]]; then
+            cp tck/Cargo.lock tck/Cargo.lock.bak
+          fi
           echo "::endgroup::"
           
-          echo "::group::Publish hedera to crates.io"
-          export CARGO_REGISTRY_TOKEN="${CARGO_HG_TOKEN}"
-          cargo publish ${{ steps.sdk-publish-args.outputs.args }}
-          echo "::endgroup::"
-          
-          echo "::group::Update Cargo.toml with new name"
-          # Update the package name in protobufs/Cargo.toml
-          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
+          echo "::group::Update protobufs/Cargo.toml with new name"       
           # Update the dependencies in the protobugs/Cargo.toml
           toml set protobufs/Cargo.toml package.name "hiero-sdk-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
+          echo "::endgroup::"
+          
+          echo "::group::Update main Cargo.toml with new name and dependencies"
+          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
           # Update the dependencies in the main Cargo.toml
-          toml set Cargo.toml dependencies.hiero-sdk-proto.package "hedera-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          toml set Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.features "['time_0_3', 'fraction']" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
@@ -362,22 +319,65 @@ jobs:
           sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" Cargo.toml
           
           # Remove the hedera-proto dependency from the main Cargo.toml
-          sed '/hedera-proto\s*=.*/d' Cargo.toml > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          sed '/hedera-proto.*/d' Cargo.toml > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          echo "::endgroup::"
           
+          echo "::group::Update TCK Cargo.toml with new dependencies"
+          # Update the dependencies in the tck/Cargo.toml
+          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.features "['time_0_3', 'fraction']" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          
+          # Update the hedera dependency in the tck/Cargo.toml
+          toml set tck/Cargo.toml dependencies.hiero-sdk.package "hiero-sdk" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          toml set tck/Cargo.toml dependencies.hiero-sdk.path "../." > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          
+          # Convert features from string to array format
+          sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" tck/Cargo.toml
+          
+          # Remove the hedera-proto and hedera dependencies from the tck Cargo.toml file
+          sed '/hedera-proto.*/d' /tck/Cargo.toml > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          sed '/hedera.*/d' tck/Cargo.toml > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          echo "::endgroup::"
+          
+          echo "group::Verify Cargo.toml changes"
           cargo check
           cargo generate-lockfile
           echo "::endgroup::"
-          
-          echo "::group::Publish hiero-sdk to crates.io"
-          export CARGO_REGISTRY_TOKEN="${CARGO_HL_TOKEN}"
+
+      - name: Publish proto to crates.io (hiero-sdk-proto)
+        working-directory: protobufs
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
+        run: |
+          cargo publish ${{ steps.proto-publish-args.outputs.args }}
+
+      - name: Publish hiero-sdk-proto to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+        run: |
           cargo publish ${{ steps.sdk-publish-args.outputs.args }}
-          echo "::endgroup::"
-          
+
+      - name: Restore Cargo files
+        run: |
           echo "::group::Restore Cargo files"
           if [[ -f "Cargo.toml.bak" ]]; then
             mv Cargo.toml.bak Cargo.toml
           fi
           if [[ -f "Cargo.lock.bak" ]]; then
             mv Cargo.lock.bak Cargo.lock
+          fi
+          if [[ -f "protobufs/Cargo.toml.bak" ]]; then
+            mv protobufs/Cargo.toml.bak protobufs/Cargo.toml
+          fi
+          if [[ -f "protobufs/Cargo.lock.bak" ]]; then
+            mv protobufs/Cargo.lock.bak protobufs/Cargo.lock
+          fi
+          if [[ -f "tck/Cargo.toml.bak" ]]; then
+            mv tck/Cargo.toml.bak tck/Cargo.toml
+          fi
+          if [[ -f "tck/Cargo.lock.bak" ]]; then
+            mv tck/Cargo.lock.bak tck/Cargo.lock
           fi
           echo "::endgroup::"
