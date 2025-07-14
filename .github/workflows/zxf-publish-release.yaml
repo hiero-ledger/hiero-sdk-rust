@@ -269,8 +269,12 @@ jobs:
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' && !cancelled() && !failure() }}
         run: |
           echo "::group::Back up Cargo files"
-          cp Cargo.toml Cargo.toml.bak
-          cp Cargo.lock Cargo.lock.bak
+          if [[ -f "Cargo.toml" ]]; then
+            cp Cargo.toml Cargo.toml.bak
+          fi
+          if [[ -f "Cargo.lock" ]]; then
+            cp Cargo.lock Cargo.lock.bak
+          fi
           echo "::endgroup::"
           
           echo "::group::Publish hedera-proto to crates.io"
@@ -289,8 +293,12 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Restore Cargo files"
-          mv Cargo.toml.bak Cargo.toml
-          mv Cargo.lock.bak Cargo.lock
+          if [[ -f "Cargo.toml.bak" ]]; then
+            mv Cargo.toml.bak Cargo.toml
+          fi
+          if [[ -f "Cargo.lock.bak" ]]; then
+            mv Cargo.lock.bak Cargo.lock
+          fi
           echo "::endgroup::"
 
       # Hiero SDK depends on the hiero-sdk-proto package
@@ -300,8 +308,12 @@ jobs:
           CARGO_HL_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: |
           echo "::group::Back up Cargo files"
-          cp Cargo.toml Cargo.toml.bak
-          cp Cargo.lock Cargo.lock.bak
+          if [[ -f "Cargo.toml" ]]; then
+            cp Cargo.toml Cargo.toml.bak
+          fi
+          if [[ -f "Cargo.lock" ]]; then
+            cp Cargo.lock Cargo.lock.bak
+          fi
           echo "::endgroup::"
           
           echo "::group::Publish hedera to crates.io"
@@ -321,6 +333,10 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Restore Cargo files"
-          mv Cargo.toml.bak Cargo.toml
-          mv Cargo.lock.bak Cargo.lock
+          if [[ -f "Cargo.toml.bak" ]]; then
+            mv Cargo.toml.bak Cargo.toml
+          fi
+          if [[ -f "Cargo.lock.bak" ]]; then
+            mv Cargo.lock.bak Cargo.lock
+          fi
           echo "::endgroup::"
