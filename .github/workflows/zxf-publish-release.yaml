@@ -317,37 +317,18 @@ jobs:
           toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
           # Update the dependencies in the main Cargo.toml
-          # TODO: Remove the path dependency on the protobufs package after hiero-sdk-proto is published
-          toml set Cargo.toml dependencies.hiero-sdk-proto.path "protobufs" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          toml set Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          toml set Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          toml set Cargo.toml dependencies.hiero-sdk-proto.features "['time_0_3', 'fraction']" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
-          # Convert features from string to array format
-          sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" Cargo.toml
-          
-          # Remove the hedera-proto dependency from the main Cargo.toml
-          sed '/hedera-proto.*/d' Cargo.toml > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          sed -i "s/hedera-proto/hiero-sdk-proto/g" Cargo.toml
+
           echo "::endgroup::"
           
           echo "::group::Update TCK Cargo.toml with new dependencies"
           # Update the dependencies in the tck/Cargo.toml
-          # TODO: Remove the path dependency on the protobufs package after hiero-sdk-proto is published
-          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.path "../protobufs" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
-          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
-          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
-          toml set tck/Cargo.toml dependencies.hiero-sdk-proto.features "['time_0_3', 'fraction']" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          sed -i "s/hedera/hiero-sdk/g" tck/Cargo.toml
+          echo "::endgroup::"
           
-          # Update the hedera dependency in the tck/Cargo.toml
-          toml set tck/Cargo.toml dependencies.hiero-sdk.package "hiero-sdk" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
-          toml set tck/Cargo.toml dependencies.hiero-sdk.path "../." > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
-          
-          # Convert features from string to array format
-          sed -i "s/features = \"\['time_0_3', 'fraction'\]\"/features = [\"time_0_3\", \"fraction\"]/g" tck/Cargo.toml
-          
-          # Remove the hedera-proto and hedera dependencies from the tck Cargo.toml file
-          sed '/hedera-proto.*/d' tck/Cargo.toml > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
-          sed '/hedera.*/d' tck/Cargo.toml > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
+          echo "::group::Update files with new names"
+          find . -type f -name "*.rs" -exec sed -i "s/hedera_proto/hiero_sdk_proto/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/hedera/hiero_sdk/g" {} +
           echo "::endgroup::"
           
           echo "group::Verify Cargo.toml changes"
