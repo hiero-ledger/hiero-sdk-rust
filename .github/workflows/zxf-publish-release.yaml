@@ -178,8 +178,8 @@ jobs:
             exit 1
           fi
           
-          if [[ "${{ steps.sdk-tag.outputs.prerelease }}" != "production" && "${{ steps.sdk-tag.outputs.prerelease }}" != "beta" ]]; then
-            echo "::error title=Invalid Prerelease Type::The prerelease type '${{ steps.sdk-tag.outputs.prerelease }}' is not valid. Expected 'production' or 'beta'."
+          if [[ "${{ steps.sdk-tag.outputs.type }}" != "production" && "${{ steps.sdk-tag.outputs.type }}" != "beta" ]]; then
+            echo "::error title=Invalid Prerelease Type::The prerelease type '${{ steps.sdk-tag.outputs.type }}' is not valid. Expected 'production' or 'beta'."
             exit 1
           fi
 
