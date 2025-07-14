@@ -345,6 +345,48 @@ jobs:
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
         working-directory: protobufs
 
+      # TODO: Remove this step once the hiero-sdk-proto is published
+      - name: Set up Cargo files for sdk Dual publish
+        if: ${{ inputs.dual-publish-enabled == true && always() }}
+        run: |
+          echo "::group::Reset Workspace"
+          git reset --hard
+          git clean -fdx
+          echo "::endgroup::"
+
+          echo "::group::Back up Cargo files"
+          if [[ -f "Cargo.toml" ]]; then
+            cp Cargo.toml Cargo.toml.bak
+          fi
+          if [[ -f "Cargo.lock" ]]; then
+            cp Cargo.lock Cargo.lock.bak
+          fi
+          if [[ -f "tck/Cargo.toml" ]]; then
+            cp tck/Cargo.toml tck/Cargo.toml.bak
+          fi
+          if [[ -f "tck/Cargo.lock" ]]; then
+            cp tck/Cargo.lock tck/Cargo.lock.bak
+          fi
+          echo "::endgroup::"
+          
+          echo "::group::Update main Cargo.toml with new name and dependencies"
+          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          echo "::group::Update TCK Cargo.toml with new dependencies"
+          # Update the dependencies in the tck/Cargo.toml
+          sed -i "s/\bhedera\b/hiero-sdk/g" tck/Cargo.toml
+          echo "::endgroup::"
+          
+          echo "::group::Update files with new names"
+          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
+          echo "::endgroup::"
+          
+          echo "::group::Verify Cargo.toml changes"
+          cargo check
+          cargo generate-lockfile
+          echo "::endgroup::"
+
       - name: Publish SDK to crates.io (hiero-sdk)
         if: ${{ inputs.dual-publish-enabled == true }}
         env:
