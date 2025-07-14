@@ -292,7 +292,7 @@ jobs:
           
           echo "::group::Update Cargo.toml with new name"
           toml set Cargo.toml package.name "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          toml set ../Cargo.toml dependencies.hiero-sdk-proto.package "hedera-proto" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
+          toml set ../Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
           toml set ../Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
           toml set ../Cargo.toml dependencies.hiero-sdk-proto.features '["time_0_3","fraction"]' > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
           sed -i '/^hedera-proto\s*=.*/d' ../Cargo.toml
