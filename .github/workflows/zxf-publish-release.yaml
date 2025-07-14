@@ -79,8 +79,8 @@ jobs:
       - name: Extract Cargo.toml Versions
         id: cargo-versions
         run: |
-          SDK_PACKAGE_VERSION="$(toml get Cargo.toml package.version --raw)"
-          SDK_PROTO_VERSION="$(toml get protobufs/Cargo.toml package.version --raw)"
+          SDK_PACKAGE_VERSION="$(toml get Cargo.toml package.version)"
+          SDK_PROTO_VERSION="$(toml get protobufs/Cargo.toml package.version)"
           
           echo "sdk-version=${SDK_PACKAGE_VERSION}" >>"${GITHUB_OUTPUT}"
           echo "sdk-proto-version=${SDK_PROTO_VERSION}" >>"${GITHUB_OUTPUT}"
