@@ -277,6 +277,12 @@ jobs:
           if [[ -f "Cargo.lock" ]]; then
             cp Cargo.lock Cargo.lock.bak
           fi
+          if [[ -f "Cargo.toml" ]]; then
+            cp ../Cargo.toml ../Cargo.toml.bak
+          fi
+          if [[ -f "Cargo.lock" ]]; then
+            cp ../Cargo.lock ../Cargo.lock.bak
+          fi
           echo "::endgroup::"
           
           echo "::group::Publish hedera-proto to crates.io"
@@ -286,6 +292,8 @@ jobs:
           
           echo "::group::Update Cargo.toml with new name"
           toml set Cargo.toml package.name "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          toml set ../Cargo.toml dependencies.hiero-sdk-proto.package "hedera-proto" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
+          toml set ../Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > ../Cargo.toml.tmp && mv ../Cargo.toml.tmp ../Cargo.toml
           echo "::endgroup::"
           
           echo "::group::Publish hiero-sdk-proto to crates.io"
