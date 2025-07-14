@@ -317,6 +317,7 @@ jobs:
           toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           
           # Update the dependencies in the main Cargo.toml
+          # TODO: Remove the path dependency on the protobufs package after hiero-sdk-proto is published
           toml set Cargo.toml dependencies.hiero-sdk-proto.path "protobufs" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
           toml set Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
@@ -331,6 +332,7 @@ jobs:
           
           echo "::group::Update TCK Cargo.toml with new dependencies"
           # Update the dependencies in the tck/Cargo.toml
+          # TODO: Remove the path dependency on the protobufs package after hiero-sdk-proto is published
           toml set tck/Cargo.toml dependencies.hiero-sdk-proto.path "../protobufs" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
           toml set tck/Cargo.toml dependencies.hiero-sdk-proto.package "hiero-sdk-proto" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
           toml set tck/Cargo.toml dependencies.hiero-sdk-proto.version "${{ needs.validate-release.outputs.sdk-version }}" > tck/Cargo.toml.tmp && mv tck/Cargo.toml.tmp tck/Cargo.toml
@@ -361,7 +363,7 @@ jobs:
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
         working-directory: protobufs
 
-      - name: Publish hiero-sdk-proto to crates.io
+      - name: Publish SDK to crates.io (hiero-sdk)
         if: ${{ inputs.dual-publish-enabled == true }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
