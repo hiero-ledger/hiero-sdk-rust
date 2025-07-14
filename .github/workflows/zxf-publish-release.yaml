@@ -285,7 +285,7 @@ jobs:
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
-        if: ${{ dual-publish-enabled == true }}
+        if: ${{ inputs.dual-publish-enabled == true }}
         run: |
           echo "::group::Back up Cargo files"
           if [[ -f "Cargo.toml" ]]; then
