@@ -332,7 +332,7 @@ jobs:
           find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
           echo "::endgroup::"
           
-          echo "group::Verify Cargo.toml changes"
+          echo "::group::Verify Cargo.toml changes"
           cargo check
           cargo generate-lockfile
           echo "::endgroup::"
