@@ -362,6 +362,7 @@ jobs:
           cargo publish ${{ steps.sdk-publish-args.outputs.args }}
 
       - name: Restore Cargo files
+        if: ${{ always() }}
         run: |
           echo "::group::Restore Cargo files"
           if [[ -f "Cargo.toml.bak" ]]; then
