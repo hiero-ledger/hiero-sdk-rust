@@ -256,7 +256,7 @@ jobs:
         id: proto-publish-args
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' }}
         env:
-          DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled }}
+          DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled || 'false' }}
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
@@ -267,7 +267,7 @@ jobs:
       - name: Calculate SDK Publish Arguments
         id: sdk-publish-args
         env:
-          DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled }}
+          DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled || 'false' }}
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
