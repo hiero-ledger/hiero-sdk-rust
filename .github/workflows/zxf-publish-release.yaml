@@ -12,6 +12,7 @@ on:
         required: false
         default: false
       dual-publish-enabled:
+        # default to true when dual-publishing period is active
         description: "Dual Publish Enabled"
         type: boolean
         required: false
@@ -225,6 +226,9 @@ jobs:
       - validate-release
       - run-safety-checks
     runs-on: hiero-client-sdk-linux-medium
+    env:
+      # Set the default to 'true' when the dual-publishing period is active
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'false' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
@@ -288,136 +292,144 @@ jobs:
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
-        if: ${{ inputs.dual-publish-enabled == true }}
         run: |
-          echo "::group::Back up Cargo files"
-          if [[ -f "Cargo.toml" ]]; then
-            cp Cargo.toml Cargo.toml.bak
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            echo "::group::Back up Cargo files"
+            if [[ -f "Cargo.toml" ]]; then
+              cp Cargo.toml Cargo.toml.bak
+            fi
+            if [[ -f "Cargo.lock" ]]; then
+              cp Cargo.lock Cargo.lock.bak
+            fi
+            if [[ -f "protobufs/Cargo.toml" ]]; then
+              cp protobufs/Cargo.toml protobufs/Cargo.toml.bak
+            fi
+            if [[ -f "protobufs/Cargo.lock" ]]; then
+              cp protobufs/Cargo.lock protobufs/Cargo.lock.bak
+            fi
+            if [[ -f "tck/Cargo.toml" ]]; then
+              cp tck/Cargo.toml tck/Cargo.toml.bak
+            fi
+            if [[ -f "tck/Cargo.lock" ]]; then
+              cp tck/Cargo.lock tck/Cargo.lock.bak
+            fi
+            echo "::endgroup::"
+            
+            echo "::group::Update protobufs/Cargo.toml with new name"       
+            # Update the dependencies in the protobugs/Cargo.toml
+            toml set protobufs/Cargo.toml package.name "hiero-sdk-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
+            echo "::endgroup::"
+            
+            echo "::group::Update main Cargo.toml with new name and dependencies"
+            toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+            
+            # Update the dependencies in the main Cargo.toml
+            sed -i "s/hedera-proto/hiero-sdk-proto/g" Cargo.toml
+  
+            echo "::endgroup::"
+            
+            echo "::group::Update TCK Cargo.toml with new dependencies"
+            # Update the dependencies in the tck/Cargo.toml
+            sed -i "s/hedera/hiero-sdk/g" tck/Cargo.toml
+            echo "::endgroup::"
+            
+            echo "::group::Update files with new names"
+            find . -type f -name "*.rs" -exec sed -i "s/\bhedera_proto\b/hiero_sdk_proto/g" {} +
+            find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
+            find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
+            echo "::endgroup::"
+            
+            echo "::group::Verify Cargo.toml changes"
+            cargo check
+            cargo generate-lockfile
+            echo "::endgroup::"
           fi
-          if [[ -f "Cargo.lock" ]]; then
-            cp Cargo.lock Cargo.lock.bak
-          fi
-          if [[ -f "protobufs/Cargo.toml" ]]; then
-            cp protobufs/Cargo.toml protobufs/Cargo.toml.bak
-          fi
-          if [[ -f "protobufs/Cargo.lock" ]]; then
-            cp protobufs/Cargo.lock protobufs/Cargo.lock.bak
-          fi
-          if [[ -f "tck/Cargo.toml" ]]; then
-            cp tck/Cargo.toml tck/Cargo.toml.bak
-          fi
-          if [[ -f "tck/Cargo.lock" ]]; then
-            cp tck/Cargo.lock tck/Cargo.lock.bak
-          fi
-          echo "::endgroup::"
-          
-          echo "::group::Update protobufs/Cargo.toml with new name"       
-          # Update the dependencies in the protobugs/Cargo.toml
-          toml set protobufs/Cargo.toml package.name "hiero-sdk-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
-          echo "::endgroup::"
-          
-          echo "::group::Update main Cargo.toml with new name and dependencies"
-          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
-          # Update the dependencies in the main Cargo.toml
-          sed -i "s/hedera-proto/hiero-sdk-proto/g" Cargo.toml
-
-          echo "::endgroup::"
-          
-          echo "::group::Update TCK Cargo.toml with new dependencies"
-          # Update the dependencies in the tck/Cargo.toml
-          sed -i "s/hedera/hiero-sdk/g" tck/Cargo.toml
-          echo "::endgroup::"
-          
-          echo "::group::Update files with new names"
-          find . -type f -name "*.rs" -exec sed -i "s/\bhedera_proto\b/hiero_sdk_proto/g" {} +
-          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
-          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
-          echo "::endgroup::"
-          
-          echo "::group::Verify Cargo.toml changes"
-          cargo check
-          cargo generate-lockfile
-          echo "::endgroup::"
 
       - name: Publish proto to crates.io (hiero-sdk-proto)
-        if: ${{ inputs.dual-publish-enabled == true && needs.validate-release.outputs.proto-publish-required == 'true' }}
+        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: |
-          cargo publish ${{ steps.proto-publish-args.outputs.args }}
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            cargo publish ${{ steps.proto-publish-args.outputs.args }}
+          fi
         working-directory: protobufs
 
       # TODO: Remove this step once the hiero-sdk-proto is published
       - name: Set up Cargo files for SDK Dual publish
-        if: ${{ inputs.dual-publish-enabled == true && always() }}
+        if: ${{ !cancelled() && always() }}
         run: |
-          echo "::group::Reset Workspace"
-          git reset --hard
-          git clean -fdx
-          echo "::endgroup::"
-
-          echo "::group::Back up Cargo files"
-          if [[ -f "Cargo.toml" ]]; then
-            cp Cargo.toml Cargo.toml.bak
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            echo "::group::Reset Workspace"
+            git reset --hard
+            git clean -fdx
+            echo "::endgroup::"
+  
+            echo "::group::Back up Cargo files"
+            if [[ -f "Cargo.toml" ]]; then
+              cp Cargo.toml Cargo.toml.bak
+            fi
+            if [[ -f "Cargo.lock" ]]; then
+              cp Cargo.lock Cargo.lock.bak
+            fi
+            if [[ -f "tck/Cargo.toml" ]]; then
+              cp tck/Cargo.toml tck/Cargo.toml.bak
+            fi
+            if [[ -f "tck/Cargo.lock" ]]; then
+              cp tck/Cargo.lock tck/Cargo.lock.bak
+            fi
+            echo "::endgroup::"
+            
+            echo "::group::Update main Cargo.toml with new name and dependencies"
+            toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+            
+            echo "::group::Update TCK Cargo.toml with new dependencies"
+            # Update the dependencies in the tck/Cargo.toml
+            sed -i "s/hedera =/hiero-sdk =/g" tck/Cargo.toml
+            cat tck/Cargo.toml
+            echo "::endgroup::"
+            
+            echo "::group::Update files with new names"
+            find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
+            find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
+            echo "::endgroup::"
+            
+            echo "::group::Verify Cargo.toml changes"
+            cargo check
+            cargo generate-lockfile
+            echo "::endgroup::"
           fi
-          if [[ -f "Cargo.lock" ]]; then
-            cp Cargo.lock Cargo.lock.bak
-          fi
-          if [[ -f "tck/Cargo.toml" ]]; then
-            cp tck/Cargo.toml tck/Cargo.toml.bak
-          fi
-          if [[ -f "tck/Cargo.lock" ]]; then
-            cp tck/Cargo.lock tck/Cargo.lock.bak
-          fi
-          echo "::endgroup::"
-          
-          echo "::group::Update main Cargo.toml with new name and dependencies"
-          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
-          echo "::group::Update TCK Cargo.toml with new dependencies"
-          # Update the dependencies in the tck/Cargo.toml
-          sed -i "s/hedera =/hiero-sdk =/g" tck/Cargo.toml
-          cat tck/Cargo.toml
-          echo "::endgroup::"
-          
-          echo "::group::Update files with new names"
-          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
-          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
-          echo "::endgroup::"
-          
-          echo "::group::Verify Cargo.toml changes"
-          cargo check
-          cargo generate-lockfile
-          echo "::endgroup::"
 
       - name: Publish SDK to crates.io (hiero-sdk)
-        if: ${{ inputs.dual-publish-enabled == true }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: |
-          cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+          fi
 
       - name: Restore Cargo files
-        if: ${{ inputs.dual-publish-enabled == true && always() }}
+        if: ${{ !cancelled() && always() }}
         run: |
-          echo "::group::Restore Cargo files"
-          if [[ -f "Cargo.toml.bak" ]]; then
-            mv Cargo.toml.bak Cargo.toml
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            echo "::group::Restore Cargo files"
+            if [[ -f "Cargo.toml.bak" ]]; then
+              mv Cargo.toml.bak Cargo.toml
+            fi
+            if [[ -f "Cargo.lock.bak" ]]; then
+              mv Cargo.lock.bak Cargo.lock
+            fi
+            if [[ -f "protobufs/Cargo.toml.bak" ]]; then
+              mv protobufs/Cargo.toml.bak protobufs/Cargo.toml
+            fi
+            if [[ -f "protobufs/Cargo.lock.bak" ]]; then
+              mv protobufs/Cargo.lock.bak protobufs/Cargo.lock
+            fi
+            if [[ -f "tck/Cargo.toml.bak" ]]; then
+              mv tck/Cargo.toml.bak tck/Cargo.toml
+            fi
+            if [[ -f "tck/Cargo.lock.bak" ]]; then
+              mv tck/Cargo.lock.bak tck/Cargo.lock
+            fi
+            echo "::endgroup::"
           fi
-          if [[ -f "Cargo.lock.bak" ]]; then
-            mv Cargo.lock.bak Cargo.lock
-          fi
-          if [[ -f "protobufs/Cargo.toml.bak" ]]; then
-            mv protobufs/Cargo.toml.bak protobufs/Cargo.toml
-          fi
-          if [[ -f "protobufs/Cargo.lock.bak" ]]; then
-            mv protobufs/Cargo.lock.bak protobufs/Cargo.lock
-          fi
-          if [[ -f "tck/Cargo.toml.bak" ]]; then
-            mv tck/Cargo.toml.bak tck/Cargo.toml
-          fi
-          if [[ -f "tck/Cargo.lock.bak" ]]; then
-            mv tck/Cargo.lock.bak tck/Cargo.lock
-          fi
-          echo "::endgroup::"
