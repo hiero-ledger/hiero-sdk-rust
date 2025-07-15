@@ -433,3 +433,13 @@ jobs:
             fi
             echo "::endgroup::"
           fi
+
+      - name: Generate Github Release
+        uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
+        if: ${{ inputs.dry-run-enabled != 'true' }}
+        with:
+          tag: ${{ needs.validate-release.outputs.tag }}
+          prerelease: ${{ needs.validate-release.outputs.prerelease == 'true' }}
+          draft: false
+          generateReleaseNotes: true
+          skipIfReleaseExists: true
