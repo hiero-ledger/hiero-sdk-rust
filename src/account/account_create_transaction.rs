@@ -109,20 +109,20 @@ impl AccountCreateTransaction {
     }
 
     /// Sets a generic key and an ECDSA(secp256k1) private key, and derives the alias from the ECDSA key.
-    pub fn set_key_with_alias(&mut self, key: crate::Key, ecdsa_key: crate::PrivateKey) -> &mut Self {
+    pub fn set_key_with_alias(&mut self, key: impl Into<Key>, ecdsa_key: crate::PrivateKey) -> &mut Self {
         if !ecdsa_key.is_ecdsa() {
             panic!("Provided key is not an ECDSA(secp256k1) private key");
         }
         let public_key = ecdsa_key.public_key();
         let evm_address = public_key.to_evm_address().expect("Failed to derive EVM address from ECDSA public key");
-        self.data_mut().key = Some(key);
+        self.data_mut().key = Some(key.into());
         self.alias(evm_address);
         self
     }
 
     /// Sets a generic key and unsets the alias.
-    pub fn set_key_without_alias(&mut self, key: crate::Key) -> &mut Self {
-        self.data_mut().key = Some(key);
+    pub fn set_key_without_alias(&mut self, key: impl Into<Key>) -> &mut Self {
+        self.data_mut().key = Some(key.into());
         self.data_mut().alias = None;
         self
     }
