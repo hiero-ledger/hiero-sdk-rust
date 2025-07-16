@@ -36,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
     let exchange_account_id = AccountCreateTransaction::new()
         // the exchange only accepts transfers that it validates through a side channel (e.g. REST API)
         .receiver_signature_required(true)
-        .key(exchange_key.public_key())
+        .set_key_without_alias(exchange_key.public_key())
         // The owner key has to sign this transaction
         // when receiver_signature_required is true
         .freeze_with(&client)?
@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
     // the user with a balance of 5 h
     let user_account_id = AccountCreateTransaction::new()
         .initial_balance(Hbar::new(5))
-        .key(user_key.public_key())
+        .set_key_without_alias(user_key.public_key())
         .execute(&client)
         .await?
         .get_receipt(&client)

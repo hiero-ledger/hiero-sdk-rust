@@ -365,7 +365,7 @@ async fn airdrop_tokens_w_receiver_sig() -> anyhow::Result<()> {
     // Create a receiver account with 0 auto associations
     let receiver_key = PrivateKey::generate_ed25519();
     let receiver_account_id = AccountCreateTransaction::new()
-        .key(receiver_key.public_key())
+        .set_key_without_alias(receiver_key.public_key())
         .initial_balance(Hbar::new(1))
         .receiver_signature_required(true)
         .max_automatic_token_associations(-1)
@@ -414,7 +414,7 @@ async fn airdrop_nfts_w_receiver_sig() -> anyhow::Result<()> {
     // Create receiver with unlimited auto associations and receiver_sig = true
     let receiver_key = PrivateKey::generate_ed25519();
     let receiver_account_id = AccountCreateTransaction::new()
-        .key(receiver_key.public_key())
+        .set_key_without_alias(receiver_key.public_key())
         .initial_balance(Hbar::new(1))
         .receiver_signature_required(true)
         .max_automatic_token_associations(-1)

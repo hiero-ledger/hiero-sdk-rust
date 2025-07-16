@@ -358,7 +358,7 @@ async fn charges_hbar_fee_with_limits_applied() -> anyhow::Result<()> {
 
     let account_receipt = AccountCreateTransaction::new()
         .initial_balance(Hbar::new(1))
-        .key(private_key.public_key())
+        .set_key_without_alias(private_key.public_key())
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -419,7 +419,7 @@ async fn exempts_fee_exempt_keys_from_hbar_fees() -> anyhow::Result<()> {
 
     let payer_account_receipt = AccountCreateTransaction::new()
         .initial_balance(Hbar::new(1))
-        .key(fee_exempt_key1.public_key())
+        .set_key_without_alias(fee_exempt_key1.public_key())
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -477,7 +477,7 @@ async fn create_with_transaction_id_assigns_auto_renew_account_id_to_transaction
     let public_key = private_key.public_key();
 
     let account_receipt = AccountCreateTransaction::new()
-        .key(public_key)
+        .set_key_without_alias(public_key)
         .initial_balance(Hbar::new(10))
         .execute(&client)
         .await?

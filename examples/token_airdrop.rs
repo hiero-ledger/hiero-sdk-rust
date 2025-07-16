@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(operator_account_id, operator_key.clone());
     let private_key_1 = PrivateKey::generate_ecdsa();
     let alice_id = AccountCreateTransaction::new()
-        .key(private_key_1.public_key())
+        .set_key_without_alias(private_key_1.public_key())
         .initial_balance(Hbar::new(10))
         .max_automatic_token_associations(-1)
         .execute(&client)
@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
 
     let private_key_2 = PrivateKey::generate_ecdsa();
     let bob_id = AccountCreateTransaction::new()
-        .key(private_key_2.public_key())
+        .set_key_without_alias(private_key_2.public_key())
         .max_automatic_token_associations(1)
         .execute(&client)
         .await?
@@ -57,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
 
     let private_key_3 = PrivateKey::generate_ecdsa();
     let carol_id = AccountCreateTransaction::new()
-        .key(private_key_3.public_key())
+        .set_key_without_alias(private_key_3.public_key())
         .max_automatic_token_associations(0)
         .execute(&client)
         .await?
@@ -68,7 +68,7 @@ async fn main() -> anyhow::Result<()> {
 
     let treasury_key = PrivateKey::generate_ecdsa();
     let treasury_account_id = AccountCreateTransaction::new()
-        .key(treasury_key.public_key())
+        .set_key_without_alias(treasury_key.public_key())
         .initial_balance(Hbar::new(10))
         .execute(&client)
         .await?
