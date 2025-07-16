@@ -102,19 +102,27 @@ impl AccountCreateTransaction {
             panic!("Provided key is not an ECDSA(secp256k1) private key");
         }
         let public_key = ecdsa_key.public_key();
-        let evm_address = public_key.to_evm_address().expect("Failed to derive EVM address from ECDSA public key");
+        let evm_address = public_key
+            .to_evm_address()
+            .expect("Failed to derive EVM address from ECDSA public key");
         self.data_mut().key = Some(public_key.clone().into());
         self.alias(evm_address);
         self
     }
 
     /// Sets a generic key and an ECDSA(secp256k1) private key, and derives the alias from the ECDSA key.
-    pub fn set_key_with_alias(&mut self, key: impl Into<Key>, ecdsa_key: crate::PrivateKey) -> &mut Self {
+    pub fn set_key_with_alias(
+        &mut self,
+        key: impl Into<Key>,
+        ecdsa_key: crate::PrivateKey,
+    ) -> &mut Self {
         if !ecdsa_key.is_ecdsa() {
             panic!("Provided key is not an ECDSA(secp256k1) private key");
         }
         let public_key = ecdsa_key.public_key();
-        let evm_address = public_key.to_evm_address().expect("Failed to derive EVM address from ECDSA public key");
+        let evm_address = public_key
+            .to_evm_address()
+            .expect("Failed to derive EVM address from ECDSA public key");
         self.data_mut().key = Some(key.into());
         self.alias(evm_address);
         self
@@ -892,7 +900,10 @@ mod tests {
 
     #[test]
     fn set_key_with_alias_sets_key_and_alias() {
-        use crate::{PrivateKey, Key};
+        use crate::{
+            Key,
+            PrivateKey,
+        };
         let ecdsa_key = PrivateKey::generate_ecdsa();
         let public_key = ecdsa_key.public_key();
         let evm_address = public_key.to_evm_address().unwrap();
@@ -907,7 +918,10 @@ mod tests {
 
     #[test]
     fn set_key_without_alias_sets_key_and_unsets_alias() {
-        use crate::{PrivateKey, Key};
+        use crate::{
+            Key,
+            PrivateKey,
+        };
         let ecdsa_key = PrivateKey::generate_ecdsa();
         let public_key = ecdsa_key.public_key();
         let generic_key = Key::Single(public_key.clone());
