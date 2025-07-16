@@ -53,7 +53,7 @@ async fn create_account() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let mut transaction = AccountCreateTransaction::new();
-    transaction.key(key.public_key());
+    transaction.set_key_without_alias(key.public_key());
 
     let schedule_id = ScheduleCreateTransaction::new()
         .scheduled_transaction(transaction)
@@ -88,7 +88,7 @@ async fn create_account_schedule() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let mut transaction = AccountCreateTransaction::new();
-    transaction.key(key.public_key());
+    transaction.set_key_without_alias(key.public_key());
 
     let schedule_id = transaction
         .schedule()
@@ -129,7 +129,7 @@ async fn transfer() -> anyhow::Result<()> {
     // Create the account with the `KeyList`
     let mut transaction = AccountCreateTransaction::new();
     let receipt = transaction
-        .key(key_list)
+        .set_key_without_alias(key_list)
         .initial_balance(Hbar::new(1))
         .execute(&client)
         .await?
@@ -514,7 +514,7 @@ async fn sign_with_multi_sig_and_update_signing_requirements() -> anyhow::Result
     };
 
     let account_id = AccountCreateTransaction::new()
-        .key(key_list)
+        .set_key_without_alias(key_list)
         .initial_balance(Hbar::new(10))
         .execute(&client)
         .await?
@@ -617,7 +617,7 @@ async fn sign_with_multi_sig() -> anyhow::Result<()> {
     };
 
     let account_id = AccountCreateTransaction::new()
-        .key(key_list)
+        .set_key_without_alias(key_list)
         .initial_balance(Hbar::new(10))
         .execute(&client)
         .await?

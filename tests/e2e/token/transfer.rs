@@ -355,7 +355,7 @@ async fn transfer_to_account_with_unlimited_associations() -> anyhow::Result<()>
         .unwrap();
 
     let sender_id = AccountCreateTransaction::new()
-        .key(sender_key.public_key())
+        .set_key_without_alias(sender_key.public_key())
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -364,7 +364,7 @@ async fn transfer_to_account_with_unlimited_associations() -> anyhow::Result<()>
         .unwrap();
 
     let receiver_id = AccountCreateTransaction::new()
-        .key(receiver_key.public_key())
+        .set_key_without_alias(receiver_key.public_key())
         .max_automatic_token_associations(-1)
         .execute(&client)
         .await?

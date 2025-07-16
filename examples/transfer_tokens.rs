@@ -174,7 +174,7 @@ async fn create_account(
     println!("public key = {}", private_key.public_key());
 
     let receipt = AccountCreateTransaction::new()
-        .key(private_key.public_key())
+        .set_key_without_alias(private_key.public_key())
         .initial_balance(Hbar::from_tinybars(1000))
         .execute(client)
         .await?

@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
 
     let create_account_transaction = AccountCreateTransaction::new()
         .initial_balance(Hbar::new(2))
-        .key(keylist)
+        .set_key_without_alias(keylist)
         .execute(&client)
         .await?;
 
