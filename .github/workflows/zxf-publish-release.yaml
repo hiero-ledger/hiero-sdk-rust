@@ -215,6 +215,9 @@ jobs:
           sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
 
       - name: Run Safety Checks
+        env:
+          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
+          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
         run: |
           echo "::group::Run Safety Checks"
           cargo check
@@ -293,6 +296,9 @@ jobs:
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
+        env:
+          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
+          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
         run: |
           files=("Cargo.toml" "protobufs/Cargo.toml" "tck/Cargo.toml" \
           "Cargo.lock" "protobufs/Cargo.lock" "tck/Cargo.lock")
@@ -351,6 +357,9 @@ jobs:
       # TODO: Remove this step once the hiero-sdk-proto is published
       - name: Set up Cargo files for SDK Dual publish
         if: ${{ !cancelled() && always() }}
+        env:
+          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
+          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
         run: |
           files=("Cargo.toml" "tck/Cargo.toml" "Cargo.lock" "tck/Cargo.lock")
           
@@ -383,7 +392,7 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
-            cargo test --test e2e
+            cargo test
             cargo generate-lockfile
             echo "::endgroup::"
           fi
