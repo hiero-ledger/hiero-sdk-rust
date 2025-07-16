@@ -29,7 +29,7 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          rustup +nightly component add rustfmt  
+          rustup +nightly component add rustfmt
 
       - name: Format
 
@@ -37,7 +37,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
           cargo +nightly fmt --check
-  
+
   check:
     runs-on: hiero-client-sdk-linux-medium
     steps:
@@ -80,7 +80,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
           cargo check --examples --workspace
-  
+
   test:
     needs: ['check']
     runs-on: hiero-client-sdk-linux-medium
@@ -121,7 +121,7 @@ jobs:
         uses: hiero-ledger/hiero-solo-action@71219540ac7f578e6ea4fc3c17575c0295e56163 # v0.9
         with:
           installMirrorNode: true
-          hieroVersion: v0.62.3
+          hieroVersion: v0.61.4
 
       - name: "Create env file"
         run: |
