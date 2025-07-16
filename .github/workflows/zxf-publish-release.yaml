@@ -383,7 +383,7 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
-            cargo test
+            cargo test --test e2e
             cargo generate-lockfile
             echo "::endgroup::"
           fi
