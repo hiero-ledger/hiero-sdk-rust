@@ -3,15 +3,11 @@
 pub(super) mod managed;
 pub(super) mod mirror;
 
-use std::borrow::Cow;
 use std::collections::{
     BTreeSet,
     HashMap,
 };
-use std::fmt;
-use std::net::Ipv4Addr;
 use std::num::NonZeroUsize;
-use std::str::FromStr;
 use std::time::{
     Duration,
     Instant,
@@ -207,8 +203,16 @@ impl NetworkData {
             let new: BTreeSet<_> = address
                 .service_endpoints
                 .iter()
-                .filter(|it| it.port() == NodeConnection::PLAINTEXT_PORT)
-                .map(|it| (*it.ip()).into())
+                .filter(|endpoint_str| {
+                    // Check if port matches PLAINTEXT_PORT
+                    if let Some(port_str) = endpoint_str.split(':').nth(1) {
+                        if let Ok(port) = port_str.parse::<i32>() {
+                            return port == NodeConnection::PLAINTEXT_PORT as i32;
+                        }
+                    }
+                    false
+                })
+                .cloned()
                 .collect();
 
             // if the node is the exact same we want to reuse everything (namely the connections and `healthy`).
@@ -256,18 +260,16 @@ impl NetworkData {
         for (address, node) in addresses {
             let next_index = node_ids.len();
 
-            let address = address.parse()?;
-
             match map.entry(*node) {
                 Entry::Occupied(entry) => {
-                    connections[*entry.get()].addresses.insert(address);
+                    connections[*entry.get()].addresses.insert(address.clone());
                 }
                 Entry::Vacant(entry) => {
                     entry.insert(next_index);
                     node_ids.push(*node);
                     // fixme: keep the channel around more.
                     connections.push(NodeConnection {
-                        addresses: BTreeSet::from([address]),
+                        addresses: BTreeSet::from([address.clone()]),
                         channel: OnceCell::new(),
                     });
 
@@ -395,7 +397,7 @@ impl NetworkData {
         self.map
             .iter()
             .flat_map(|(&account, &index)| {
-                self.connections[index].addresses.iter().map(move |it| (it.to_string(), account))
+                self.connections[index].addresses.iter().map(move |it| (it.clone(), account))
             })
             .collect()
     }
@@ -514,46 +516,9 @@ impl NodeHealth {
     }
 }
 
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
-struct HostAndPort {
-    host: Cow<'static, str>,
-    port: u16,
-}
-
-impl HostAndPort {
-    const fn from_static(host: &'static str) -> Self {
-        Self { host: Cow::Borrowed(host), port: NodeConnection::PLAINTEXT_PORT }
-    }
-}
-
-impl FromStr for HostAndPort {
-    type Err = crate::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (host, port) = s.split_once(':').ok_or_else(|| Error::basic_parse("Invalid uri"))?;
-
-        Ok(Self {
-            host: Cow::Owned(host.to_owned()),
-            port: port.parse().map_err(Error::basic_parse)?,
-        })
-    }
-}
-
-impl fmt::Display for HostAndPort {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", self.host, self.port)
-    }
-}
-
-impl From<Ipv4Addr> for HostAndPort {
-    fn from(value: Ipv4Addr) -> Self {
-        Self { host: Cow::Owned(value.to_string()), port: NodeConnection::PLAINTEXT_PORT }
-    }
-}
-
 #[derive(Clone)]
 struct NodeConnection {
-    addresses: BTreeSet<HostAndPort>,
+    addresses: BTreeSet<String>,
     channel: OnceCell<Channel>,
 }
 
@@ -562,7 +527,11 @@ impl NodeConnection {
 
     fn new_static(addresses: &[&'static str]) -> NodeConnection {
         Self {
-            addresses: addresses.iter().copied().map(HostAndPort::from_static).collect(),
+            addresses: addresses
+                .iter()
+                .copied()
+                .map(|addr| format!("{}:{}", addr, Self::PLAINTEXT_PORT))
+                .collect(),
             channel: OnceCell::default(),
         }
     }

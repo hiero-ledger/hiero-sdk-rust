@@ -73,17 +73,19 @@ impl FromProtobuf<services::ServiceEndpoint> for ServiceEndpoint {
             port = 50211;
         }
 
-        let socket_addr_v4 = parse_socket_addr_v4(pb.ip_address_v4, port)?;
+        // Only parse IP address if it's present
+        let ip_address_v4 = if !pb.ip_address_v4.is_empty() {
+            let socket_addr_v4 = parse_socket_addr_v4(pb.ip_address_v4, port)?;
+            Some(socket_addr_v4.ip().to_owned())
+        } else {
+            None
+        };
 
         if !pb.domain_name.is_empty() {
             validate_domain_name(pb.domain_name.clone())?;
         }
 
-        Ok(Self {
-            ip_address_v4: Some(socket_addr_v4.ip().to_owned()),
-            port: socket_addr_v4.port() as i32,
-            domain_name: pb.domain_name,
-        })
+        Ok(Self { ip_address_v4, port, domain_name: pb.domain_name })
     }
 }
 
@@ -92,7 +94,7 @@ impl ToProtobuf for ServiceEndpoint {
 
     fn to_protobuf(&self) -> Self::Protobuf {
         services::ServiceEndpoint {
-            ip_address_v4: self.ip_address_v4.unwrap().octets().to_vec(),
+            ip_address_v4: self.ip_address_v4.map(|ip| ip.octets().to_vec()).unwrap_or_default(),
             port: self.port,
             domain_name: self.domain_name.clone(),
         }

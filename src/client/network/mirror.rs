@@ -82,26 +82,41 @@ impl MirrorNetworkData {
         self.channel
             .get_or_init(|| {
                 let endpoint = self.addresses.iter().next().unwrap();
-                let uri = format!("https://{endpoint}");
+
+                // Check if endpoint is localhost or 127.0.0.1 to determine protocol
+                let is_localhost = endpoint.contains("localhost") || endpoint.contains("127.0.0.1");
+                let protocol = if is_localhost { "http" } else { "https" };
+                let uri = format!("{protocol}://{endpoint}");
                 let uri_parsed = Uri::from_maybe_shared(uri).unwrap();
 
-                // Configure OpenSSL
-                let mut ssl_builder = SslConnector::builder(SslMethod::tls()).unwrap();
-                ssl_builder.set_verify(SslVerifyMode::PEER);
-                ssl_builder.set_alpn_protos(b"\x02h2").unwrap();
+                if is_localhost {
+                    // Use HTTP for localhost
+                    Endpoint::from_shared(uri_parsed.to_string())
+                        .unwrap()
+                        .connect_timeout(Duration::from_secs(10))
+                        .keep_alive_timeout(Duration::from_secs(10))
+                        .keep_alive_while_idle(true)
+                        .tcp_keepalive(Some(Duration::from_secs(10)))
+                        .connect_lazy()
+                } else {
+                    // Configure OpenSSL for HTTPS
+                    let mut ssl_builder = SslConnector::builder(SslMethod::tls()).unwrap();
+                    ssl_builder.set_verify(SslVerifyMode::PEER);
+                    ssl_builder.set_alpn_protos(b"\x02h2").unwrap();
 
-                // Create HTTPS connector with OpenSSL
-                let mut http = HttpConnector::new();
-                http.enforce_http(false);
-                let https = HttpsConnector::with_connector(http, ssl_builder).unwrap();
+                    // Create HTTPS connector with OpenSSL
+                    let mut http = HttpConnector::new();
+                    http.enforce_http(false);
+                    let https = HttpsConnector::with_connector(http, ssl_builder).unwrap();
 
-                Endpoint::from_shared(uri_parsed.to_string())
-                    .unwrap()
-                    .connect_timeout(Duration::from_secs(10))
-                    .keep_alive_timeout(Duration::from_secs(10))
-                    .keep_alive_while_idle(true)
-                    .tcp_keepalive(Some(Duration::from_secs(10)))
-                    .connect_with_connector_lazy(https)
+                    Endpoint::from_shared(uri_parsed.to_string())
+                        .unwrap()
+                        .connect_timeout(Duration::from_secs(10))
+                        .keep_alive_timeout(Duration::from_secs(10))
+                        .keep_alive_while_idle(true)
+                        .tcp_keepalive(Some(Duration::from_secs(10)))
+                        .connect_with_connector_lazy(https)
+                }
             })
             .clone()
     }

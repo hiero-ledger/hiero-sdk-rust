@@ -9,6 +9,7 @@ use crate::{
     AccountId,
     Error,
     FromProtobuf,
+    ServiceEndpoint,
 };
 
 fn parse_socket_addr_v4(ip: Vec<u8>, port: i32) -> crate::Result<SocketAddrV4> {
@@ -48,8 +49,8 @@ pub struct NodeAddress {
     /// Its value can be used to verify the node's certificate it presents during TLS negotiations.
     pub tls_certificate_hash: Vec<u8>,
 
-    /// A node's service IP addresses and ports.
-    pub service_endpoints: Vec<SocketAddrV4>,
+    /// A node's service endpoints as strings in format "host:port".
+    pub service_endpoints: Vec<String>,
 
     /// A description of the node, up to 100 bytes.
     pub description: String,
@@ -66,11 +67,17 @@ impl FromProtobuf<services::NodeAddress> for NodeAddress {
         // `ip_address`/`portno` are deprecated, but lets handle them anyway.
         #[allow(deprecated)]
         if !pb.ip_address.is_empty() {
-            addresses.push(parse_socket_addr_v4(pb.ip_address, pb.portno)?);
+            let socket_addr = parse_socket_addr_v4(pb.ip_address, pb.portno)?;
+            addresses.push(format!("{}:{}", socket_addr.ip(), socket_addr.port()));
         }
 
         for address in pb.service_endpoint {
-            addresses.push(parse_socket_addr_v4(address.ip_address_v4, address.port)?);
+            let endpoint = ServiceEndpoint::from_protobuf(address)?;
+            let host = match endpoint.ip_address_v4 {
+                Some(ip) => ip.to_string(),
+                None => endpoint.domain_name,
+            };
+            addresses.push(format!("{}:{}", host, endpoint.port));
         }
 
         let node_account_id = AccountId::from_protobuf(pb_getf!(pb, node_account_id)?)?;
@@ -93,10 +100,30 @@ impl ToProtobuf for NodeAddress {
         let service_endpoint = self
             .service_endpoints
             .iter()
-            .map(|it| services::ServiceEndpoint {
-                ip_address_v4: it.ip().octets().to_vec(),
-                port: i32::from(it.port()),
-                domain_name: it.to_string(),
+            .map(|endpoint_str| {
+                // Parse "host:port" format back to ServiceEndpoint
+                let parts: Vec<&str> = endpoint_str.split(':').collect();
+                if parts.len() != 2 {
+                    return services::ServiceEndpoint::default();
+                }
+
+                let host = parts[0];
+                let port = parts[1].parse::<i32>().unwrap_or(50211);
+
+                // Try to parse as IP address first, otherwise treat as domain name
+                if let Ok(ip) = host.parse::<std::net::Ipv4Addr>() {
+                    services::ServiceEndpoint {
+                        ip_address_v4: ip.octets().to_vec(),
+                        port,
+                        domain_name: String::new(),
+                    }
+                } else {
+                    services::ServiceEndpoint {
+                        ip_address_v4: Vec::new(),
+                        port,
+                        domain_name: host.to_string(),
+                    }
+                }
             })
             .collect();
 
