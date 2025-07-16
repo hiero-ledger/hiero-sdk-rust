@@ -28,7 +28,7 @@ async fn create_account(client: &Client, name: &'static str) -> hedera::Result<A
     let key = PrivateKey::generate_ed25519();
 
     let reciept = AccountCreateTransaction::new()
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .initial_balance(Hbar::new(5))
         .account_memo(format!("[sdk::rust::account_allowance_example::{name}]"))
         .execute(client)

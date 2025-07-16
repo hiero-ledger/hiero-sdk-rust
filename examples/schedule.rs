@@ -37,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
     println!("public key 2 = {}", key2.public_key());
 
     let new_account_id = AccountCreateTransaction::new()
-        .key(KeyList::from([key1.public_key(), key2.public_key()]))
+        .set_key_without_alias(KeyList::from([key1.public_key(), key2.public_key()]))
         .initial_balance(Hbar::from_tinybars(1000))
         .execute(&client)
         .await?

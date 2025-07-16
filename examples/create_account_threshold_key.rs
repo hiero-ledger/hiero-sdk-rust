@@ -53,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let transaction_response = AccountCreateTransaction::new()
-        .key(transaction_key)
+        .set_key_without_alias(transaction_key)
         .initial_balance(Hbar::new(10))
         .execute(&client)
         .await?;

@@ -31,7 +31,7 @@ async fn basic() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let mut transaction = AccountCreateTransaction::new();
-    transaction.key(key.public_key());
+    transaction.set_key_without_alias(key.public_key());
 
     let schedule_id = ScheduleCreateTransaction::new()
         .scheduled_transaction(transaction)
