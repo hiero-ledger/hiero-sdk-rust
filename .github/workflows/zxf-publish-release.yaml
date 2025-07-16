@@ -218,6 +218,7 @@ jobs:
         run: |
           echo "::group::Run Safety Checks"
           cargo check
+          cargo test
           echo "::endgroup::"
 
   publish:
@@ -293,26 +294,17 @@ jobs:
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
         run: |
+          files=("Cargo.toml" "protobufs/Cargo.toml" "tck/Cargo.toml" \
+          "Cargo.lock" "protobufs/Cargo.lock" "tck/Cargo.lock")
+          
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
             echo "::group::Back up Cargo files"
-            if [[ -f "Cargo.toml" ]]; then
-              cp Cargo.toml Cargo.toml.bak
-            fi
-            if [[ -f "Cargo.lock" ]]; then
-              cp Cargo.lock Cargo.lock.bak
-            fi
-            if [[ -f "protobufs/Cargo.toml" ]]; then
-              cp protobufs/Cargo.toml protobufs/Cargo.toml.bak
-            fi
-            if [[ -f "protobufs/Cargo.lock" ]]; then
-              cp protobufs/Cargo.lock protobufs/Cargo.lock.bak
-            fi
-            if [[ -f "tck/Cargo.toml" ]]; then
-              cp tck/Cargo.toml tck/Cargo.toml.bak
-            fi
-            if [[ -f "tck/Cargo.lock" ]]; then
-              cp tck/Cargo.lock tck/Cargo.lock.bak
-            fi
+          
+            for file in "${files[@]}"; do
+              if [[ -f "${file}" ]]; then
+                cp "${file}" "${file}.bak"
+              fi
+            done
             echo "::endgroup::"
             
             echo "::group::Update protobufs/Cargo.toml with new name"       
@@ -341,6 +333,7 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
+            cargo test
             cargo generate-lockfile
             echo "::endgroup::"
           fi
@@ -359,6 +352,8 @@ jobs:
       - name: Set up Cargo files for SDK Dual publish
         if: ${{ !cancelled() && always() }}
         run: |
+          files=("Cargo.toml" "tck/Cargo.toml" "Cargo.lock" "tck/Cargo.lock")
+          
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
             echo "::group::Reset Workspace"
             git reset --hard
@@ -366,18 +361,11 @@ jobs:
             echo "::endgroup::"
   
             echo "::group::Back up Cargo files"
-            if [[ -f "Cargo.toml" ]]; then
-              cp Cargo.toml Cargo.toml.bak
-            fi
-            if [[ -f "Cargo.lock" ]]; then
-              cp Cargo.lock Cargo.lock.bak
-            fi
-            if [[ -f "tck/Cargo.toml" ]]; then
-              cp tck/Cargo.toml tck/Cargo.toml.bak
-            fi
-            if [[ -f "tck/Cargo.lock" ]]; then
-              cp tck/Cargo.lock tck/Cargo.lock.bak
-            fi
+            for file in "${files[@]}"; do
+              if [[ -f "${file}" ]]; then
+                cp "${file}" "${file}.bak"
+              fi
+            done
             echo "::endgroup::"
             
             echo "::group::Update main Cargo.toml with new name and dependencies"
@@ -395,6 +383,7 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
+            cargo test
             cargo generate-lockfile
             echo "::endgroup::"
           fi
@@ -410,26 +399,16 @@ jobs:
       - name: Restore Cargo files
         if: ${{ !cancelled() && always() }}
         run: |
+          files=("Cargo.toml" "protobufs/Cargo.toml" "tck/Cargo.toml" \
+          "Cargo.lock" "protobufs/Cargo.lock" "tck/Cargo.lock")
+          
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
             echo "::group::Restore Cargo files"
-            if [[ -f "Cargo.toml.bak" ]]; then
-              mv Cargo.toml.bak Cargo.toml
-            fi
-            if [[ -f "Cargo.lock.bak" ]]; then
-              mv Cargo.lock.bak Cargo.lock
-            fi
-            if [[ -f "protobufs/Cargo.toml.bak" ]]; then
-              mv protobufs/Cargo.toml.bak protobufs/Cargo.toml
-            fi
-            if [[ -f "protobufs/Cargo.lock.bak" ]]; then
-              mv protobufs/Cargo.lock.bak protobufs/Cargo.lock
-            fi
-            if [[ -f "tck/Cargo.toml.bak" ]]; then
-              mv tck/Cargo.toml.bak tck/Cargo.toml
-            fi
-            if [[ -f "tck/Cargo.lock.bak" ]]; then
-              mv tck/Cargo.lock.bak tck/Cargo.lock
-            fi
+            for file in "${files[@]}"; do
+              if [[ -f "${file}.bak" ]]; then
+                mv "${file}.bak" "${file}"
+              fi
+            done
             echo "::endgroup::"
           fi
 
