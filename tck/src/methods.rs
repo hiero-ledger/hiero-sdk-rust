@@ -270,7 +270,7 @@ impl RpcServer for RpcServerImpl {
         if let Some(key) = key {
             let key = get_hedera_key(&key)?;
 
-            account_create_tx.key(key);
+            account_create_tx.set_key_without_alias(key);
         }
 
         if let Some(initial_balance) = initial_balance {

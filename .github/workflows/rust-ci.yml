@@ -62,7 +62,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Rust Cache
-        uses: step-security/rust-cache@3dc80ea64187c7f97c5b985b9dcd71fa45103573 # v2.7.8
+        uses: step-security/rust-cache@94e3ae6a5bdb04807deb1cb2274adab839828881 # v2.8.0
         with:
           workspaces: |
             sdk/rust
@@ -107,7 +107,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Rust Cache
-        uses: step-security/rust-cache@3dc80ea64187c7f97c5b985b9dcd71fa45103573 # v2.7.8
+        uses: step-security/rust-cache@94e3ae6a5bdb04807deb1cb2274adab839828881 # v2.8.0
         with:
           workspaces: |
             .

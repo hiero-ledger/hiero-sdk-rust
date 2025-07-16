@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let receipt = AccountCreateTransaction::new()
-        .key(transaction_key)
+        .set_key_without_alias(transaction_key)
         .initial_balance(Hbar::from_tinybars(1))
         .account_memo("3-of-4 multi-sig account")
         .execute(&client)
