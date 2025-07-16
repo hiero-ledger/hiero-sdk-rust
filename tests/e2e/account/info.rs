@@ -166,14 +166,14 @@ async fn flow_verify_transaction() -> anyhow::Result<()> {
 
     let mut signed_tx = hedera::AccountCreateTransaction::new();
     signed_tx
-        .key(new_public_key)
+        .set_key_without_alias(new_public_key)
         .initial_balance(Hbar::from_tinybars(1000))
         .freeze_with(&client)?
         .sign_with_operator(&client)?;
 
     let mut unsigned_tx = hedera::AccountCreateTransaction::new();
     unsigned_tx
-        .key(new_public_key)
+        .set_key_without_alias(new_public_key)
         .initial_balance(Hbar::from_tinybars(1000))
         .freeze_with(&client)?;
 

@@ -26,7 +26,7 @@ async fn initial_balance_and_key() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let receipt = AccountCreateTransaction::new()
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .initial_balance(Hbar::new(1))
         .execute(&client)
         .await?
@@ -56,7 +56,7 @@ async fn no_initial_balance() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let receipt = AccountCreateTransaction::new()
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -135,7 +135,7 @@ async fn manages_expiration() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let receipt = AccountCreateTransaction::new()
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .transaction_id(TransactionId {
             account_id: op.account_id,
             valid_start: OffsetDateTime::now_utc() - Duration::seconds(40),
@@ -180,7 +180,7 @@ async fn alias_from_admin_key() -> anyhow::Result<()> {
     let evm_address = admin_key.public_key().to_evm_address().unwrap();
 
     let account_id = AccountCreateTransaction::new()
-        .key(admin_key.public_key())
+        .set_key_without_alias(admin_key.public_key())
         .alias(evm_address)
         .freeze_with(&client)?
         .execute(&client)
@@ -212,7 +212,7 @@ async fn alias_from_admin_key_with_receiver_sig_required() -> anyhow::Result<()>
 
     let account_id = AccountCreateTransaction::new()
         .receiver_signature_required(true)
-        .key(admin_key.public_key())
+        .set_key_without_alias(admin_key.public_key())
         .alias(evm_address)
         .freeze_with(&client)?
         .sign(admin_key.clone())
@@ -244,7 +244,7 @@ async fn alias_from_admin_key_with_receiver_sig_required_and_no_signature_errors
 
     let res = AccountCreateTransaction::new()
         .receiver_signature_required(true)
-        .key(admin_key.public_key())
+        .set_key_without_alias(admin_key.public_key())
         .alias(evm_address)
         .freeze_with(&client)?
         .execute(&client)
@@ -274,7 +274,7 @@ async fn alias() -> anyhow::Result<()> {
     let evm_address = key.public_key().to_evm_address().unwrap();
 
     let account_id = AccountCreateTransaction::new()
-        .key(admin_key.public_key())
+        .set_key_without_alias(admin_key.public_key())
         .alias(evm_address)
         .freeze_with(&client)?
         .sign(key)
@@ -307,7 +307,7 @@ async fn alias_missing_signature_fails() -> anyhow::Result<()> {
     let evm_address = key.public_key().to_evm_address().unwrap();
 
     let res = AccountCreateTransaction::new()
-        .key(admin_key.public_key())
+        .set_key_without_alias(admin_key.public_key())
         .alias(evm_address)
         .freeze_with(&client)?
         .execute(&client)
@@ -338,7 +338,7 @@ async fn alias_with_receiver_sig_required() -> anyhow::Result<()> {
 
     let account_id = AccountCreateTransaction::new()
         .receiver_signature_required(true)
-        .key(admin_key.public_key())
+        .set_key_without_alias(admin_key.public_key())
         .alias(evm_address)
         .freeze_with(&client)?
         .sign(key)
@@ -373,7 +373,7 @@ async fn alias_with_receiver_sig_required_missing_signature_fails() -> anyhow::R
 
     let res = AccountCreateTransaction::new()
         .receiver_signature_required(true)
-        .key(admin_key.public_key())
+        .set_key_without_alias(admin_key.public_key())
         .alias(evm_address)
         .freeze_with(&client)?
         .sign(key.clone())
@@ -400,7 +400,7 @@ async fn cannot_create_account_with_invalid_negative_max_auto_token_assocation(
     let key = PrivateKey::generate_ed25519();
 
     let res = AccountCreateTransaction::new()
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .max_automatic_token_associations(-2)
         .execute(&client)
         .await;

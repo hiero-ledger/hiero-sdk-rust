@@ -104,7 +104,7 @@ async fn serialized_deserialized_transaction_can_be_executed() -> anyhow::Result
     let key = PrivateKey::generate_ed25519();
     let _ = tx
         .initial_balance(Hbar::from_tinybars(100))
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .transaction_memo("HIP-745 test")
         .freeze_with(&client);
 
@@ -132,7 +132,7 @@ async fn serialized_deserialized_transaction_can_be_executed_non_frozen() -> any
     let key = PrivateKey::generate_ed25519();
     let _ = tx
         .initial_balance(Hbar::from_tinybars(100))
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .transaction_memo("HIP-745 test");
 
     let bytes = tx.to_bytes().expect("Failed to serialize transaction");

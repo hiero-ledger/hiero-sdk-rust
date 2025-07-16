@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "hedera"
 readme = "README.md"
 repository = "https://github.com/hashgraph/hedera-sdk-rust"
-version = "0.34.0"
+version = "0.36.0"
 
 [lib]
 bench = false
@@ -22,12 +22,12 @@ mnemonic = []
 [dependencies]
 async-stream = "0.3.6"
 backoff = "0.4.0"
-ed25519-dalek = { version = "2.0.0", features = ["rand_core"] }
+ed25519-dalek = { version = "2.2.0", features = ["rand_core"] }
 fraction = { version = "0.15.1", default-features = false }
 futures-core = "0.3.31"
 # Transitive dependency of tonic 0.12
-h2 = "0.4.10"
-hedera-proto = { path = "./protobufs", version = "0.16.0", features = [
+h2 = "0.4.11"
+hedera-proto = { path = "./protobufs", version = "0.17.0", features = [
   "time_0_3",
   "fraction",
 ] }
@@ -44,7 +44,7 @@ sha2 = "0.10.9"
 sha3 = "0.10.2"
 thiserror = "1.0.31"
 time = "0.3.41"
-tokio = { version = "1.45.1", features = ["time"] }
+tokio = { version = "1.46.1", features = ["time"] }
 tonic = "0.12.3"
 tinystr = { version = "0.7.0", default-features = false }
 arc-swap = "1.6.0"
@@ -52,23 +52,23 @@ rlp = "0.6.1"
 bytes = { version = "1.2.1", default-features = false }
 pin-project-lite = "0.2.16"
 unsize = "1.1.0"
-parking_lot = "0.12.0"
+parking_lot = "0.12.4"
 serde_json = { version = "1.0.140", optional = true }
 serde = { version = "1.0.219", optional = true }
 serde_derive = { version = "1.0.163", optional = true }
 pem = "3.0.5"
 cbc = "0.1.2"
 aes = "0.8.3"
-md5 = "0.7.0"
+md5 = "0.8.0"
 sec1 = { version = "0.7.3", features = ["der"] }
 tower = { version = "0.5.2", features = ["util"] }
 openssl = "0.10.72"
-hyper-util = "0.1.12"
+hyper-util = "0.1.15"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
 
 
 [dependencies.futures-util]
-version = "0.3.21"
+version = "0.3.31"
 default-features = false
 
 [dependencies.prost]
@@ -99,15 +99,15 @@ features = ["std", "arc-swap", "unsize"]
 [dev-dependencies]
 anyhow = "1.0.98"
 assert_matches = "1.5.0"
-clap = { version = "4.5.39", features = ["derive", "env"] }
+clap = { version = "4.5.41", features = ["derive", "env"] }
 dotenvy = "0.15.5"
 expect-test = "1.5.1"
 hex-literal = "1.0.0"
 miniserde = "0.1.42"
-parking_lot = "0.12.0"
+parking_lot = "0.12.4"
 
 [dev-dependencies.tokio]
-version = "1.45.1"
+version = "1.46.1"
 features = ["rt-multi-thread", "macros", "parking_lot"]
 
 [dev-dependencies.env_logger]
