@@ -104,7 +104,11 @@ impl ToProtobuf for NodeAddress {
                 // Parse "host:port" format back to ServiceEndpoint
                 let parts: Vec<&str> = endpoint_str.split(':').collect();
                 if parts.len() != 2 {
-                    return services::ServiceEndpoint::default();
+                    return services::ServiceEndpoint {
+                        ip_address_v4: Vec::new(),
+                        port: 50211,
+                        domain_name: String::new(),
+                    };
                 }
 
                 let host = parts[0];
@@ -138,5 +142,254 @@ impl ToProtobuf for NodeAddress {
             // deprecated fields
             ..Default::default()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_node_address_with_ip_endpoints() {
+        let pb = services::NodeAddress {
+            node_id: 3,
+            rsa_pub_key: "746573745f6b6579".to_string(), // hex encoded "test_key"
+            node_account_id: Some(AccountId::new(0, 0, 3).to_protobuf()),
+            node_cert_hash: vec![1, 2, 3, 4],
+            service_endpoint: vec![
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![192, 168, 1, 1],
+                    port: 50211,
+                    domain_name: String::new(),
+                },
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![10, 0, 0, 1],
+                    port: 50211,
+                    domain_name: String::new(),
+                },
+            ],
+            description: "Test node".to_string(),
+            ..Default::default()
+        };
+
+        let node_address = NodeAddress::from_protobuf(pb).unwrap();
+        assert_eq!(node_address.node_id, 3);
+        assert_eq!(node_address.node_account_id, AccountId::new(0, 0, 3));
+        assert_eq!(node_address.service_endpoints, vec!["192.168.1.1:50211", "10.0.0.1:50211"]);
+        assert_eq!(node_address.description, "Test node");
+    }
+
+    #[test]
+    fn test_node_address_with_domain_endpoints() {
+        let pb = services::NodeAddress {
+            node_id: 4,
+            rsa_pub_key: "746573745f6b6579".to_string(), // hex encoded "test_key"
+            node_account_id: Some(AccountId::new(0, 0, 4).to_protobuf()),
+            node_cert_hash: vec![1, 2, 3, 4],
+            service_endpoint: vec![
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![],
+                    port: 50211,
+                    domain_name: "example.com".to_string(),
+                },
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![],
+                    port: 50211,
+                    domain_name: "localhost".to_string(),
+                },
+            ],
+            description: "Test node with domains".to_string(),
+            ..Default::default()
+        };
+
+        let node_address = NodeAddress::from_protobuf(pb).unwrap();
+        assert_eq!(node_address.node_id, 4);
+        assert_eq!(node_address.node_account_id, AccountId::new(0, 0, 4));
+        assert_eq!(node_address.service_endpoints, vec!["example.com:50211", "localhost:50211"]);
+        assert_eq!(node_address.description, "Test node with domains");
+    }
+
+    #[test]
+    fn test_node_address_with_mixed_endpoints() {
+        let pb = services::NodeAddress {
+            node_id: 5,
+            rsa_pub_key: "746573745f6b6579".to_string(), // hex encoded "test_key"
+            node_account_id: Some(AccountId::new(0, 0, 5).to_protobuf()),
+            node_cert_hash: vec![1, 2, 3, 4],
+            service_endpoint: vec![
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![192, 168, 1, 1],
+                    port: 50211,
+                    domain_name: String::new(),
+                },
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![],
+                    port: 50211,
+                    domain_name: "example.com".to_string(),
+                },
+            ],
+            description: "Test node with mixed endpoints".to_string(),
+            ..Default::default()
+        };
+
+        let node_address = NodeAddress::from_protobuf(pb).unwrap();
+        assert_eq!(node_address.node_id, 5);
+        assert_eq!(node_address.node_account_id, AccountId::new(0, 0, 5));
+        assert_eq!(node_address.service_endpoints, vec!["192.168.1.1:50211", "example.com:50211"]);
+        assert_eq!(node_address.description, "Test node with mixed endpoints");
+    }
+
+    #[test]
+    fn test_node_address_to_protobuf() {
+        let node_address = NodeAddress {
+            node_id: 7,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 7),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+            ],
+            description: "Test node for to_protobuf".to_string(),
+        };
+
+        let pb = node_address.to_protobuf();
+        assert_eq!(pb.node_id, 7);
+        assert_eq!(pb.rsa_pub_key, "01020304");
+        assert_eq!(pb.node_cert_hash, vec![5, 6, 7, 8]);
+        assert_eq!(pb.description, "Test node for to_protobuf");
+        assert_eq!(pb.service_endpoint.len(), 2);
+
+        // Check first endpoint (IP address)
+        assert_eq!(pb.service_endpoint[0].ip_address_v4, vec![192, 168, 1, 1]);
+        assert_eq!(pb.service_endpoint[0].port, 50211);
+        assert_eq!(pb.service_endpoint[0].domain_name, "");
+
+        // Check second endpoint (domain name)
+        assert_eq!(pb.service_endpoint[1].ip_address_v4, vec![] as Vec<u8>);
+        assert_eq!(pb.service_endpoint[1].port, 50211);
+        assert_eq!(pb.service_endpoint[1].domain_name, "example.com");
+    }
+
+    #[test]
+    fn test_node_address_round_trip() {
+        let original = NodeAddress {
+            node_id: 8,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 8),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+                "localhost:50211".to_string(),
+            ],
+            description: "Test node round trip".to_string(),
+        };
+
+        let pb = original.to_protobuf();
+        let deserialized = NodeAddress::from_protobuf(pb).unwrap();
+
+        assert_eq!(deserialized.node_id, original.node_id);
+        assert_eq!(deserialized.node_account_id, original.node_account_id);
+        assert_eq!(deserialized.service_endpoints, original.service_endpoints);
+        assert_eq!(deserialized.description, original.description);
+    }
+
+    #[test]
+    fn test_node_address_with_invalid_string_format() {
+        let node_address = NodeAddress {
+            node_id: 9,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 9),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "invalid-format".to_string(),           // Missing port
+                "192.168.1.1:invalid-port".to_string(), // Invalid port
+            ],
+            description: "Test node with invalid strings".to_string(),
+        };
+
+        let pb = node_address.to_protobuf();
+        // Should handle gracefully and use defaults
+        assert_eq!(pb.service_endpoint.len(), 2);
+        assert_eq!(pb.service_endpoint[0].port, 50211); // Default port
+        assert_eq!(pb.service_endpoint[1].port, 50211); // Default port
+    }
+
+    #[test]
+    fn test_node_address_with_localhost_and_127_0_0_1() {
+        let pb = services::NodeAddress {
+            node_id: 10,
+            rsa_pub_key: "746573745f6b6579".to_string(), // hex encoded "test_key"
+            node_account_id: Some(AccountId::new(0, 0, 10).to_protobuf()),
+            node_cert_hash: vec![1, 2, 3, 4],
+            service_endpoint: vec![
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![],
+                    port: 50211,
+                    domain_name: "localhost".to_string(),
+                },
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![127, 0, 0, 1],
+                    port: 50211,
+                    domain_name: String::new(),
+                },
+            ],
+            description: "Test node with localhost".to_string(),
+            ..Default::default()
+        };
+
+        let node_address = NodeAddress::from_protobuf(pb).unwrap();
+        assert_eq!(node_address.service_endpoints, vec!["localhost:50211", "127.0.0.1:50211"]);
+    }
+
+    #[test]
+    fn test_node_address_with_kubernetes_style_domain() {
+        let pb = services::NodeAddress {
+            node_id: 11,
+            rsa_pub_key: "746573745f6b6579".to_string(), // hex encoded "test_key"
+            node_account_id: Some(AccountId::new(0, 0, 11).to_protobuf()),
+            node_cert_hash: vec![1, 2, 3, 4],
+            service_endpoint: vec![services::ServiceEndpoint {
+                ip_address_v4: vec![],
+                port: 50211,
+                domain_name: "network-node1-svc.solo-e2e.svc.cluster.local".to_string(),
+            }],
+            description: "Test node with k8s domain".to_string(),
+            ..Default::default()
+        };
+
+        let node_address = NodeAddress::from_protobuf(pb).unwrap();
+        assert_eq!(
+            node_address.service_endpoints,
+            vec!["network-node1-svc.solo-e2e.svc.cluster.local:50211"]
+        );
+    }
+
+    #[test]
+    fn test_node_address_with_different_ports() {
+        let pb = services::NodeAddress {
+            node_id: 12,
+            rsa_pub_key: "746573745f6b6579".to_string(), // hex encoded "test_key"
+            node_account_id: Some(AccountId::new(0, 0, 12).to_protobuf()),
+            node_cert_hash: vec![1, 2, 3, 4],
+            service_endpoint: vec![
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![192, 168, 1, 1],
+                    port: 50211,
+                    domain_name: String::new(),
+                },
+                services::ServiceEndpoint {
+                    ip_address_v4: vec![10, 0, 0, 1],
+                    port: 50212,
+                    domain_name: String::new(),
+                },
+            ],
+            description: "Test node with different ports".to_string(),
+            ..Default::default()
+        };
+
+        let node_address = NodeAddress::from_protobuf(pb).unwrap();
+        assert_eq!(node_address.service_endpoints, vec!["192.168.1.1:50211", "10.0.0.1:50212"]);
     }
 }

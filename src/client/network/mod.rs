@@ -556,3 +556,160 @@ impl NodeConnection {
         channel
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        NodeAddress,
+        NodeAddressBook,
+    };
+
+    #[test]
+    fn test_network_with_string_endpoints() {
+        let node_address = NodeAddress {
+            node_id: 1,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 1),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+                "localhost:50211".to_string(),
+            ],
+            description: "Test node".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        // Test that the network properly filters endpoints with PLAINTEXT_PORT
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 3);
+        assert!(addresses.contains_key("192.168.1.1:50211"));
+        assert!(addresses.contains_key("example.com:50211"));
+        assert!(addresses.contains_key("localhost:50211"));
+    }
+
+    #[test]
+    fn test_network_filters_by_port() {
+        let node_address = NodeAddress {
+            node_id: 2,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 2),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(), // Should be included
+                "192.168.1.1:50212".to_string(), // Should be filtered out
+                "example.com:50211".to_string(), // Should be included
+                "example.com:50213".to_string(), // Should be filtered out
+            ],
+            description: "Test node with different ports".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 2);
+        assert!(addresses.contains_key("192.168.1.1:50211"));
+        assert!(addresses.contains_key("example.com:50211"));
+        assert!(!addresses.contains_key("192.168.1.1:50212"));
+        assert!(!addresses.contains_key("example.com:50213"));
+    }
+
+    #[test]
+    fn test_network_with_kubernetes_domain() {
+        let node_address = NodeAddress {
+            node_id: 3,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 3),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "network-node1-svc.solo-e2e.svc.cluster.local:50211".to_string()
+            ],
+            description: "Test node with k8s domain".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 1);
+        assert!(addresses.contains_key("network-node1-svc.solo-e2e.svc.cluster.local:50211"));
+    }
+
+    #[test]
+    fn test_network_with_mixed_ip_and_domain() {
+        let node_address = NodeAddress {
+            node_id: 4,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 4),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "10.0.0.1:50211".to_string(),
+                "example.com:50211".to_string(),
+                "localhost:50211".to_string(),
+            ],
+            description: "Test node with mixed endpoints".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 4);
+        assert!(addresses.contains_key("192.168.1.1:50211"));
+        assert!(addresses.contains_key("10.0.0.1:50211"));
+        assert!(addresses.contains_key("example.com:50211"));
+        assert!(addresses.contains_key("localhost:50211"));
+    }
+
+    #[test]
+    fn test_node_connection_with_string_addresses() {
+        let connection = NodeConnection {
+            addresses: BTreeSet::from([
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+            ]),
+            channel: OnceCell::new(),
+        };
+
+        assert_eq!(connection.addresses.len(), 2);
+        assert!(connection.addresses.contains("192.168.1.1:50211"));
+        assert!(connection.addresses.contains("example.com:50211"));
+    }
+
+    #[test]
+    fn test_network_data_with_address_book() {
+        let node_address = NodeAddress {
+            node_id: 5,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 5),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+            ],
+            description: "Test node".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network_data = NetworkData::with_address_book(&NetworkData::default(), &address_book);
+
+        assert_eq!(network_data.node_ids.len(), 1);
+        assert_eq!(network_data.node_ids[0], AccountId::new(0, 0, 5));
+        assert_eq!(network_data.connections.len(), 1);
+        assert_eq!(network_data.connections[0].addresses.len(), 2);
+    }
+}
