@@ -385,6 +385,12 @@ jobs:
             echo "::endgroup::"
           fi
 
+      - name: Stop the local node (hiero-sdk-proto)
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            npx @hashgraph/hedera-local stop
+          fi
+
       - name: Publish proto to crates.io (hiero-sdk-proto)
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' }}
         env:
@@ -395,12 +401,6 @@ jobs:
           fi
         working-directory: protobufs
 
-      - name: Stop the local node (hiero-sdk-proto)
-        run: |
-          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
-            npx @hashgraph/hedera-local stop
-          fi
-
       - name: Start the local node (hiero-sdk)
         run: |
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
@@ -410,9 +410,6 @@ jobs:
       # TODO: Remove this step once the hiero-sdk-proto is published
       - name: Set up Cargo files for SDK Dual publish
         if: ${{ !cancelled() && always() }}
-        env:
-          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
-          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
         run: |
           files=("Cargo.toml" "tck/Cargo.toml" "Cargo.lock" "tck/Cargo.lock")
           
