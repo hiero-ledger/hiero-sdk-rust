@@ -234,8 +234,13 @@ jobs:
         run: |
           echo "::group::Run Safety Checks"
           cargo check
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
           cargo test --workspace
           echo "::endgroup::"
+
+      - name: Stop the local node
+        run: npx @hashgraph/hedera-local stop
 
   publish:
     name: Publish SDK to crates.io
@@ -275,7 +280,7 @@ jobs:
           node-version: 22
 
       - name: Start the local node
-        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.63.7
+        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
 
       - name: Create env file
         run: |
@@ -368,6 +373,8 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            . $HOME/.cargo/env
             cargo test --workspace
             cargo generate-lockfile
             echo "::endgroup::"
@@ -421,10 +428,15 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            . $HOME/.cargo/env
             cargo test --workspace
             cargo generate-lockfile
             echo "::endgroup::"
           fi
+
+      - name: Stop the local node
+        run: npx @hashgraph/hedera-local stop
 
       - name: Publish SDK to crates.io (hiero-sdk)
         env:
