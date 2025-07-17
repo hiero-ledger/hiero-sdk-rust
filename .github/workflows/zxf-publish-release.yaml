@@ -287,11 +287,13 @@ jobs:
 
       - name: Create env file
         run: |
-          touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-          echo TEST_OPERATOR_ID="0.0.1022" >> .env
-          echo TEST_NETWORK_NAME="localhost" >> .env
-          echo TEST_RUN_NONFREE="1" >> .env
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            touch .env
+            echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
+            echo TEST_OPERATOR_ID="0.0.1022" >> .env
+            echo TEST_NETWORK_NAME="localhost" >> .env
+            echo TEST_RUN_NONFREE="1" >> .env
+          fi
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
