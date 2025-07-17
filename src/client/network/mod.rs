@@ -3,15 +3,11 @@
 pub(super) mod managed;
 pub(super) mod mirror;
 
-use std::borrow::Cow;
 use std::collections::{
     BTreeSet,
     HashMap,
 };
-use std::fmt;
-use std::net::Ipv4Addr;
 use std::num::NonZeroUsize;
-use std::str::FromStr;
 use std::time::{
     Duration,
     Instant,
@@ -207,8 +203,16 @@ impl NetworkData {
             let new: BTreeSet<_> = address
                 .service_endpoints
                 .iter()
-                .filter(|it| it.port() == NodeConnection::PLAINTEXT_PORT)
-                .map(|it| (*it.ip()).into())
+                .filter(|endpoint_str| {
+                    // Check if port matches PLAINTEXT_PORT
+                    if let Some(port_str) = endpoint_str.split(':').nth(1) {
+                        if let Ok(port) = port_str.parse::<i32>() {
+                            return port == NodeConnection::PLAINTEXT_PORT as i32;
+                        }
+                    }
+                    false
+                })
+                .cloned()
                 .collect();
 
             // if the node is the exact same we want to reuse everything (namely the connections and `healthy`).
@@ -256,18 +260,16 @@ impl NetworkData {
         for (address, node) in addresses {
             let next_index = node_ids.len();
 
-            let address = address.parse()?;
-
             match map.entry(*node) {
                 Entry::Occupied(entry) => {
-                    connections[*entry.get()].addresses.insert(address);
+                    connections[*entry.get()].addresses.insert(address.clone());
                 }
                 Entry::Vacant(entry) => {
                     entry.insert(next_index);
                     node_ids.push(*node);
                     // fixme: keep the channel around more.
                     connections.push(NodeConnection {
-                        addresses: BTreeSet::from([address]),
+                        addresses: BTreeSet::from([address.clone()]),
                         channel: OnceCell::new(),
                     });
 
@@ -395,7 +397,7 @@ impl NetworkData {
         self.map
             .iter()
             .flat_map(|(&account, &index)| {
-                self.connections[index].addresses.iter().map(move |it| (it.to_string(), account))
+                self.connections[index].addresses.iter().map(move |it| (it.clone(), account))
             })
             .collect()
     }
@@ -514,46 +516,9 @@ impl NodeHealth {
     }
 }
 
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
-struct HostAndPort {
-    host: Cow<'static, str>,
-    port: u16,
-}
-
-impl HostAndPort {
-    const fn from_static(host: &'static str) -> Self {
-        Self { host: Cow::Borrowed(host), port: NodeConnection::PLAINTEXT_PORT }
-    }
-}
-
-impl FromStr for HostAndPort {
-    type Err = crate::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (host, port) = s.split_once(':').ok_or_else(|| Error::basic_parse("Invalid uri"))?;
-
-        Ok(Self {
-            host: Cow::Owned(host.to_owned()),
-            port: port.parse().map_err(Error::basic_parse)?,
-        })
-    }
-}
-
-impl fmt::Display for HostAndPort {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", self.host, self.port)
-    }
-}
-
-impl From<Ipv4Addr> for HostAndPort {
-    fn from(value: Ipv4Addr) -> Self {
-        Self { host: Cow::Owned(value.to_string()), port: NodeConnection::PLAINTEXT_PORT }
-    }
-}
-
 #[derive(Clone)]
 struct NodeConnection {
-    addresses: BTreeSet<HostAndPort>,
+    addresses: BTreeSet<String>,
     channel: OnceCell<Channel>,
 }
 
@@ -562,7 +527,11 @@ impl NodeConnection {
 
     fn new_static(addresses: &[&'static str]) -> NodeConnection {
         Self {
-            addresses: addresses.iter().copied().map(HostAndPort::from_static).collect(),
+            addresses: addresses
+                .iter()
+                .copied()
+                .map(|addr| format!("{}:{}", addr, Self::PLAINTEXT_PORT))
+                .collect(),
             channel: OnceCell::default(),
         }
     }
@@ -585,5 +554,162 @@ impl NodeConnection {
             .clone();
 
         channel
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        NodeAddress,
+        NodeAddressBook,
+    };
+
+    #[test]
+    fn test_network_with_string_endpoints() {
+        let node_address = NodeAddress {
+            node_id: 1,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 1),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+                "localhost:50211".to_string(),
+            ],
+            description: "Test node".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        // Test that the network properly filters endpoints with PLAINTEXT_PORT
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 3);
+        assert!(addresses.contains_key("192.168.1.1:50211"));
+        assert!(addresses.contains_key("example.com:50211"));
+        assert!(addresses.contains_key("localhost:50211"));
+    }
+
+    #[test]
+    fn test_network_filters_by_port() {
+        let node_address = NodeAddress {
+            node_id: 2,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 2),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(), // Should be included
+                "192.168.1.1:50212".to_string(), // Should be filtered out
+                "example.com:50211".to_string(), // Should be included
+                "example.com:50213".to_string(), // Should be filtered out
+            ],
+            description: "Test node with different ports".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 2);
+        assert!(addresses.contains_key("192.168.1.1:50211"));
+        assert!(addresses.contains_key("example.com:50211"));
+        assert!(!addresses.contains_key("192.168.1.1:50212"));
+        assert!(!addresses.contains_key("example.com:50213"));
+    }
+
+    #[test]
+    fn test_network_with_kubernetes_domain() {
+        let node_address = NodeAddress {
+            node_id: 3,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 3),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "network-node1-svc.solo-e2e.svc.cluster.local:50211".to_string()
+            ],
+            description: "Test node with k8s domain".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 1);
+        assert!(addresses.contains_key("network-node1-svc.solo-e2e.svc.cluster.local:50211"));
+    }
+
+    #[test]
+    fn test_network_with_mixed_ip_and_domain() {
+        let node_address = NodeAddress {
+            node_id: 4,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 4),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "10.0.0.1:50211".to_string(),
+                "example.com:50211".to_string(),
+                "localhost:50211".to_string(),
+            ],
+            description: "Test node with mixed endpoints".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network = Network::default();
+        network.update_from_address_book(&address_book);
+
+        let addresses = network.0.load().addresses();
+        assert_eq!(addresses.len(), 4);
+        assert!(addresses.contains_key("192.168.1.1:50211"));
+        assert!(addresses.contains_key("10.0.0.1:50211"));
+        assert!(addresses.contains_key("example.com:50211"));
+        assert!(addresses.contains_key("localhost:50211"));
+    }
+
+    #[test]
+    fn test_node_connection_with_string_addresses() {
+        let connection = NodeConnection {
+            addresses: BTreeSet::from([
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+            ]),
+            channel: OnceCell::new(),
+        };
+
+        assert_eq!(connection.addresses.len(), 2);
+        assert!(connection.addresses.contains("192.168.1.1:50211"));
+        assert!(connection.addresses.contains("example.com:50211"));
+    }
+
+    #[test]
+    fn test_network_data_with_address_book() {
+        let node_address = NodeAddress {
+            node_id: 5,
+            rsa_public_key: vec![1, 2, 3, 4],
+            node_account_id: AccountId::new(0, 0, 5),
+            tls_certificate_hash: vec![5, 6, 7, 8],
+            service_endpoints: vec![
+                "192.168.1.1:50211".to_string(),
+                "example.com:50211".to_string(),
+            ],
+            description: "Test node".to_string(),
+        };
+
+        let address_book = NodeAddressBook { node_addresses: vec![node_address] };
+
+        let network_data = NetworkData::with_address_book(&NetworkData::default(), &address_book);
+
+        assert_eq!(network_data.node_ids.len(), 1);
+        assert_eq!(network_data.node_ids[0], AccountId::new(0, 0, 5));
+        assert_eq!(network_data.connections.len(), 1);
+        assert_eq!(network_data.connections[0].addresses.len(), 2);
     }
 }
