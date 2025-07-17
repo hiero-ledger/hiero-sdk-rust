@@ -317,7 +317,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Start the local node (hiero-sdk-proto)
+      - name: Start the local node
         run: |
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
             npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
@@ -385,12 +385,6 @@ jobs:
             echo "::endgroup::"
           fi
 
-      - name: Stop the local node (hiero-sdk-proto)
-        run: |
-          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
-            npx @hashgraph/hedera-local stop
-          fi
-
       - name: Publish proto to crates.io (hiero-sdk-proto)
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' }}
         env:
@@ -400,12 +394,6 @@ jobs:
             cargo publish ${{ steps.proto-publish-args.outputs.args }}
           fi
         working-directory: protobufs
-
-      - name: Start the local node (hiero-sdk)
-        run: |
-          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
-            npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
-          fi
 
       # TODO: Remove this step once the hiero-sdk-proto is published
       - name: Set up Cargo files for SDK Dual publish
@@ -449,7 +437,7 @@ jobs:
             echo "::endgroup::"
           fi
 
-      - name: Stop the local node (hiero-sdk)
+      - name: Stop the local node
         run: |
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
             npx @hashgraph/hedera-local stop
