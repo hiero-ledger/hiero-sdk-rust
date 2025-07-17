@@ -214,14 +214,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
 
+      - name: Prepare Hiero Solo
+        id: solo
+        uses: hiero-ledger/hiero-solo-action@a39acf8cfbaa2feb195a86530d0ab643a45aa541 # v0.10
+        with:
+          installMirrorNode: true
+          hieroVersion: v0.63.7
+
+      - name: Set Operator Account
+        run: |
+          touch .env
+          echo "TEST_OPERATOR_KEY=${{ steps.solo.outputs.ed25519PrivateKey }}" >> .env
+          echo "TEST_OPERATOR_ID=${{ steps.solo.outputs.ed25519AccountId }}" >> .env
+          echo "TEST_NETWORK_NAME=local-node" >> .env
+          echo "TEST_RUN_NONFREE=1" >> .env
+
       - name: Run Safety Checks
-        env:
-          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
-          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
         run: |
           echo "::group::Run Safety Checks"
           cargo check
-          cargo test
+          cargo test --workspace
           echo "::endgroup::"
 
   publish:
@@ -255,6 +267,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
           cargo install toml-cli
+
+      - name: Prepare Hiero Solo
+        id: solo
+        uses: hiero-ledger/hiero-solo-action@a39acf8cfbaa2feb195a86530d0ab643a45aa541 # v0.10
+        with:
+          installMirrorNode: true
+          hieroVersion: v0.63.7
+
+      - name: Set Operator Account
+        run: |
+          touch .env
+          echo "TEST_OPERATOR_KEY=${{ steps.solo.outputs.ed25519PrivateKey }}" >> .env
+          echo "TEST_OPERATOR_ID=${{ steps.solo.outputs.ed25519AccountId }}" >> .env
+          echo "TEST_NETWORK_NAME=local-node" >> .env
+          echo "TEST_RUN_NONFREE=1" >> .env
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
@@ -339,7 +366,7 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
-            cargo test
+            cargo test --workspace
             cargo generate-lockfile
             echo "::endgroup::"
           fi
@@ -392,7 +419,7 @@ jobs:
             
             echo "::group::Verify Cargo.toml changes"
             cargo check
-            cargo test
+            cargo test --workspace
             cargo generate-lockfile
             echo "::endgroup::"
           fi
