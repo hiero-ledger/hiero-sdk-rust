@@ -89,15 +89,16 @@ impl MirrorNetworkData {
                 let uri = format!("{protocol}://{endpoint}");
                 let uri_parsed = Uri::from_maybe_shared(uri).unwrap();
 
+                let endpoint = Endpoint::from_shared(uri_parsed.to_string())
+                    .unwrap()
+                    .connect_timeout(Duration::from_secs(10))
+                    .keep_alive_timeout(Duration::from_secs(10))
+                    .keep_alive_while_idle(true)
+                    .tcp_keepalive(Some(Duration::from_secs(10)));
+
                 if is_localhost {
                     // Use HTTP for localhost
-                    Endpoint::from_shared(uri_parsed.to_string())
-                        .unwrap()
-                        .connect_timeout(Duration::from_secs(10))
-                        .keep_alive_timeout(Duration::from_secs(10))
-                        .keep_alive_while_idle(true)
-                        .tcp_keepalive(Some(Duration::from_secs(10)))
-                        .connect_lazy()
+                    endpoint.connect_lazy()
                 } else {
                     // Configure OpenSSL for HTTPS
                     let mut ssl_builder = SslConnector::builder(SslMethod::tls()).unwrap();
@@ -109,13 +110,7 @@ impl MirrorNetworkData {
                     http.enforce_http(false);
                     let https = HttpsConnector::with_connector(http, ssl_builder).unwrap();
 
-                    Endpoint::from_shared(uri_parsed.to_string())
-                        .unwrap()
-                        .connect_timeout(Duration::from_secs(10))
-                        .keep_alive_timeout(Duration::from_secs(10))
-                        .keep_alive_while_idle(true)
-                        .tcp_keepalive(Some(Duration::from_secs(10)))
-                        .connect_with_connector_lazy(https)
+                    endpoint.connect_with_connector_lazy(https)
                 }
             })
             .clone()
