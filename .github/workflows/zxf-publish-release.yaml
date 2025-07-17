@@ -274,27 +274,6 @@ jobs:
           sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
           cargo install toml-cli
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-
-      - name: Start the local node
-        run: |
-          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
-            npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
-          fi
-
-      - name: Create env file
-        run: |
-          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
-            touch .env
-            echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-            echo TEST_OPERATOR_ID="0.0.1022" >> .env
-            echo TEST_NETWORK_NAME="localhost" >> .env
-            echo TEST_RUN_NONFREE="1" >> .env
-          fi
-
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' }}
@@ -317,7 +296,7 @@ jobs:
           
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
 
-      # Publish the hiero-sdk-proto package
+      # Publish the hedera-proto package
       - name: Publish Proto Subpackage to crates.io (hedera-proto)
         if: ${{ needs.validate-release.outputs.proto-publish-required == 'true'}}
         env:
@@ -326,12 +305,33 @@ jobs:
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
         working-directory: protobufs
 
-      # Publish the main SDK package
+      # Publish the main SDK package (hedera)
       - name: Publish SDK to crates.io (hedera)
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
         run: |
           cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Start the local node (hiero-sdk-proto)
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+          fi
+
+      - name: Create env file
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            touch .env
+            echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
+            echo TEST_OPERATOR_ID="0.0.1022" >> .env
+            echo TEST_NETWORK_NAME="localhost" >> .env
+            echo TEST_RUN_NONFREE="1" >> .env
+          fi
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
@@ -395,6 +395,18 @@ jobs:
           fi
         working-directory: protobufs
 
+      - name: Stop the local node (hiero-sdk-proto)
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            npx @hashgraph/hedera-local stop
+          fi
+
+      - name: Start the local node (hiero-sdk)
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+          fi
+
       # TODO: Remove this step once the hiero-sdk-proto is published
       - name: Set up Cargo files for SDK Dual publish
         if: ${{ !cancelled() && always() }}
@@ -440,7 +452,7 @@ jobs:
             echo "::endgroup::"
           fi
 
-      - name: Stop the local node
+      - name: Stop the local node (hiero-sdk)
         run: |
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
             npx @hashgraph/hedera-local stop
