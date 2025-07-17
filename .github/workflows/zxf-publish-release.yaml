@@ -395,18 +395,45 @@ jobs:
           fi
         working-directory: protobufs
 
-      # TODO: Remove this step once the hiero-sdk-proto is published
+      # TODO<BEGIN>: Remove this group of steps after the hiero-sdk-proto package is published
+      - name: Stop the local node (hiero-sdk-proto)
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            npx @hashgraph/hedera-local stop
+          fi
+
+      - name: Reset the workspace
+        if: ${{ !cancelled() && always() }}
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            echo "::group::Reset Workspace"
+            git reset --hard
+            git clean -fdx
+            echo "::endgroup::"
+          fi
+
+      - name: Start the local node (hiero-sdk)
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+          fi
+
+      - name: Create env file (hiero-sdk)
+        run: |
+          if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
+            touch .env
+            echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
+            echo TEST_OPERATOR_ID="0.0.1022" >> .env
+            echo TEST_NETWORK_NAME="localhost" >> .env
+            echo TEST_RUN_NONFREE="1" >> .env
+          fi
+
       - name: Set up Cargo files for SDK Dual publish
         if: ${{ !cancelled() && always() }}
         run: |
           files=("Cargo.toml" "tck/Cargo.toml" "Cargo.lock" "tck/Cargo.lock")
           
           if [[ "${DUAL_PUBLISH_ENABLED}" == "true" ]]; then
-            echo "::group::Reset Workspace"
-            git reset --hard
-            git clean -fdx
-            echo "::endgroup::"
-  
             echo "::group::Back up Cargo files"
             for file in "${files[@]}"; do
               if [[ -f "${file}" ]]; then
@@ -436,6 +463,7 @@ jobs:
             cargo generate-lockfile
             echo "::endgroup::"
           fi
+      # TODO<END>: Remove this group of steps after the hiero-sdk-proto package is published
 
       - name: Stop the local node
         run: |
