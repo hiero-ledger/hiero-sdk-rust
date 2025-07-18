@@ -3,7 +3,7 @@ edition = "2021"
 license = "Apache-2.0"
 name = "hedera-proto"
 description = "Protobufs for the Hedera™ Hashgraph SDK"
-repository = "https://github.com/hashgraph/hedera-sdk-rust"
+repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
 version = "0.17.0"
 
 [features]
