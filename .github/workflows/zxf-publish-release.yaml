@@ -308,7 +308,8 @@ jobs:
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
-        if: ${{ needs.validate-release.outputs.proto-publish-required == 'true' }}
+        if: ${{ needs.validate-release.outputs.hedera-proto-publish-required == 'true' || 
+              needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
@@ -317,6 +318,8 @@ jobs:
         working-directory: protobufs
 
       - name: Calculate SDK Publish Arguments
+        if: ${{ needs.validate-release.outputs.hedera-publish-required == 'true' ||
+                needs.validate-release.outputs.hiero-publish-required == 'true' }}
         id: sdk-publish-args
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
@@ -400,7 +403,9 @@ jobs:
         if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
-        run: cargo publish ${{ steps.proto-publish-args.outputs.args }}
+        run: | 
+          echo "cargo publish ${{ steps.proto-publish-args.outputs.args }}"
+          cargo publish ${{ steps.proto-publish-args.outputs.args }}
         working-directory: protobufs
 
       # TODO<BEGIN>: Remove this group of steps after the hiero-sdk-proto package is published
