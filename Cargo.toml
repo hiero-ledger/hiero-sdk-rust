@@ -7,7 +7,7 @@ edition = "2021"
 license = "Apache-2.0"
 name = "hedera"
 readme = "README.md"
-repository = "https://github.com/hashgraph/hedera-sdk-rust"
+repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
 version = "0.36.0"
 
 [lib]
@@ -27,10 +27,7 @@ fraction = { version = "0.15.1", default-features = false }
 futures-core = "0.3.31"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.11"
-hedera-proto = { path = "./protobufs", version = "0.17.0", features = [
-  "time_0_3",
-  "fraction",
-] }
+hedera-proto = { path = "./protobufs", version = "0.17.0", features = ["time_0_3", "fraction"] }
 hex = "0.4.3"
 hmac = "0.12.1"
 # Dependency of tonic 0.12
@@ -65,7 +62,6 @@ tower = { version = "0.5.2", features = ["util"] }
 openssl = "0.10.72"
 hyper-util = "0.1.15"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
-
 
 [dependencies.futures-util]
 version = "0.3.31"

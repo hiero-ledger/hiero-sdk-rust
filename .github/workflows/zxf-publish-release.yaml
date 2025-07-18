@@ -1,0 +1,490 @@
+name: "Publish Release"
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing Tag to Publish (eg: v3.7.0)"
+        type: string
+        required: true
+      dry-run-enabled:
+        description: "Dry Run Enabled"
+        type: boolean
+        required: false
+        default: false
+      dual-publish-enabled:
+        # default to true when dual-publishing period is active
+        description: "Dual Publish Enabled"
+        type: boolean
+        required: false
+        default: false
+  push:
+    tags:
+      - "v*.*.*"
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: write
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: hiero-client-sdk-linux-medium
+    env:
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'false' }}
+    outputs:
+      # Project tag
+      tag: ${{ steps.sdk-tag.outputs.name }}
+
+      # main package
+      sdk-version: ${{ steps.sdk-tag.outputs.version }}
+      sdk-prerelease: ${{ steps.sdk-tag.outputs.prerelease }}
+      sdk-type: ${{ steps.sdk-tag.outputs.type }}
+      hedera-publish-required: ${{ steps.hedera-sdk-required.outputs.hedera-publish-required }}
+      hiero-publish-required: ${{ steps.hiero-sdk-required.outputs.hiero-publish-required }}
+
+      # proto subpackage
+      proto-version: ${{ steps.cargo-versions.outputs.sdk-proto-version }}
+      proto-prerelease: ${{ steps.proto-tag.outputs.prerelease }}
+      proto-type: ${{ steps.proto-tag.outputs.type }}
+      hedera-proto-publish-required: ${{ steps.hedera-proto-required.outputs.hedera-proto-publish-required }}
+      hiero-proto-publish-required: ${{ steps.hiero-sdk-proto-required.outputs.hiero-proto-publish-required }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.tag || '' }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Semantic Version Tools
+        run: |
+          echo "::group::Download SemVer Binary"
+          sudo curl -L -o /usr/local/bin/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
+          echo "::endgroup::"
+          echo "::group::Change SemVer Binary Permissions"
+          sudo chmod -v +x /usr/local/bin/semver
+          echo "::endgroup::"
+          echo "::group::Show SemVer Binary Version Info"
+          semver --version
+          echo "::endgroup::"
+            
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        with:
+          toolchain: 1.88.0
+
+      - name: Install components
+        run: |
+          cargo install toml-cli
+
+      - name: Extract Cargo.toml Versions
+        id: cargo-versions
+        run: |
+          SDK_PACKAGE_VERSION="$(toml get Cargo.toml package.version --raw)"
+          SDK_PROTO_VERSION="$(toml get protobufs/Cargo.toml package.version --raw)"
+          
+          echo "sdk-version=${SDK_PACKAGE_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "sdk-proto-version=${SDK_PROTO_VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Hedera Proto Subpackage Publish Required
+        id: hedera-proto-required
+        run: |
+          HEDERA_PROTO_PUBLISH_REQUIRED="false"
+          if ! curl -sSLf "https://crates.io/api/v1/crates/hedera-proto/${{ steps.cargo-versions.outputs.sdk-proto-version }}" >/dev/null 2>&1; then
+            HEDERA_PROTO_PUBLISH_REQUIRED="true"
+          fi
+          echo "hedera-proto-publish-required=${HEDERA_PROTO_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
+
+      - name: Hiero SDK Proto Subpackage Publish Required
+        id: hiero-sdk-proto-required
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
+        run: |
+          HIERO_SDK_PROTO_PUBLISH_REQUIRED="false"
+          if ! curl -sSLf "https://crates.io/api/v1/crates/hiero-sdk-proto/${{ steps.cargo-versions.outputs.sdk-proto-version }}" >/dev/null 2>&1; then
+            HIERO_SDK_PROTO_PUBLISH_REQUIRED="true"
+          fi
+          echo "hiero-proto-publish-required=${HIERO_SDK_PROTO_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
+
+      - name: Hedera SDK Publish Required
+        id: hedera-sdk-required
+        run: |
+          HEDERA_SDK_PUBLISH_REQUIRED="false"
+          if ! curl -sSLf "https://crates.io/api/v1/crates/hedera/${{ steps.cargo-versions.outputs.sdk-version }}" >/dev/null 2>&1; then
+            HEDERA_SDK_PUBLISH_REQUIRED="true"
+          fi
+          echo "hedera-publish-required=${HEDERA_SDK_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
+
+      - name: Hiero SDK Publish Required
+        id: hiero-sdk-required
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
+        run: |
+          HIERO_SDK_PUBLISH_REQUIRED="false"
+          if ! curl -sSLf "https://crates.io/api/v1/crates/hiero-sdk/${{ steps.cargo-versions.outputs.sdk-version }}" >/dev/null 2>&1; then
+            HIERO_SDK_PUBLISH_REQUIRED="true"
+          fi
+          echo "hiero-publish-required=${HIERO_SDK_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
+
+      - name: Extract SDK Tag Information
+        id: sdk-tag
+        env:
+          REF_NAME: ${{ inputs.tag || steps.cargo-versions.outputs.sdk-version }}
+        run: |
+          IS_VALID_SEMVER="$(semver validate "${REF_NAME}")"
+          if [[ "${IS_VALID_SEMVER}" != "valid" ]]; then
+            echo "::error title=Invalid Tag::The tag '${REF_NAME}' is not a valid SemVer tag."
+            exit 1
+          fi
+
+          RELEASE_VERSION="$(semver get release "${REF_NAME}")"
+          PREREL_VERSION="$(semver get prerel "${REF_NAME}")"
+          PREREL_VERSION_LC="$(printf "%s" "${PREREL_VERSION}" | tr '[:upper:]' '[:lower:]')"
+
+          IS_PRERELEASE="false"
+          [[ -n "${PREREL_VERSION}" ]] && IS_PRERELEASE="true"
+          PREREL_TYPE="unknown"
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            if [[ "${PREREL_VERSION_LC}" =~ "beta" ]]; then
+              PREREL_TYPE="beta"
+            else
+              PREREL_TYPE="unknown"
+            fi
+          else
+            PREREL_TYPE="production"
+          fi
+
+          FINAL_VERSION="${RELEASE_VERSION}"
+          [[ -n "${PREREL_VERSION}" ]] && FINAL_VERSION="${RELEASE_VERSION}-${PREREL_VERSION}"
+
+          TAG_NAME="v${FINAL_VERSION}"
+          
+          echo "name=${TAG_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "version=${FINAL_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "prerelease=${IS_PRERELEASE}" >> "${GITHUB_OUTPUT}"
+          echo "type=${PREREL_TYPE}" >> "${GITHUB_OUTPUT}"
+          
+          echo "## Release Information" >> "${GITHUB_STEP_SUMMARY}"
+          echo "SDK_VERSION=${FINAL_VERSION}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Extract Proto Subpackage Information
+        id: proto-tag
+        run: |
+          IS_VALID_SEMVER="$(semver validate "${{ steps.cargo-versions.outputs.sdk-proto-version }}")"
+          
+          if [[ "${IS_VALID_SEMVER}" != "valid" ]]; then
+            echo "::error title=Invalid Proto Tag::The proto version '${{ steps.cargo-versions.outputs.sdk-proto-version }}' is not a valid SemVer tag."
+            exit 1
+          fi
+          
+          PREREL_VERSION="$(semver get prerel '${{ steps.cargo-versions.outputs.sdk-proto-version }}')"
+          PREREL_VERSION_LC="$(printf "%s" "${PREREL_VERSION}" | tr '[:upper:]' '[:lower:]')"
+          
+          IS_PRERELEASE="false"
+          [[ -n "${PREREL_VERSION}" ]] && IS_PRERELEASE="true"
+          
+          PREREL_TYPE="unknown"
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            if [[ "${PREREL_VERSION_LC}" =~ "beta" ]]; then
+              PREREL_TYPE="beta"
+            else
+              PREREL_TYPE="unknown"
+            fi
+          else
+            PREREL_TYPE="production"
+          fi
+
+          echo "prerelease=${IS_PRERELEASE}" >>"${GITHUB_OUTPUT}"
+          echo "type=${PREREL_TYPE}" >>"${GITHUB_OUTPUT}"
+          
+          echo "## Proto Subpackage Release Information" >> "${GITHUB_STEP_SUMMARY}"
+          echo "SDK_PROTO_VERSION=${{ steps.cargo-versions.outputs.sdk-proto-version }}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Validate Tag and Cargo.toml Versions
+        run: |
+          COMPARISON_RESULT="$(semver compare "${{ steps.cargo-versions.outputs.sdk-version }}" "${{ steps.sdk-tag.outputs.version }}")"
+          if [[ "${COMPARISON_RESULT}" -ne 0 ]]; then
+            echo "::error title=Version Mismatch::The Cargo.toml version '${{ steps.cargo-versions.outputs.sdk-version }}' does not match the tag version '${{ steps.sdk-tag.outputs.version }}'."
+            exit 1
+          fi
+          
+          if [[ "${{ steps.sdk-tag.outputs.type }}" != "production" && "${{ steps.sdk-tag.outputs.type }}" != "beta" ]]; then
+            echo "::error title=Invalid Prerelease Type::The prerelease type '${{ steps.sdk-tag.outputs.type }}' is not valid. Expected 'production' or 'beta'."
+            exit 1
+          fi
+
+  run-safety-checks:
+    name: Safety Checks
+    runs-on: hiero-client-sdk-linux-medium
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.tag || '' }}
+          submodules: recursive
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        with:
+          toolchain: 1.88.0
+
+      - name: Install components
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Start the local node
+        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+
+      - name: Create env file
+        run: |
+          touch .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
+          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_NETWORK_NAME="localhost" >> .env
+          echo TEST_RUN_NONFREE="1" >> .env
+
+      - name: Run Safety Checks
+        run: |
+          echo "::group::Run Safety Checks"
+          cargo check
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
+          cargo test --workspace
+          echo "::endgroup::"
+
+      - name: Stop the local node
+        run: npx @hashgraph/hedera-local stop
+
+  publish:
+    name: Publish SDK to crates.io
+    needs:
+      - validate-release
+      - run-safety-checks
+    runs-on: hiero-client-sdk-linux-medium
+    env:
+      # Set the default to 'true' when the dual-publishing period is active
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'false' }}
+      DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled || 'false' }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.tag || '' }}
+          submodules: recursive
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        with:
+          toolchain: 1.88.0
+
+      - name: Install components
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
+          cargo install toml-cli
+
+      - name: Calculate Proto Subpackage Publish Arguments
+        id: proto-publish-args
+        if: ${{ needs.validate-release.outputs.hedera-proto-publish-required == 'true' || 
+              needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
+        run: |
+          PUBLISH_ARGS="--locked --allow-dirty"
+          [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+          
+          echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
+        working-directory: protobufs
+
+      - name: Calculate SDK Publish Arguments
+        if: ${{ needs.validate-release.outputs.hedera-publish-required == 'true' ||
+                needs.validate-release.outputs.hiero-publish-required == 'true' }}
+        id: sdk-publish-args
+        run: |
+          PUBLISH_ARGS="--locked --allow-dirty"
+          [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+          
+          echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
+
+      # Publish the hedera-proto package
+      - name: Publish Proto Subpackage to crates.io (hedera-proto)
+        if: ${{ needs.validate-release.outputs.hedera-proto-publish-required == 'true'}}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
+        run: cargo publish ${{ steps.proto-publish-args.outputs.args }}
+        working-directory: protobufs
+
+      # Publish the main SDK package (hedera)
+      - name: Publish SDK to crates.io (hedera)
+        if: ${{ needs.validate-release.outputs.hedera-publish-required == 'true' }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
+        run: cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Start the local node
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
+        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+
+      - name: Create env file
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
+        run: |
+          touch .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
+          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_NETWORK_NAME="localhost" >> .env
+          echo TEST_RUN_NONFREE="1" >> .env
+
+      # Update the Cargo.toml files for the hiero-sdk-* packages
+      - name: Update Cargo.toml for hiero publishing
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
+        env:
+          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
+          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
+        run: |         
+          echo "::group::Update protobufs/Cargo.toml with new name"       
+          # Update the dependencies in the protobugs/Cargo.toml
+          toml set protobufs/Cargo.toml package.name "hiero-sdk-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
+          echo "::endgroup::"
+          
+          echo "::group::Update main Cargo.toml with new name and dependencies"
+          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          # Update the dependencies in the main Cargo.toml
+          sed -i "s/hedera-proto/hiero-sdk-proto/g" Cargo.toml
+
+          echo "::endgroup::"
+          
+          echo "::group::Update TCK Cargo.toml with new dependencies"
+          # Update the dependencies in the tck/Cargo.toml
+          sed -i "s/hedera/hiero-sdk/g" tck/Cargo.toml
+          echo "::endgroup::"
+          
+          echo "::group::Update files with new names"
+          find . -type f -name "*.rs" -exec sed -i "s/\bhedera_proto\b/hiero_sdk_proto/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
+          echo "::endgroup::"
+          
+          echo "::group::Verify Cargo.toml changes"
+          cargo check
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
+          cargo test --workspace
+          cargo generate-lockfile
+          echo "::endgroup::"
+
+      - name: Publish proto to crates.io (hiero-sdk-proto)
+        if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+        run: | 
+          echo "cargo publish ${{ steps.proto-publish-args.outputs.args }}"
+          cargo publish ${{ steps.proto-publish-args.outputs.args }}
+        working-directory: protobufs
+
+      # TODO<BEGIN>: Remove this group of steps after the hiero-sdk-proto package is published
+      - name: Stop the local node (hiero-sdk-proto)
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          npx @hashgraph/hedera-local stop
+
+      - name: Reset the workspace
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' && !cancelled() && always() }}
+        run: |
+          echo "::group::Reset Workspace"
+          git reset --hard
+          git clean -fdx
+          echo "::endgroup::"
+
+      - name: Start the local node (hiero-sdk)
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+
+      - name: Create env file (hiero-sdk)
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          touch .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
+          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_NETWORK_NAME="localhost" >> .env
+          echo TEST_RUN_NONFREE="1" >> .env
+
+      - name: Set up Cargo files for SDK Dual publish
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' && !cancelled() && always() }}
+        run: |
+          echo "::group::Update main Cargo.toml with new name and dependencies"
+          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          echo "::group::Update TCK Cargo.toml with new dependencies"
+          # Update the dependencies in the tck/Cargo.toml
+          sed -i "s/hedera =/hiero-sdk =/g" tck/Cargo.toml
+          echo "::endgroup::"
+          
+          echo "::group::Update files with new names"
+          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
+          echo "::endgroup::"
+          
+          echo "::group::Verify Cargo.toml changes"
+          cargo check
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
+          cargo test --workspace
+          cargo generate-lockfile
+          echo "::endgroup::"
+      # TODO<END>: Remove this group of steps after the hiero-sdk-proto package is published
+
+      - name: Stop the local node
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
+        run: npx @hashgraph/hedera-local stop
+
+      - name: Publish SDK to crates.io (hiero-sdk)
+        if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
+        run: cargo publish ${{ steps.sdk-publish-args.outputs.args }}
+
+      - name: Reset the workspace
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && !cancelled() && always() }}
+        run: |
+          echo "::group::Reset Workspace"
+          git reset --hard
+          git clean -fdx
+          echo "::endgroup::"
+
+      - name: Generate Github Release
+        uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
+        if: ${{ env.DRY_RUN_ENABLED != 'true' }}
+        with:
+          tag: ${{ needs.validate-release.outputs.tag }}
+          prerelease: ${{ needs.validate-release.outputs.prerelease == 'true' }}
+          draft: false
+          generateReleaseNotes: true
+          skipIfReleaseExists: true

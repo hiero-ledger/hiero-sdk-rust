@@ -6,7 +6,7 @@
 
 ## Release
 
-In the main directory, use the the following steps to publish to [hedera](https://crates.io/crates/hedera): 
+In the main directory, use the following steps to publish to [hedera](https://crates.io/crates/hedera): 
 
 1. Create a new git branch: `release/vX.Y.Z`.
 2. Run all tests against [hiero-local-node](https://github.com/hiero-ledger/hiero-local-node). Stop local-node once the tests are completed.
