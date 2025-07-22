@@ -170,7 +170,7 @@ match result {
 
 | Crate  | Status    | Description                                |
 | ------ | --------- | ------------------------------------------ |
-| hedera | ✅ Legacy | Still works, but will be deprecated soon   |
+| hedera | ⌛ Legacy | Still works, but will be deprecated soon   |
 | hiero  | ✅ Active | New name, actively maintained and improved |
 
 We are currently starting dual-publishing new versions to both crates, but this will change in a future releases where `hedera` will be marked as deprecated.
