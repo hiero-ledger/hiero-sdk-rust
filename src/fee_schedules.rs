@@ -795,6 +795,9 @@ pub enum FeeDataType {
     /// The resource prices are scoped to a [`TopicCreateTransaction`](crate::TopicCreateTransaction)
     /// with a custom fee schedule.
     TopicCreateWithCustomFees,
+
+    /// The resource prices are scoped to a submit message operation with custom fees.
+    SubmitMessageWithCustomFees,
 }
 
 impl FromProtobuf<services::SubType> for FeeDataType {
@@ -810,6 +813,7 @@ impl FromProtobuf<services::SubType> for FeeDataType {
             }
             SubType::ScheduleCreateContractCall => Self::ScheduleCreateContractCall,
             SubType::TopicCreateWithCustomFees => Self::TopicCreateWithCustomFees,
+            SubType::SubmitMessageWithCustomFees => Self::SubmitMessageWithCustomFees,
         };
 
         Ok(value)
@@ -831,6 +835,7 @@ impl ToProtobuf for FeeDataType {
             }
             Self::ScheduleCreateContractCall => SubType::ScheduleCreateContractCall,
             Self::TopicCreateWithCustomFees => SubType::TopicCreateWithCustomFees,
+            Self::SubmitMessageWithCustomFees => SubType::SubmitMessageWithCustomFees,
         }
     }
 }

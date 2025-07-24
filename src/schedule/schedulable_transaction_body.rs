@@ -102,6 +102,7 @@ impl SchedulableTransactionBody {
                 .max_transaction_fee
                 .unwrap_or_else(|| self.data.default_max_transaction_fee())
                 .to_tinybars() as u64,
+            max_custom_fees: vec![],
         }
     }
 }
