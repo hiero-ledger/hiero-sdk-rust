@@ -274,6 +274,7 @@ mod tests {
                     SchedulableTransactionBody {
                         transaction_fee: 200000000,
                         memo: "",
+                        max_custom_fees: [],
                         data: Some(
                             CryptoDelete(
                                 CryptoDeleteTransactionBody {
@@ -459,6 +460,7 @@ mod tests {
                     SchedulableTransactionBody {
                         transaction_fee: 200000000,
                         memo: "",
+                        max_custom_fees: [],
                         data: Some(
                             CryptoDelete(
                                 CryptoDeleteTransactionBody {
