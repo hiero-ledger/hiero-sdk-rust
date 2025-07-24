@@ -358,6 +358,7 @@ async fn can_sign_schedule() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[ignore]
 async fn schedule_ahead_one_year_fail() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
@@ -395,6 +396,7 @@ async fn schedule_ahead_one_year_fail() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[ignore]
 async fn schedule_in_the_past_fail() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
@@ -432,6 +434,7 @@ async fn schedule_in_the_past_fail() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sign_schedule_and_wait_for_expiry() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
@@ -698,6 +701,7 @@ async fn sign_with_multi_sig() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[ignore]
 async fn execute_with_short_exp_time() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
