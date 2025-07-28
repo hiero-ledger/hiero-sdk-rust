@@ -117,14 +117,18 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Start the local node
-        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+      - name: Prepare Hiero Solo
+        id: solo
+        uses: hiero-ledger/hiero-solo-action@71219540ac7f578e6ea4fc3c17575c0295e56163 # v0.9
+        with:
+          installMirrorNode: true
+          hieroVersion: v0.60.0-alpha.0
 
       - name: "Create env file"
         run: |
             touch .env
-            echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-            echo TEST_OPERATOR_ID="0.0.1022" >> .env
+            echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
+            echo TEST_OPERATOR_ID="0.0.2" >> .env
             echo TEST_NETWORK_NAME="localhost" >> .env
             echo TEST_RUN_NONFREE="1" >> .env
             cat .env
@@ -134,6 +138,3 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
           cargo test --workspace  
-
-      - name: Stop the local node
-        run: npx @hashgraph/hedera-local stop
