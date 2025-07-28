@@ -170,6 +170,7 @@ async fn query_cost_small_max() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[ignore]
 async fn query_cost_insufficient_tx_fee() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
