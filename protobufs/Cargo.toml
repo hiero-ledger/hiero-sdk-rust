@@ -5,6 +5,7 @@ name = "hedera-proto"
 description = "Protobufs for the Hedera™ Hashgraph SDK"
 repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
 version = "0.17.0"
+exclude = ["services/*"]
 
 [features]
 
