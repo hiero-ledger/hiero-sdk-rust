@@ -6,14 +6,14 @@ on:
         description: "Existing Tag to Publish (eg: v3.7.0)"
         type: string
         required: true
-      dry-run-enabled:
-        description: "Dry Run Enabled"
-        type: boolean
-        required: false
-        default: false
       dual-publish-enabled:
         # default to true when dual-publishing period is active
         description: "Dual Publish Enabled"
+        type: boolean
+        required: false
+        default: false
+      dry-run-enabled:
+        description: "Dry Run Enabled"
         type: boolean
         required: false
         default: false
