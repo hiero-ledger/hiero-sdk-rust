@@ -250,16 +250,21 @@ jobs:
         with:
           node-version: 22
 
-      - name: Start the local node
-        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+      - name: Prepare Hiero Solo
+        id: solo
+        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
+        with:
+          installMirrorNode: true
+          hieroVersion: v0.60.0-alpha.0
 
-      - name: Create env file
+      - name: "Create env file"
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
 
       - name: Run Safety Checks
         run: |
@@ -269,9 +274,6 @@ jobs:
           . $HOME/.cargo/env
           cargo test --workspace
           echo "::endgroup::"
-
-      - name: Stop the local node
-        run: npx @hashgraph/hedera-local stop
 
   publish:
     name: Publish SDK to crates.io
@@ -347,18 +349,22 @@ jobs:
         with:
           node-version: 22
 
-      - name: Start the local node
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
-        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+      - name: Prepare Hiero Solo
+        id: solo
+        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
+        with:
+          installMirrorNode: true
+          hieroVersion: v0.60.0-alpha.0
 
       - name: Create env file
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
@@ -407,63 +413,6 @@ jobs:
           echo "cargo publish ${{ steps.proto-publish-args.outputs.args }}"
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
         working-directory: protobufs
-
-      # TODO<BEGIN>: Remove this group of steps after the hiero-sdk-proto package is published
-      - name: Stop the local node (hiero-sdk-proto)
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
-        run: |
-          npx @hashgraph/hedera-local stop
-
-      - name: Reset the workspace
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' && !cancelled() && always() }}
-        run: |
-          echo "::group::Reset Workspace"
-          git reset --hard
-          git clean -fdx
-          echo "::endgroup::"
-
-      - name: Start the local node (hiero-sdk)
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
-        run: |
-          npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
-
-      - name: Create env file (hiero-sdk)
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
-        run: |
-          touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-          echo TEST_OPERATOR_ID="0.0.1022" >> .env
-          echo TEST_NETWORK_NAME="localhost" >> .env
-          echo TEST_RUN_NONFREE="1" >> .env
-
-      - name: Set up Cargo files for SDK Dual publish
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' && !cancelled() && always() }}
-        run: |
-          echo "::group::Update main Cargo.toml with new name and dependencies"
-          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
-          echo "::group::Update TCK Cargo.toml with new dependencies"
-          # Update the dependencies in the tck/Cargo.toml
-          sed -i "s/hedera =/hiero-sdk =/g" tck/Cargo.toml
-          echo "::endgroup::"
-          
-          echo "::group::Update files with new names"
-          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
-          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
-          echo "::endgroup::"
-          
-          echo "::group::Verify Cargo.toml changes"
-          cargo check
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          . $HOME/.cargo/env
-          cargo test --workspace
-          cargo generate-lockfile
-          echo "::endgroup::"
-      # TODO<END>: Remove this group of steps after the hiero-sdk-proto package is published
-
-      - name: Stop the local node
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
-        run: npx @hashgraph/hedera-local stop
 
       - name: Publish SDK to crates.io (hiero-sdk)
         if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
