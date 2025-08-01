@@ -264,11 +264,13 @@ jobs:
           echo TEST_OPERATOR_ID="0.0.2" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
-          #echo SOLO_DEPLOYMENT="${{ steps.solo.outputs.deployment }}" >> .env
-          echo SOLO_DEPLOYMENT="solo-deployment" >> .env
           cat .env
 
       - name: Run Safety Checks
+        env:
+          #SOLO_DEPLOYMENT: "${{ steps.solo.outputs.deployment }}"
+          SOLO_DEPLOYMENT: "solo-deployment"
+          TEST_OPERATOR_ID: "0.0.2"
         run: |
           echo "::group::Run Safety Checks"
           cargo check
@@ -367,17 +369,16 @@ jobs:
           echo TEST_OPERATOR_ID="0.0.2" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
-          #echo SOLO_DEPLOYMENT="${{ steps.solo.outputs.deployment }}" >> .env
-          echo SOLO_DEPLOYMENT="solo-deployment" >> .env
           cat .env
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         env:
-          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
-          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
-        run: |         
+          #SOLO_DEPLOYMENT: "${{ steps.solo.outputs.deployment }}"
+          SOLO_DEPLOYMENT: "solo-deployment"
+          TEST_OPERATOR_ID: "0.0.2"
+        run: |
           echo "::group::Update protobufs/Cargo.toml with new name"       
           # Update the dependencies in the protobugs/Cargo.toml
           toml set protobufs/Cargo.toml package.name "hiero-sdk-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
