@@ -264,6 +264,8 @@ jobs:
           echo TEST_OPERATOR_ID="0.0.2" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
+          #echo SOLO_DEPLOYMENT="${{ steps.solo.outputs.deployment }}" >> .env
+          echo SOLO_DEPLOYMENT="solo-deployment" >> .env
           cat .env
 
       - name: Run Safety Checks
@@ -272,6 +274,7 @@ jobs:
           cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
+          solo account update --account-id "${TEST_OPERATOR_ID}" --deployment "${SOLO_DEPLOYMENT}" --hbar-amount 1000000000
           cargo test --workspace
           echo "::endgroup::"
 
@@ -364,6 +367,8 @@ jobs:
           echo TEST_OPERATOR_ID="0.0.2" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
+          #echo SOLO_DEPLOYMENT="${{ steps.solo.outputs.deployment }}" >> .env
+          echo SOLO_DEPLOYMENT="solo-deployment" >> .env
           cat .env
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
@@ -401,6 +406,7 @@ jobs:
           cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
+          solo account update --account-id "${TEST_OPERATOR_ID}" --deployment "${SOLO_DEPLOYMENT}" --hbar-amount 1000000000
           cargo test --workspace
           cargo generate-lockfile
           echo "::endgroup::"
