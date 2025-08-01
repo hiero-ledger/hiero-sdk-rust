@@ -252,31 +252,27 @@ jobs:
 
       - name: Prepare Hiero Solo
         id: solo
-        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
+        uses: hiero-ledger/hiero-solo-action@3bb6a23cc7915a38bde580c84a6c02c986dcac8f # latest
         with:
           installMirrorNode: true
           hieroVersion: v0.60.0-alpha.0
+          hbarAmount: 100000000
 
       - name: Create env file
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="${{ steps.solo.outputs.privateKey }}" >> .env
+          echo TEST_OPERATOR_ID="${{ steps.solo.outputs.accountId }}" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
 
       - name: Run Safety Checks
-        env:
-          #SOLO_DEPLOYMENT: "${{ steps.solo.outputs.deployment }}"
-          SOLO_DEPLOYMENT: "solo-deployment"
-          TEST_OPERATOR_ID: "${{ steps.solo.outputs.accountId }}"
         run: |
           echo "::group::Run Safety Checks"
           cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          solo account update --account-id "${TEST_OPERATOR_ID}" --deployment "${SOLO_DEPLOYMENT}" --hbar-amount 1000000000
           cargo test --workspace
           echo "::endgroup::"
 
@@ -356,17 +352,18 @@ jobs:
 
       - name: Prepare Hiero Solo
         id: solo
-        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
+        uses: hiero-ledger/hiero-solo-action@3bb6a23cc7915a38bde580c84a6c02c986dcac8f # latest
         with:
           installMirrorNode: true
           hieroVersion: v0.60.0-alpha.0
+          hbarAmount: 100000000
 
       - name: Create env file
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="${{ steps.solo.outputs.privateKey }}" >> .env
+          echo TEST_OPERATOR_ID="${{ steps.solo.outputs.accountId }}" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
@@ -374,10 +371,6 @@ jobs:
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
-        env:
-          #SOLO_DEPLOYMENT: "${{ steps.solo.outputs.deployment }}"
-          SOLO_DEPLOYMENT: "solo-deployment"
-          TEST_OPERATOR_ID: "${{ steps.solo.outputs.accountId }}"
         run: |
           echo "::group::Update protobufs/Cargo.toml with new name"       
           # Update the dependencies in the protobugs/Cargo.toml
@@ -407,7 +400,6 @@ jobs:
           cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          solo account update --account-id "${TEST_OPERATOR_ID}" --deployment "${SOLO_DEPLOYMENT}" --hbar-amount 1000000000
           cargo test --workspace
           cargo generate-lockfile
           echo "::endgroup::"
