@@ -250,6 +250,8 @@ jobs:
         with:
           node-version: 22
 
+      # Uses the latest commit of the hiero-ledger/hiero-solo-action main branch (3bb6a23cc7915a38bde580c84a6c02c986dcac8f)
+      # this is the first version that supports the hbarAmount input.
       - name: Prepare Hiero Solo
         id: solo
         uses: hiero-ledger/hiero-solo-action@3bb6a23cc7915a38bde580c84a6c02c986dcac8f # latest
@@ -350,6 +352,8 @@ jobs:
         with:
           node-version: 22
 
+      # Uses the latest commit of the hiero-ledger/hiero-solo-action main branch (3bb6a23cc7915a38bde580c84a6c02c986dcac8f)
+      # this is the first version that supports the hbarAmount input.
       - name: Prepare Hiero Solo
         id: solo
         uses: hiero-ledger/hiero-solo-action@3bb6a23cc7915a38bde580c84a6c02c986dcac8f # latest
