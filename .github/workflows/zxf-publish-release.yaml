@@ -260,8 +260,8 @@ jobs:
       - name: Create env file
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="${{ steps.solo.outputs.ecdsaPrivateKey }}" >> .env
+          echo TEST_OPERATOR_ID="${{ steps.solo.outputs.accountId }}" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
@@ -270,7 +270,7 @@ jobs:
         env:
           #SOLO_DEPLOYMENT: "${{ steps.solo.outputs.deployment }}"
           SOLO_DEPLOYMENT: "solo-deployment"
-          TEST_OPERATOR_ID: "0.0.2"
+          TEST_OPERATOR_ID: "${{ steps.solo.outputs.accountId }}"
         run: |
           echo "::group::Run Safety Checks"
           cargo check
@@ -365,8 +365,8 @@ jobs:
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="${{ steps.solo.outputs.ecdsaPrivateKey }}" >> .env
+          echo TEST_OPERATOR_ID="${{ steps.solo.outputs.accountId }}" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
@@ -377,7 +377,7 @@ jobs:
         env:
           #SOLO_DEPLOYMENT: "${{ steps.solo.outputs.deployment }}"
           SOLO_DEPLOYMENT: "solo-deployment"
-          TEST_OPERATOR_ID: "0.0.2"
+          TEST_OPERATOR_ID: "${{ steps.solo.outputs.accountId }}"
         run: |
           echo "::group::Update protobufs/Cargo.toml with new name"       
           # Update the dependencies in the protobugs/Cargo.toml
