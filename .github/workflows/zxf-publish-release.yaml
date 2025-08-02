@@ -300,10 +300,9 @@ jobs:
       - name: Run Safety Checks
         run: |
           echo "::group::Run Safety Checks"
-          cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
+          cargo test --workspace 
           echo "::endgroup::"
 
       - name: Clean up solo deployment
@@ -457,10 +456,9 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Verify Cargo.toml changes"
-          cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
+          cargo test --workspace 
           cargo generate-lockfile
           echo "::endgroup::"
 
