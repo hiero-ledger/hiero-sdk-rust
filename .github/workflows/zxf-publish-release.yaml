@@ -28,6 +28,13 @@ defaults:
 permissions:
   contents: write
 
+env:
+  SOLO_CLUSTER_NAME: "solo-rust"
+  SOLO_NAMESPACE: "solo-rust"
+  SOLO_CLUSTER_SETUP_NAMESPACE: "solo-rust-cluster"
+  SOLO_DEPLOYMENT: "solo-rust-deployment"
+  CONSENSUS_NODE_VERSION: "v0.60.0-alpha.0"
+
 jobs:
   validate-release:
     name: Validate Release
@@ -220,39 +227,9 @@ jobs:
             exit 1
           fi
 
-  set-solo-props:
-    name: Set Solo Outputs
-    runs-on: hiero-client-sdk-linux-medium
-    outputs:
-      solo-cluster-name: ${{ steps.solo-vars.outputs.cluster-name }}
-      solo-namespace: ${{ steps.solo-vars.outputs.namespace }}
-      solo-cluster-setup-namespace: ${{ steps.solo-vars.outputs.cluster-setup-namespace }}
-      solo-deployment: ${{ steps.solo-vars.outputs.deployment }}
-      solo-account-id: ${{ steps.solo-vars.outputs.account-id }}
-      solo-account-key: ${{ steps.solo-vars.outputs.account-key }}
-      solo-hcn-version: ${{ steps.solo-vars.outputs.consensus-node-version }}
-
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
-        with:
-          egress-policy: audit
-
-      - name: Set Solo Vars
-        id: solo-vars
-        run: |
-          echo "cluster-name=solo-rust" >> "${GITHUB_OUTPUT}"
-          echo "namespace=solo-rust" >> "${GITHUB_OUTPUT}"
-          echo "cluster-setup-namespace=solo-rust-cluster" >> "${GITHUB_OUTPUT}"
-          echo "deployment=solo-rust-deployment" >> "${GITHUB_OUTPUT}"
-          echo "account-id=0.0.2" >> "${GITHUB_OUTPUT}"
-          echo "account-key=302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> "${GITHUB_OUTPUT}"
-          echo "consensus-node-version=v0.60.0-alpha.0" >> "${GITHUB_OUTPUT}"
-
   run-safety-checks:
     name: Safety Checks
     runs-on: hiero-client-sdk-linux-medium
-    needs: set-solo-props
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
@@ -291,11 +268,6 @@ jobs:
           verbosity: 3
           wait: 120s
 
-      - name: Setup yq
-        uses: step-security/setup-yq@ad0cf3bb7054291a414b615c1160ce0af1193a26 # v1.0.1
-        with:
-          yq-version: v4.47.1
-
       # Install solo and configure it for the safety checks
       - name: Install Solo
         run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
@@ -303,25 +275,19 @@ jobs:
       - name: Configure Solo
         run: |
           echo "::group::Kind Create Cluster"
-          kind create cluster -n "${{ needs.set-solo-props.outputs.solo-cluster-name }}"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
           echo "::endgroup::"
           
           echo "::group::Solo Quick Start Single Deploy"
           # Configures the entire network including the consensus node, mirror node, rpc, and explorer
           solo quick-start single deploy
           echo "::endgroup::"
-          
-          echo "::group::Solo Node Setup and Start"
-          SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
-          solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
-          solo node start --deployment "${SOLO_DEPLOYMENT}"
-          echo "::endgroup::"
 
       - name: Create env file
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="${{ needs.set-solo-props.outputs.solo-account-key }}" >> .env
-          echo TEST_OPERATOR_ID="${{ needs.set-solo-props.outputs.solo-account-id }}" >> .env
+          echo TEST_OPERATOR_KEY="0.0.2" >> .env
+          echo TEST_OPERATOR_ID="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
@@ -429,11 +395,6 @@ jobs:
           verbosity: 3
           wait: 120s
 
-      - name: Setup yq
-        uses: step-security/setup-yq@ad0cf3bb7054291a414b615c1160ce0af1193a26 # v1.0.1
-        with:
-          yq-version: v4.47.1
-
       # Install solo and configure it for the safety checks
       - name: Install Solo
         run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
@@ -441,26 +402,19 @@ jobs:
       - name: Configure Solo
         run: |
           echo "::group::Kind Create Cluster"
-          kind create cluster -n "${{ needs.set-solo-props.outputs.solo-cluster-name }}"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
           echo "::endgroup::"
-          
+
           echo "::group::Solo Quick Start Single Deploy"
           # Configures the entire network including the consensus node, mirror node, rpc, and explorer
           solo quick-start single deploy
           echo "::endgroup::"
-          
-          echo "::group::Solo Node Setup and Start"
-          SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
-          solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
-          solo node start --deployment "${SOLO_DEPLOYMENT}"
-          echo "::endgroup::"
 
       - name: Create env file
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="${{ needs.set-solo-props.outputs.solo-account-key }}" >> .env
-          echo TEST_OPERATOR_ID="${{ needs.set-solo-props.outputs.solo-account-id }}" >> .env
+          echo TEST_OPERATOR_KEY="0.0.2" >> .env
+          echo TEST_OPERATOR_ID="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
