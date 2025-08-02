@@ -291,8 +291,10 @@ jobs:
           verbosity: 3
           wait: 120s
 
-      - name: Set up yq
+      - name: Setup yq
         uses: step-security/setup-yq@ad0cf3bb7054291a414b615c1160ce0af1193a26 # v1.0.1
+        with:
+          yq-version: v4.47.1
 
       # Install solo and configure it for the safety checks
       - name: Install Solo
@@ -309,7 +311,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Solo Node Setup and Start"
-          SOLO_DEPLOYMENT=$(yq eval -r '.deployments.[].name' ~/.solo/local-config.yaml)
+          SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
           solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
           solo node start --deployment "${SOLO_DEPLOYMENT}"
           echo "::endgroup::"
@@ -432,8 +434,10 @@ jobs:
           verbosity: 3
           wait: 120s
 
-      - name: Set up yq
+      - name: Setup yq
         uses: step-security/setup-yq@ad0cf3bb7054291a414b615c1160ce0af1193a26 # v1.0.1
+        with:
+          yq-version: v4.47.1
 
       # Install solo and configure it for the safety checks
       - name: Install Solo
@@ -450,7 +454,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Solo Node Setup and Start"
-          SOLO_DEPLOYMENT=$(yq eval -r '.deployments.[].name' ~/.solo/local-config.yaml)
+          SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
           solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
           solo node start --deployment "${SOLO_DEPLOYMENT}"
           echo "::endgroup::"
