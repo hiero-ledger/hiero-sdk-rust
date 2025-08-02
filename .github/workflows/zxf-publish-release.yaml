@@ -250,7 +250,12 @@ jobs:
       - name: Install components
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
+          sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup NodeJS
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -339,8 +344,13 @@ jobs:
       - name: Install components
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
+          sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
           cargo install toml-cli
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
