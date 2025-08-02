@@ -307,6 +307,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
           solo quick-start single deploy
           echo "::endgroup::"
           
@@ -314,12 +315,6 @@ jobs:
           SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
           solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
           solo node start --deployment "${SOLO_DEPLOYMENT}"
-          echo "::endgroup::"
-          
-          echo "::group::Solo Deploy Mirror Node, Explorer, and Relay"
-          solo mirror-node deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref "kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}" --enable-ingress
-          solo explorer deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}
-          solo relay deploy -i node1 --deployment "${SOLO_DEPLOYMENT}"
           echo "::endgroup::"
 
       - name: Create env file
@@ -450,6 +445,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
           solo quick-start single deploy
           echo "::endgroup::"
           
@@ -457,12 +453,6 @@ jobs:
           SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
           solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
           solo node start --deployment "${SOLO_DEPLOYMENT}"
-          echo "::endgroup::"
-          
-          echo "::group::Solo Deploy Mirror Node, Explorer, and Relay"
-          solo mirror-node deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref "kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}" --enable-ingress
-          solo explorer deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}
-          solo relay deploy -i node1 --deployment "${SOLO_DEPLOYMENT}"
           echo "::endgroup::"
 
       - name: Create env file
