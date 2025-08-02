@@ -80,14 +80,6 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
           cargo check --examples --workspace
-
-      - name: Clean up solo deployment
-        run: |
-          solo quick-start single destroy
-          for cluster in $(kind get clusters); do
-            kind delete cluster -n $cluster
-          done
-          rm -rf ~/.solo
   
   test:
     needs: ['check']
