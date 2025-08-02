@@ -243,11 +243,10 @@ jobs:
           ref: ${{ inputs.tag || '' }}
           submodules: 'recursive'
 
-      - name: Rust Cache
-        uses: step-security/rust-cache@94e3ae6a5bdb04807deb1cb2274adab839828881 # v2.8.0
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
-          workspaces: |
-            .
+          toolchain: 1.88.0
 
       - name: Install components
         run: |
@@ -341,11 +340,10 @@ jobs:
           ref: ${{ inputs.tag || '' }}
           submodules: 'recursive'
 
-      - name: Rust Cache
-        uses: step-security/rust-cache@94e3ae6a5bdb04807deb1cb2274adab839828881 # v2.8.0
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
-          workspaces: |
-            .
+          toolchain: 1.88.0
 
       - name: Install components
         run: |
