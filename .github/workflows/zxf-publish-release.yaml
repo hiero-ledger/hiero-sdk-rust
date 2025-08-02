@@ -314,7 +314,6 @@ jobs:
     needs:
       - validate-release
       - run-safety-checks
-      - set-solo-props
     runs-on: hiero-client-sdk-linux-medium
     env:
       # Set the default to 'true' when the dual-publishing period is active
