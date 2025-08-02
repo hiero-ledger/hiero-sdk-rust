@@ -309,7 +309,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Solo Node Setup and Start"
-          SOLO_DEPLOYMENT=`yq '.deployments.[].name' ~/.solo/local-config.yaml`
+          SOLO_DEPLOYMENT=$(yq eval -r '.deployments.[].name' ~/.solo/local-config.yaml)
           solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
           solo node start --deployment "${SOLO_DEPLOYMENT}"
           echo "::endgroup::"
@@ -450,7 +450,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Solo Node Setup and Start"
-          SOLO_DEPLOYMENT=`yq '.deployments.[].name' ~/.solo/local-config.yaml`
+          SOLO_DEPLOYMENT=$(yq eval -r '.deployments.[].name' ~/.solo/local-config.yaml)
           solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
           solo node start --deployment "${SOLO_DEPLOYMENT}"
           echo "::endgroup::"
