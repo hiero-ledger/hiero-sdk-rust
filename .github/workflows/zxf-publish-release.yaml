@@ -220,9 +220,39 @@ jobs:
             exit 1
           fi
 
+  set-solo-props:
+    name: Set Solo Outputs
+    runs-on: hiero-client-sdk-linux-medium
+    outputs:
+      solo-cluster-name: ${{ steps.solo-vars.outputs.cluster-name }}
+      solo-namespace: ${{ steps.solo-vars.outputs.namespace }}
+      solo-cluster-setup-namespace: ${{ steps.solo-vars.outputs.cluster-setup-namespace }}
+      solo-deployment: ${{ steps.solo-vars.outputs.deployment }}
+      solo-account-id: ${{ steps.solo-vars.outputs.account-id }}
+      solo-account-key: ${{ steps.solo-vars.outputs.account-key }}
+      solo-hcn-version: ${{ steps.solo-vars.outputs.consensus-node-version }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
+
+      - name: Set Solo Vars
+        id: solo-vars
+        run: |
+          echo "cluster-name=solo-rust" >> "${GITHUB_OUTPUT}"
+          echo "namespace=solo-rust" >> "${GITHUB_OUTPUT}"
+          echo "cluster-setup-namespace=solo-rust-cluster" >> "${GITHUB_OUTPUT}"
+          echo "deployment=solo-rust-deployment" >> "${GITHUB_OUTPUT}"
+          echo "account-id=0.0.2" >> "${GITHUB_OUTPUT}"
+          echo "account-key=302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> "${GITHUB_OUTPUT}"
+          echo "consensus-node-version=v0.60.0-alpha.0" >> "${GITHUB_OUTPUT}"
+
   run-safety-checks:
     name: Safety Checks
     runs-on: hiero-client-sdk-linux-medium
+    needs: set-solo-props
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
@@ -248,23 +278,42 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version: 20.18.0
 
-      # Uses the latest commit of the hiero-ledger/hiero-solo-action main branch (3bb6a23cc7915a38bde580c84a6c02c986dcac8f)
-      # this is the first version that supports the hbarAmount input.
-      - name: Prepare Hiero Solo
-        id: solo
-        uses: hiero-ledger/hiero-solo-action@3bb6a23cc7915a38bde580c84a6c02c986dcac8f # latest
+      # Set up kind; needed for configuring the solo environment
+      - name: Setup Kind
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
         with:
-          installMirrorNode: true
-          hieroVersion: v0.60.0-alpha.0
-          hbarAmount: 10000000000
+          install_only: true
+          node_image: kindest/node:v1.31.4@sha256:2cb39f7295fe7eafee0842b1052a599a4fb0f8bcf3f83d96c7f4864c357c6c30
+          version: v0.26.0
+          kubectl_version: v1.31.4
+          verbosity: 3
+          wait: 120s
+
+      - name: Set up yq
+        uses: step-security/setup-yq@ad0cf3bb7054291a414b615c1160ce0af1193a26 # v1.0.1
+
+      # Install solo and configure it for the safety checks
+      - name: Install Solo
+        run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
+
+      - name: Configure Solo
+        run: |
+          kind create cluster -n "${{ needs.set-solo-props.outputs.solo-cluster-name }}"
+          solo quick-start single deploy
+          SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
+          solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
+          solo node start --deployment "${SOLO_DEPLOYMENT}"
+          solo mirror-node deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref "kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}" --enable-ingress
+          solo explorer deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}
+          solo relay deploy -i node1 --deployment "${SOLO_DEPLOYMENT}"
 
       - name: Create env file
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="${{ needs.set-solo-props.outputs.solo-account-key }}" >> .env
+          echo TEST_OPERATOR_ID="${{ needs.set-solo-props.outputs.solo-account-id }}" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
@@ -283,6 +332,7 @@ jobs:
     needs:
       - validate-release
       - run-safety-checks
+      - set-solo-props
     runs-on: hiero-client-sdk-linux-medium
     env:
       # Set the default to 'true' when the dual-publishing period is active
@@ -350,24 +400,43 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version: 20.18.0
 
-      # Uses the latest commit of the hiero-ledger/hiero-solo-action main branch (3bb6a23cc7915a38bde580c84a6c02c986dcac8f)
-      # this is the first version that supports the hbarAmount input.
-      - name: Prepare Hiero Solo
-        id: solo
-        uses: hiero-ledger/hiero-solo-action@3bb6a23cc7915a38bde580c84a6c02c986dcac8f # latest
+      # Set up kind; needed for configuring the solo environment
+      - name: Setup Kind
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
         with:
-          installMirrorNode: true
-          hieroVersion: v0.60.0-alpha.0
-          hbarAmount: 10000000000
+          install_only: true
+          node_image: kindest/node:v1.31.4@sha256:2cb39f7295fe7eafee0842b1052a599a4fb0f8bcf3f83d96c7f4864c357c6c30
+          version: v0.26.0
+          kubectl_version: v1.31.4
+          verbosity: 3
+          wait: 120s
+
+      - name: Set up yq
+        uses: step-security/setup-yq@ad0cf3bb7054291a414b615c1160ce0af1193a26 # v1.0.1
+
+      # Install solo and configure it for the safety checks
+      - name: Install Solo
+        run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
+
+      - name: Configure Solo
+        run: |
+          kind create cluster -n "${{ needs.set-solo-props.outputs.solo-cluster-name }}"
+          solo quick-start single deploy
+          SOLO_DEPLOYMENT=$(yq '.deployments.[].name' ~/.solo/local-config.yaml)
+          solo node setup --deployment "${SOLO_DEPLOYMENT}" --release-tag "${{ needs.set-solo-props.outputs.solo-hcn-version }}"
+          solo node start --deployment "${SOLO_DEPLOYMENT}"
+          solo mirror-node deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref "kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}" --enable-ingress
+          solo explorer deploy --deployment "${SOLO_DEPLOYMENT}" --cluster-ref kind-${{ needs.set-solo-props.outputs.solo-cluster-name }}
+          solo relay deploy -i node1 --deployment "${SOLO_DEPLOYMENT}"
 
       - name: Create env file
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="${{ needs.set-solo-props.outputs.solo-account-key }}" >> .env
+          echo TEST_OPERATOR_ID="${{ needs.set-solo-props.outputs.solo-account-id }}" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
