@@ -338,6 +338,14 @@ jobs:
           cargo test --workspace
           echo "::endgroup::"
 
+      - name: Clean up solo deployment
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
+
   publish:
     name: Publish SDK to crates.io
     needs:
@@ -498,6 +506,14 @@ jobs:
           cargo test --workspace
           cargo generate-lockfile
           echo "::endgroup::"
+
+      - name: Clean up solo deployment
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
 
       - name: Publish proto to crates.io (hiero-sdk-proto)
         if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
