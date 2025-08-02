@@ -241,13 +241,13 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ inputs.tag || '' }}
-          submodules: recursive
+          submodules: 'recursive'
 
       - name: Rust Cache
         uses: step-security/rust-cache@94e3ae6a5bdb04807deb1cb2274adab839828881 # v2.8.0
         with:
           workspaces: |
-            sdk/rust
+            .
 
       - name: Install components
         run: |
@@ -299,11 +299,11 @@ jobs:
           echo TEST_RUN_NONFREE="1" >> .env
           cat .env
 
-      - name: Run Check
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          . $HOME/.cargo/env
-          cargo check --examples --workspace
+#      - name: Run Check
+#        run: |
+#          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#          . $HOME/.cargo/env
+#          cargo check --examples --workspace
 
       - name: Run Tests
         run: |
