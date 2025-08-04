@@ -1,11 +1,13 @@
-# Migration Guide: hedera → hiero
+# Migration Guide: hedera → hiero-sdk
 
 As part of the transition from the Hedera SDK to the new Hiero ecosystem, this Rust SDK will now be published under a new crate name:
 
--   ✅ **hiero** will be the new crate name.
+-   ✅ **hiero-sdk** will be the new crate name.
 -   ⚠️ **hedera** is still maintained temporarily for backward compatibility, but will be deprecated in the future.
+-   ✅ **hiero-sdk-proto** will be the new crate name for the protobufs crate.
+-   ⚠️ **hedera-proto** is still maintained temporarily for backward compatibility, but will be deprecated in the future.
 
-We encourage all users to migrate to **hiero** to receive future updates, features, and bug fixes.
+We encourage all users to migrate to **hiero-sdk** and **hiero-sdk-proto** to receive future updates, features, and bug fixes.
 
 ## 🛠 How to Migrate
 
@@ -17,14 +19,22 @@ Change your dependency from:
 name = "hedera"
 ```
 
+```toml
+name = "hedera-proto"
+```
+
 To:
 
 ```toml
-name = "hiero"
+name = "hiero-sdk"
+```
+
+```toml
+name = "hiero-sdk-proto"
 ```
 
 Make sure to run `cargo build` or `cargo update` to apply the change. Keep in mind that right after the dual publishing
-starts the namespace will still remain `hedera`. We will start publishing the `hiero` new SDK crates with the updated `.toml`
+starts the namespace will still remain `hedera`. We will start publishing the `hiero-sdk` new SDK crates with the updated `.toml`
 files.
 
 ### Import changes and other examples
@@ -40,12 +50,27 @@ use hedera::{
 Change it to:
 
 ```rust
-use hiero::{
+use hiero_sdk::{
     Client, AccountId, PrivateKey, TopicCreateTransaction, TopicMessageQuery, TopicMessageSubmitTransaction,
 };
 ```
 
-Most APIs and types will remain identical between `hedera` and `hiero`. Keep in mind that right after the dual publishing
+If you're using the hedera-proto crate:
+```rust
+use hedera_proto::services::{
+    self,
+};
+```
+
+Change it to:
+
+```rust
+use hiero_sdk_proto::services::{
+    self,
+};
+```
+
+Most APIs and types will remain identical between `hedera` and `hiero-sdk` and between `hedera-proto` and `hiero-sdk-proto`. Keep in mind that right after the dual publishing
 starts the namespace will still remain `hedera`. We will put up a notice when the namespace change will be mandatory.
 
 ### Update Transaction and Query Usage
@@ -67,7 +92,7 @@ let tx = TransferTransaction::new()
 Change to:
 
 ```rust
-use hiero::{Client, AccountId, TransferTransaction};
+use hiero_sdk::{Client, AccountId, TransferTransaction};
 
 let client = Client::for_testnet();
 let account_id = AccountId::from_string("0.0.1234");
@@ -91,7 +116,7 @@ let private_key = PrivateKey::generate();
 New:
 
 ```rust
-use hiero::PrivateKey;
+use hiero_sdk::PrivateKey;
 
 let private_key = PrivateKey::generate();
 ```
@@ -112,7 +137,7 @@ let topic = TopicCreateTransaction::new()
 New:
 
 ```rust
-use hiero::{TopicCreateTransaction, TopicMessageSubmitTransaction};
+use hiero_sdk::{TopicCreateTransaction, TopicMessageSubmitTransaction};
 
 let topic = TopicCreateTransaction::new()
     .memo("My Topic")
@@ -136,7 +161,7 @@ let balance = AccountBalanceQuery::new()
 New:
 
 ```rust
-use hiero::{AccountBalanceQuery, AccountId};
+use hiero_sdk::{AccountBalanceQuery, AccountId};
 
 let balance = AccountBalanceQuery::new()
     .account_id(AccountId::from_string("0.0.1234"))
@@ -161,27 +186,29 @@ Update to:
 ```rust
 match result {
     Ok(value) => { /* ... */ }
-    Err(hiero::Error::SomeError) => { /* ... */ }
+    Err(hiero_sdk::Error::SomeError) => { /* ... */ }
     Err(e) => { /* ... */ }
 }
 ```
 
 ## 📦 Crate Availability
 
-| Crate  | Status    | Description                                |
-| ------ | --------- | ------------------------------------------ |
-| hedera | ⌛ Legacy | Still works, but will be deprecated soon   |
-| hiero  | ✅ Active | New name, actively maintained and improved |
+| Crate           | Status   | Description                                 |
+|-----------------|----------|---------------------------------------------|
+| hedera          | ⌛ Legacy | Still works, but will be deprecated soon    |
+| hiero-sdk       | ✅ Active | New name, actively maintained and improved  |
+| hedera-proto    | ⌛ Legacy | Still works, but will be deprecated soon    |
+| hiero-sdk-proto | ✅ Active | New name for protobufs, actively maintained |
 
 We are currently starting dual-publishing new versions to both crates, but this will change in a future releases where `hedera` will be marked as deprecated.
 
 ## 📅 Deprecation Timeline
 
-We will continue to publish updates to both `hedera` and `hiero` for a short transition period. After that:
+We will continue to publish updates to both `hedera` and `hiero-sdk` as well as to `hedera-proto` and `hiero-sdk-proto` for a short transition period. After that:
 
 -   Final `hedera` version will be published
 -   Crate will be marked as deprecated on crates.io
--   All new development will occur under `hiero`
+-   All new development will occur under `hiero-sdk`
 
 ## 🗣 Support
 

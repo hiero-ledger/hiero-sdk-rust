@@ -1,4 +1,4 @@
-name: "Publish Release"
+name: "ZXF: Publish Release"
 on:
   workflow_dispatch:
     inputs:
@@ -6,14 +6,13 @@ on:
         description: "Existing Tag to Publish (eg: v3.7.0)"
         type: string
         required: true
-      dry-run-enabled:
-        description: "Dry Run Enabled"
+      dual-publish-enabled:
+        description: "Dual Publish Enabled"
         type: boolean
         required: false
-        default: false
-      dual-publish-enabled:
-        # default to true when dual-publishing period is active
-        description: "Dual Publish Enabled"
+        default: true
+      dry-run-enabled:
+        description: "Dry Run Enabled"
         type: boolean
         required: false
         default: false
@@ -28,12 +27,20 @@ defaults:
 permissions:
   contents: write
 
+env:
+  SOLO_CLUSTER_NAME: "solo-rust"
+  SOLO_NAMESPACE: "solo-rust"
+  SOLO_CLUSTER_SETUP_NAMESPACE: "solo-rust-cluster"
+  SOLO_DEPLOYMENT: "solo-rust-deployment"
+  CONSENSUS_NODE_VERSION: "v0.60.0-alpha.0"
+  NODE_VERSION: "20.18.3"
+
 jobs:
   validate-release:
     name: Validate Release
     runs-on: hiero-client-sdk-linux-medium
     env:
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'false' }}
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'true' }}
     outputs:
       # Project tag
       tag: ${{ steps.sdk-tag.outputs.name }}
@@ -77,7 +84,7 @@ jobs:
           semver --version
           echo "::endgroup::"
             
-      - name: Set up Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
@@ -233,9 +240,9 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ inputs.tag || '' }}
-          submodules: recursive
+          submodules: 'recursive'
 
-      - name: Set up Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
@@ -243,35 +250,72 @@ jobs:
       - name: Install components
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
+          sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup NodeJS
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Start the local node
-        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+      # Set up kind; needed for configuring the solo environment
+      - name: Setup Kind
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+        with:
+          install_only: true
+          node_image: kindest/node:v1.31.4@sha256:2cb39f7295fe7eafee0842b1052a599a4fb0f8bcf3f83d96c7f4864c357c6c30
+          version: v0.26.0
+          kubectl_version: v1.31.4
+          verbosity: 3
+          wait: 120s
+
+      # Install solo and configure it for the safety checks
+      - name: Install Solo
+        run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
+
+      - name: Configure Solo
+        run: |
+          echo "::group::Kind Create Cluster"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
+          echo "::endgroup::"
+          
+          echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
+          solo quick-start single deploy
+          echo "::endgroup::"
 
       - name: Create env file
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
 
-      - name: Run Safety Checks
+      - name: Run Check
         run: |
-          echo "::group::Run Safety Checks"
-          cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
-          echo "::endgroup::"
+          cargo check --examples --workspace
 
-      - name: Stop the local node
-        run: npx @hashgraph/hedera-local stop
+      - name: Run Tests
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
+          cargo test --workspace 
+
+      - name: Clean up solo deployment
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
 
   publish:
     name: Publish SDK to crates.io
@@ -280,8 +324,7 @@ jobs:
       - run-safety-checks
     runs-on: hiero-client-sdk-linux-medium
     env:
-      # Set the default to 'true' when the dual-publishing period is active
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'false' }}
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'true' }}
       DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled || 'false' }}
     steps:
       - name: Harden Runner
@@ -293,9 +336,9 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ inputs.tag || '' }}
-          submodules: recursive
+          submodules: 'recursive'
 
-      - name: Set up Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
@@ -303,8 +346,13 @@ jobs:
       - name: Install components
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libssl-dev protobuf-compiler
+          sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
           cargo install toml-cli
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
@@ -345,28 +393,47 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Start the local node
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
-        run: npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+      # Set up kind; needed for configuring the solo environment
+      - name: Setup Kind
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+        with:
+          install_only: true
+          node_image: kindest/node:v1.31.4@sha256:2cb39f7295fe7eafee0842b1052a599a4fb0f8bcf3f83d96c7f4864c357c6c30
+          version: v0.26.0
+          kubectl_version: v1.31.4
+          verbosity: 3
+          wait: 120s
+
+      # Install solo and configure it for the safety checks
+      - name: Install Solo
+        run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
+
+      - name: Configure Solo
+        run: |
+          echo "::group::Kind Create Cluster"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
+          echo "::endgroup::"
+
+          echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
+          solo quick-start single deploy
+          echo "::endgroup::"
 
       - name: Create env file
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
 
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
-        env:
-          OPERATOR_ID: ${{ secrets.TEST_OPERATOR_ID }}
-          OPERATOR_KEY: ${{ secrets.TEST_OPERATOR_KEY }}
-        run: |         
+        run: |
           echo "::group::Update protobufs/Cargo.toml with new name"       
           # Update the dependencies in the protobugs/Cargo.toml
           toml set protobufs/Cargo.toml package.name "hiero-sdk-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
@@ -381,7 +448,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Update TCK Cargo.toml with new dependencies"
-          # Update the dependencies in the tck/Cargo.toml
+          # Update the dependencies in the tck/Cargo.toml for both protobufs and sdk
           sed -i "s/hedera/hiero-sdk/g" tck/Cargo.toml
           echo "::endgroup::"
           
@@ -392,12 +459,20 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Verify Cargo.toml changes"
-          cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
+          cargo check --examples --workspace
+          cargo test --workspace 
           cargo generate-lockfile
           echo "::endgroup::"
+
+      - name: Clean up solo deployment
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
 
       - name: Publish proto to crates.io (hiero-sdk-proto)
         if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
@@ -408,36 +483,38 @@ jobs:
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
         working-directory: protobufs
 
-      # TODO<BEGIN>: Remove this group of steps after the hiero-sdk-proto package is published
-      - name: Stop the local node (hiero-sdk-proto)
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
-        run: |
-          npx @hashgraph/hedera-local stop
-
+      # Test the hiero-sdk package if proto hasn't been published yet.
       - name: Reset the workspace
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' && !cancelled() && always() }}
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
         run: |
           echo "::group::Reset Workspace"
           git reset --hard
           git clean -fdx
           echo "::endgroup::"
 
-      - name: Start the local node (hiero-sdk)
+      - name: Configure Solo
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
         run: |
-          npx @hashgraph/hedera-local start -d --network local --network-tag=0.60.0-alpha.0
+          echo "::group::Kind Create Cluster"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
+          echo "::endgroup::"
 
-      - name: Create env file (hiero-sdk)
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+          echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
+          solo quick-start single deploy
+          echo "::endgroup::"
+
+      - name: Create env file
         run: |
           touch .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b657004220420a608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" >> .env
-          echo TEST_OPERATOR_ID="0.0.1022" >> .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
           echo TEST_NETWORK_NAME="localhost" >> .env
           echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
 
       - name: Set up Cargo files for SDK Dual publish
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' && !cancelled() && always() }}
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
         run: |
           echo "::group::Update main Cargo.toml with new name and dependencies"
           toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
@@ -453,17 +530,21 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Verify Cargo.toml changes"
-          cargo check
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
+          cargo check --examples --workspace
+          cargo test --workspace 
           cargo generate-lockfile
           echo "::endgroup::"
-      # TODO<END>: Remove this group of steps after the hiero-sdk-proto package is published
 
-      - name: Stop the local node
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
-        run: npx @hashgraph/hedera-local stop
+      - name: Clean up solo deployment
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
 
       - name: Publish SDK to crates.io (hiero-sdk)
         if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
