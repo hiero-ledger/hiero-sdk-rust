@@ -12,11 +12,6 @@ permissions:
     contents: read
 
 env:
-  SOLO_CLUSTER_NAME: "solo-rust"
-  SOLO_NAMESPACE: "solo-rust"
-  SOLO_CLUSTER_SETUP_NAMESPACE: "solo-rust-cluster"
-  SOLO_DEPLOYMENT: "solo-rust-deployment"
-  CONSENSUS_NODE_VERSION: "v0.60.0-alpha.0"
   NODE_VERSION: "20.18.3"
 
 jobs:
@@ -114,31 +109,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # Set up kind; needed for configuring the solo environment
-      - name: Setup Kind
-        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+      - name: Prepare Hiero Solo
+        id: solo
+        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
         with:
-          install_only: true
-          node_image: kindest/node:v1.31.4@sha256:2cb39f7295fe7eafee0842b1052a599a4fb0f8bcf3f83d96c7f4864c357c6c30
-          version: v0.26.0
-          kubectl_version: v1.31.4
-          verbosity: 3
-          wait: 120s
-
-      # Install solo and configure it for the safety checks
-      - name: Install Solo
-        run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
-
-      - name: Configure Solo
-        run: |
-          echo "::group::Kind Create Cluster"
-          kind create cluster -n "${SOLO_CLUSTER_NAME}"
-          echo "::endgroup::"
-
-          echo "::group::Solo Quick Start Single Deploy"
-          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
-          solo quick-start single deploy
-          echo "::endgroup::"
+          installMirrorNode: true
+          hieroVersion: v0.60.0-alpha.0
 
       - name: Create env file
         run: |
@@ -153,12 +129,4 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace  
-
-      - name: Clean up solo deployment
-        run: |
-          solo quick-start single destroy
-          for cluster in $(kind get clusters); do
-            kind delete cluster -n $cluster
-          done
-          rm -rf ~/.solo
+          cargo test --workspace
