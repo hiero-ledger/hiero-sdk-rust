@@ -19,7 +19,7 @@ hedera = { path = "../." }
 hedera-proto = { path = "../protobufs", version = "0.17.0", features = ["time_0_3", "fraction"] }
 once_cell = "1.21.3"
 futures-util = "0.3.31"
-serde_json = {version = "1.0.141", features = ["raw_value"] }
+serde_json = {version = "1.0.142", features = ["raw_value"] }
 serde = { version = "1.0.219", features = ["derive"] }
 time = "0.3.41"
 hex = "0.4.3"
