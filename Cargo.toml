@@ -27,7 +27,7 @@ fraction = { version = "0.15.1", default-features = false }
 futures-core = "0.3.31"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.11"
-hedera-proto = { path = "./protobufs", version = "0.17.0", features = ["time_0_3", "fraction"] }
+hedera-proto = { path = "./protobufs", version = "0.18.0", features = ["time_0_3", "fraction"] }
 hex = "0.4.3"
 hmac = "0.12.1"
 # Dependency of tonic 0.12
