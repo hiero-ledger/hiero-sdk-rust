@@ -7,11 +7,10 @@ on:
         type: string
         required: true
       dual-publish-enabled:
-        # default to true when dual-publishing period is active
         description: "Dual Publish Enabled"
         type: boolean
         required: false
-        default: false
+        default: true
       dry-run-enabled:
         description: "Dry Run Enabled"
         type: boolean
@@ -41,7 +40,7 @@ jobs:
     name: Validate Release
     runs-on: hiero-client-sdk-linux-medium
     env:
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'false' }}
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'true' }}
     outputs:
       # Project tag
       tag: ${{ steps.sdk-tag.outputs.name }}
@@ -325,8 +324,7 @@ jobs:
       - run-safety-checks
     runs-on: hiero-client-sdk-linux-medium
     env:
-      # Set the default to 'true' when the dual-publishing period is active
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'false' }}
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || 'true' }}
       DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled || 'false' }}
     steps:
       - name: Harden Runner
