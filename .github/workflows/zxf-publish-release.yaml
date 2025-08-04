@@ -28,6 +28,11 @@ permissions:
   contents: write
 
 env:
+  SOLO_CLUSTER_NAME: "solo-rust"
+  SOLO_NAMESPACE: "solo-rust"
+  SOLO_CLUSTER_SETUP_NAMESPACE: "solo-rust-cluster"
+  SOLO_DEPLOYMENT: "solo-rust-deployment"
+  CONSENSUS_NODE_VERSION: "v0.60.0-alpha.0"
   NODE_VERSION: "20.18.3"
 
 jobs:
@@ -257,12 +262,31 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Prepare Hiero Solo
-        id: solo
-        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
+      # Set up kind; needed for configuring the solo environment
+      - name: Setup Kind
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
         with:
-          installMirrorNode: true
-          hieroVersion: v0.60.0-alpha.0
+          install_only: true
+          node_image: kindest/node:v1.31.4@sha256:2cb39f7295fe7eafee0842b1052a599a4fb0f8bcf3f83d96c7f4864c357c6c30
+          version: v0.26.0
+          kubectl_version: v1.31.4
+          verbosity: 3
+          wait: 120s
+
+      # Install solo and configure it for the safety checks
+      - name: Install Solo
+        run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
+
+      - name: Configure Solo
+        run: |
+          echo "::group::Kind Create Cluster"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
+          echo "::endgroup::"
+          
+          echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
+          solo quick-start single deploy
+          echo "::endgroup::"
 
       - name: Create env file
         run: |
@@ -283,7 +307,15 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
+          cargo test --workspace 
+
+      - name: Clean up solo deployment
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
 
   publish:
     name: Publish SDK to crates.io
@@ -362,12 +394,31 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Prepare Hiero Solo
-        id: solo
-        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
+      # Set up kind; needed for configuring the solo environment
+      - name: Setup Kind
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
         with:
-          installMirrorNode: true
-          hieroVersion: v0.60.0-alpha.0
+          install_only: true
+          node_image: kindest/node:v1.31.4@sha256:2cb39f7295fe7eafee0842b1052a599a4fb0f8bcf3f83d96c7f4864c357c6c30
+          version: v0.26.0
+          kubectl_version: v1.31.4
+          verbosity: 3
+          wait: 120s
+
+      # Install solo and configure it for the safety checks
+      - name: Install Solo
+        run: npm install -g @hashgraph/solo@${{ vars.SOLO_VERSION }}
+
+      - name: Configure Solo
+        run: |
+          echo "::group::Kind Create Cluster"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
+          echo "::endgroup::"
+
+          echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
+          solo quick-start single deploy
+          echo "::endgroup::"
 
       - name: Create env file
         run: |
@@ -396,7 +447,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Update TCK Cargo.toml with new dependencies"
-          # Update the dependencies in the tck/Cargo.toml
+          # Update the dependencies in the tck/Cargo.toml for both protobufs and sdk
           sed -i "s/hedera/hiero-sdk/g" tck/Cargo.toml
           echo "::endgroup::"
           
@@ -414,6 +465,14 @@ jobs:
           cargo generate-lockfile
           echo "::endgroup::"
 
+      - name: Clean up solo deployment
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
+
       - name: Publish proto to crates.io (hiero-sdk-proto)
         if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
         env:
@@ -422,6 +481,69 @@ jobs:
           echo "cargo publish ${{ steps.proto-publish-args.outputs.args }}"
           cargo publish ${{ steps.proto-publish-args.outputs.args }}
         working-directory: protobufs
+
+      # Test the hiero-sdk package if proto hasn't been published yet.
+      - name: Reset the workspace
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          echo "::group::Reset Workspace"
+          git reset --hard
+          git clean -fdx
+          echo "::endgroup::"
+
+      - name: Configure Solo
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          echo "::group::Kind Create Cluster"
+          kind create cluster -n "${SOLO_CLUSTER_NAME}"
+          echo "::endgroup::"
+
+          echo "::group::Solo Quick Start Single Deploy"
+          # Configures the entire network including the consensus node, mirror node, rpc, and explorer
+          solo quick-start single deploy
+          echo "::endgroup::"
+
+      - name: Create env file
+        run: |
+          touch .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
+          echo TEST_NETWORK_NAME="localhost" >> .env
+          echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
+
+      - name: Set up Cargo files for SDK Dual publish
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          echo "::group::Update main Cargo.toml with new name and dependencies"
+          toml set Cargo.toml package.name "hiero-sdk" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+          
+          echo "::group::Update TCK Cargo.toml with new dependencies"
+          # Update the dependencies in the tck/Cargo.toml
+          sed -i "s/hedera =/hiero-sdk =/g" tck/Cargo.toml
+          echo "::endgroup::"
+          
+          echo "::group::Update files with new names"
+          find . -type f -name "*.rs" -exec sed -i "s/\buse hedera\b/use hiero_sdk/g" {} +
+          find . -type f -name "*.rs" -exec sed -i "s/\bhedera::\b/hiero_sdk::/g" {} +
+          echo "::endgroup::"
+          
+          echo "::group::Verify Cargo.toml changes"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
+          cargo check --examples --workspace
+          cargo test --workspace 
+          cargo generate-lockfile
+          echo "::endgroup::"
+
+      - name: Clean up solo deployment
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
+        run: |
+          solo quick-start single destroy
+          for cluster in $(kind get clusters); do
+            kind delete cluster -n $cluster
+          done
+          rm -rf ~/.solo
 
       - name: Publish SDK to crates.io (hiero-sdk)
         if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
