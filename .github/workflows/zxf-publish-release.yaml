@@ -1,4 +1,4 @@
-name: "Publish Release"
+name: "ZXF: Publish Release"
 on:
   workflow_dispatch:
     inputs:
@@ -84,7 +84,7 @@ jobs:
           semver --version
           echo "::endgroup::"
             
-      - name: Set up Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
@@ -242,7 +242,7 @@ jobs:
           ref: ${{ inputs.tag || '' }}
           submodules: 'recursive'
 
-      - name: Set up Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0
@@ -338,7 +338,7 @@ jobs:
           ref: ${{ inputs.tag || '' }}
           submodules: 'recursive'
 
-      - name: Set up Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: 1.88.0

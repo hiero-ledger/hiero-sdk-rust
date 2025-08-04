@@ -1,4 +1,4 @@
-name: Rust CI
+name: "Flow: Rust CI"
 on:
   pull_request:
   push:
@@ -59,11 +59,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Rust Cache
-        uses: step-security/rust-cache@94e3ae6a5bdb04807deb1cb2274adab839828881 # v2.8.0
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
-          workspaces: |
-            sdk/rust
+          toolchain: 1.88.0
 
       - name: Setup GCC and OpenSSL
         run: |
@@ -95,11 +94,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Rust Cache
-        uses: step-security/rust-cache@94e3ae6a5bdb04807deb1cb2274adab839828881 # v2.8.0
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
-          workspaces: |
-            .
+          toolchain: 1.88.0
 
       - name: Setup GCC and OpenSSL
         run: |
