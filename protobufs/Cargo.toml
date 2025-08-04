@@ -5,6 +5,29 @@ name = "hedera-proto"
 description = "Protobufs for the Hedera™ Hashgraph SDK"
 repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
 version = "0.18.0"
+exclude = [
+    "services/.github",
+    "services/config",
+    "services/docs",
+    "services/example-apps",
+    "services/gradle",
+    "services/hedera-node",
+    "services/hiero-dependency-versions",
+    "services/platform-sdk",
+    "services/.gitignore",
+    "services/.pre-commit-config.yaml",
+    "services/.remarkrc",
+    "services/.snyk",
+    "services/build.gradle",
+    "services/codecov.yml",
+    "services/gradle.properties",
+    "services/gradlew",
+    "services/gradlew.bat",
+    "services/LICENSE",
+    "services/README.md",
+    "services/settings.gradle.kts",
+    "services/version.txt"
+]
 
 [features]
 
