@@ -40,7 +40,7 @@ jobs:
     name: Validate Release
     runs-on: hiero-client-sdk-linux-medium
     env:
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled == 'true' || github.event_name == 'push' }}
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || github.event_name == 'push' }}
     outputs:
       # Project tag
       tag: ${{ steps.sdk-tag.outputs.name }}
@@ -324,7 +324,7 @@ jobs:
       - run-safety-checks
     runs-on: hiero-client-sdk-linux-medium
     env:
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled == 'true' || github.event_name == 'push' }}
+      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || github.event_name == 'push' }}
       DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled || 'false' }}
     steps:
       - name: Harden Runner
