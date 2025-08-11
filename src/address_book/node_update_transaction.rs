@@ -225,6 +225,14 @@ impl NodeUpdateTransaction {
         self.data_mut().grpc_proxy_endpoint = Some(grpc_proxy_endpoint);
         self
     }
+
+    /// Deletes the gRPC proxy endpoint and sets it to null.
+    ///
+    /// This clears the gRPC proxy endpoint field, effectively removing it from the node update.
+    pub fn delete_grpc_proxy_endpoint(&mut self) -> &mut Self {
+        self.data_mut().grpc_proxy_endpoint = None;
+        self
+    }
 }
 
 impl TransactionData for NodeUpdateTransactionData {}
@@ -540,6 +548,26 @@ mod tests {
         tx.grpc_proxy_endpoint(grpc_proxy_endpoint.clone());
 
         assert_eq!(tx.get_grpc_proxy_endpoint(), Some(&grpc_proxy_endpoint));
+    }
+
+    #[test]
+    fn delete_grpc_proxy_endpoint() {
+        let grpc_proxy_endpoint = make_ip_address_list().into_iter().next().unwrap();
+        let mut tx = NodeUpdateTransaction::new();
+
+        // First set the grpc proxy endpoint
+        tx.grpc_proxy_endpoint(grpc_proxy_endpoint.clone());
+        assert_eq!(tx.get_grpc_proxy_endpoint(), Some(&grpc_proxy_endpoint));
+
+        // Then delete it
+        tx.delete_grpc_proxy_endpoint();
+        assert_eq!(tx.get_grpc_proxy_endpoint(), None);
+    }
+
+    #[test]
+    #[should_panic]
+    fn delete_grpc_proxy_endpoint_frozen_panic() {
+        make_transaction().delete_grpc_proxy_endpoint();
     }
 
     #[test]
