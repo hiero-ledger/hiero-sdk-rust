@@ -554,11 +554,11 @@ mod tests {
     fn delete_grpc_proxy_endpoint() {
         let grpc_proxy_endpoint = make_ip_address_list().into_iter().next().unwrap();
         let mut tx = NodeUpdateTransaction::new();
-        
+
         // First set the grpc proxy endpoint
         tx.grpc_proxy_endpoint(grpc_proxy_endpoint.clone());
         assert_eq!(tx.get_grpc_proxy_endpoint(), Some(&grpc_proxy_endpoint));
-        
+
         // Then delete it
         tx.delete_grpc_proxy_endpoint();
         assert_eq!(tx.get_grpc_proxy_endpoint(), None);
