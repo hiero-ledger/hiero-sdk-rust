@@ -909,7 +909,9 @@ impl AnyTransaction {
                     .into_iter()
                     .map(CustomFeeLimit::from_protobuf)
                     .collect::<Result<Vec<_>, _>>()?,
-                batch_key: first_body.batch_key.map(|key| crate::protobuf::FromProtobuf::from_protobuf(key).unwrap()),
+                batch_key: first_body
+                    .batch_key
+                    .map(|key| crate::protobuf::FromProtobuf::from_protobuf(key).unwrap()),
             },
             signers: Vec::new(),
             sources: None,
@@ -1119,9 +1121,9 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                 (Self::Ethereum(v), Data::EthereumTransaction(element)) => v.push(element),
                 (Self::UtilPrng(v), Data::UtilPrng(element)) => v.push(element),
                 (Self::TokenAirdrop(v), Data::TokenAirdrop(element)) => v.push(element),
-                                 (Self::TokenClaimAirdrop(v), Data::TokenClaimAirdrop(element)) => v.push(element),
-                 (Self::TokenCancelAirdrop(v), Data::TokenCancelAirdrop(element)) => v.push(element),
-                 (Self::AtomicBatch(v), Data::AtomicBatch(element)) => v.push(element),
+                (Self::TokenClaimAirdrop(v), Data::TokenClaimAirdrop(element)) => v.push(element),
+                (Self::TokenCancelAirdrop(v), Data::TokenCancelAirdrop(element)) => v.push(element),
+                (Self::AtomicBatch(v), Data::AtomicBatch(element)) => v.push(element),
                 _ => return Err(Error::from_protobuf("mismatched transaction types")),
             }
         }

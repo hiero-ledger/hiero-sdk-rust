@@ -517,22 +517,22 @@ impl<D: ValidateChecksums> Transaction<D> {
 
 impl<D: TransactionExecute> Transaction<D> {
     /// Convert this transaction to signed transaction bytes.
-    /// 
+    ///
     /// This is used internally for batch transactions to get the bytes
     /// of each inner transaction.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the transaction is not frozen or cannot be serialized.
     pub fn to_signed_transaction_bytes(&self) -> crate::Result<Vec<u8>> {
         if !self.is_frozen() {
             return Err(crate::Error::basic_parse(
-                "Transaction must be frozen to get signed transaction bytes"
+                "Transaction must be frozen to get signed transaction bytes",
             ));
         }
 
         let transaction_list = self.make_transaction_list()?;
-        
+
         // For batch transactions, we need the signed transaction bytes from the first transaction
         if let Some(first_transaction) = transaction_list.first() {
             Ok(first_transaction.signed_transaction_bytes.clone())
@@ -543,11 +543,15 @@ impl<D: TransactionExecute> Transaction<D> {
 
     /// Convenience method to mark a transaction as part of a batch transaction.
     /// The Transaction will be frozen and signed by the operator of the client.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the client has no operator configured.
-    pub fn batchify(&mut self, client: &crate::Client, batch_key: crate::Key) -> crate::Result<&mut Self> {
+    pub fn batchify(
+        &mut self,
+        client: &crate::Client,
+        batch_key: crate::Key,
+    ) -> crate::Result<&mut Self> {
         self.require_not_frozen();
         self.set_batch_key(batch_key);
         self.freeze_with(client)?;

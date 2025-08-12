@@ -3,14 +3,7 @@
 use std::str::FromStr;
 
 use hedera::{
-    AccountBalanceQuery,
-    AccountCreateTransaction,
-    AccountId,
-    BatchTransaction,
-    Client,
-    Hbar,
-    PrivateKey,
-    TransferTransaction,
+    AccountBalanceQuery, AccountCreateTransaction, AccountId, BatchTransaction, Client, Hbar, PrivateKey, TransferTransaction
 };
 
 #[tokio::main]
@@ -48,7 +41,7 @@ async fn main() -> hedera::Result<()> {
     // Create a transfer from Alice to the operator
     let mut alice_transfer = TransferTransaction::new();
     alice_transfer
-        .hbar_transfer(alice, Hbar::new(-1))  // Alice sends 1 HBAR
+        .hbar_transfer(alice, Hbar::new(-1)) // Alice sends 1 HBAR
         .hbar_transfer(operator_account, Hbar::new(1)); // Operator receives 1 HBAR
 
     // Freeze the transaction and set batch key
@@ -59,7 +52,7 @@ async fn main() -> hedera::Result<()> {
     // Create a transfer from Bob to the operator
     let mut bob_transfer = TransferTransaction::new();
     bob_transfer
-        .hbar_transfer(bob, Hbar::new(-2))     // Bob sends 2 HBAR
+        .hbar_transfer(bob, Hbar::new(-2)) // Bob sends 2 HBAR
         .hbar_transfer(operator_account, Hbar::new(2)); // Operator receives 2 HBAR
 
     // Freeze the transaction and set batch key
@@ -75,7 +68,7 @@ async fn main() -> hedera::Result<()> {
 
     // Step 5: Create and execute the batch transaction
     println!("\nExecuting batch transaction...");
-    
+
     let mut batch = BatchTransaction::new();
     batch.add_inner_transaction(alice_transfer.into())?;
     batch.add_inner_transaction(bob_transfer.into())?;
@@ -85,7 +78,7 @@ async fn main() -> hedera::Result<()> {
     // Execute the batch transaction
     let response = batch.execute(&client).await?;
     let receipt = response.get_receipt(&client).await?;
-    
+
     println!("Batch transaction executed successfully!");
     println!("Transaction ID: {}", response.transaction_id);
     println!("Status: {:?}", receipt.status);
@@ -121,9 +114,11 @@ async fn create_account(
         .await?;
 
     let receipt = response.get_receipt(client).await?;
-    receipt.account_id.ok_or_else(|| hedera::Error::TimedOut(
-        Box::new(hedera::Error::GrpcStatus(tonic::Status::not_found("account_id not found in receipt")))
-    ))
+    receipt.account_id.ok_or_else(|| {
+        hedera::Error::TimedOut(Box::new(hedera::Error::GrpcStatus(
+            tonic::Status::not_found("account_id not found in receipt"),
+        )))
+    })
 }
 
 async fn print_balance(client: &Client, name: &str, account_id: AccountId) -> hedera::Result<()> {
@@ -133,4 +128,4 @@ async fn print_balance(client: &Client, name: &str, account_id: AccountId) -> he
         .await?;
     println!("{}: {} HBAR", name, balance.hbars);
     Ok(())
-} 
+}
