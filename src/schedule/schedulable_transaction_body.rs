@@ -544,6 +544,9 @@ impl TryFrom<AnyTransactionData> for AnySchedulableTransactionData {
             AnyTransactionData::Ethereum(_) => {
                 Err(crate::Error::basic_parse("Cannot schedule `EthereumTransaction`"))
             }
+            AnyTransactionData::Batch(_) => {
+                Err(crate::Error::basic_parse("Cannot schedule `BatchTransaction`"))
+            }
         }
     }
 }

@@ -40,6 +40,7 @@ mod data {
         NodeDeleteTransactionData as NodeDelete,
         NodeUpdateTransactionData as NodeUpdate,
     };
+    pub(super) use crate::batch_transaction::BatchTransactionData as Batch;
     pub(super) use crate::contract::{
         ContractCreateTransactionData as ContractCreate,
         ContractDeleteTransactionData as ContractDelete,
@@ -150,6 +151,7 @@ pub enum AnyTransactionData {
     TokenAirdrop(data::TokenAirdrop),
     TokenClaimAirdrop(data::TokenClaimAirdrop),
     TokenCancelAirdrop(data::TokenCancelAirdrop),
+    Batch(data::Batch),
 }
 
 impl ToTransactionDataProtobuf for AnyTransactionData {
@@ -292,6 +294,8 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
 
             Self::NodeDelete(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
+            Self::TokenReject(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
+
             Self::TokenAirdrop(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
             Self::TokenClaimAirdrop(transaction) => {
@@ -300,6 +304,7 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
             Self::TokenCancelAirdrop(transaction) => {
                 transaction.to_transaction_data_protobuf(chunk_info)
             }
+            Self::Batch(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
         }
     }
 }
@@ -356,6 +361,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenClaimAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenCancelAirdrop(transaction) => transaction.default_max_transaction_fee(),
+            Self::Batch(transaction) => transaction.default_max_transaction_fee(),
         }
     }
 
@@ -410,6 +416,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenAirdrop(it) => it.maybe_chunk_data(),
             Self::TokenClaimAirdrop(it) => it.maybe_chunk_data(),
             Self::TokenCancelAirdrop(it) => it.maybe_chunk_data(),
+            Self::Batch(it) => it.maybe_chunk_data(),
         }
     }
 
@@ -464,6 +471,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenAirdrop(it) => it.wait_for_receipt(),
             Self::TokenClaimAirdrop(it) => it.wait_for_receipt(),
             Self::TokenCancelAirdrop(it) => it.wait_for_receipt(),
+            Self::Batch(it) => it.wait_for_receipt(),
         }
     }
 }
@@ -524,6 +532,7 @@ impl TransactionExecute for AnyTransactionData {
             Self::TokenAirdrop(transaction) => transaction.execute(channel, request),
             Self::TokenClaimAirdrop(transaction) => transaction.execute(channel, request),
             Self::TokenCancelAirdrop(transaction) => transaction.execute(channel, request),
+            Self::Batch(transaction) => transaction.execute(channel, request),
         }
     }
 }
@@ -582,6 +591,7 @@ impl ValidateChecksums for AnyTransactionData {
             Self::TokenAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenClaimAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenCancelAirdrop(transaction) => transaction.validate_checksums(ledger_id),
+            Self::Batch(transaction) => transaction.validate_checksums(ledger_id),
         }
     }
 }
@@ -838,6 +848,9 @@ impl AnyTransactionData {
             ServicesTransactionDataList::TokenCancelAirdrop(v) => {
                 data::TokenCancelAirdrop::from_protobuf(try_into_only_element(v)?)?.into()
             }
+            ServicesTransactionDataList::AtomicBatch(v) => {
+                data::Batch::from_protobuf(try_into_only_element(v)?)?.into()
+            }
         };
 
         Ok(data)
@@ -896,6 +909,7 @@ impl AnyTransaction {
                     .into_iter()
                     .map(CustomFeeLimit::from_protobuf)
                     .collect::<Result<Vec<_>, _>>()?,
+                batch_key: first_body.batch_key.map(|key| crate::protobuf::FromProtobuf::from_protobuf(key).unwrap()),
             },
             signers: Vec::new(),
             sources: None,
@@ -955,6 +969,7 @@ enum ServicesTransactionDataList {
     TokenAirdrop(Vec<services::TokenAirdropTransactionBody>),
     TokenClaimAirdrop(Vec<services::TokenClaimAirdropTransactionBody>),
     TokenCancelAirdrop(Vec<services::TokenCancelAirdropTransactionBody>),
+    AtomicBatch(Vec<services::AtomicBatchTransactionBody>),
 }
 
 impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransactionDataList {
@@ -1104,9 +1119,9 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                 (Self::Ethereum(v), Data::EthereumTransaction(element)) => v.push(element),
                 (Self::UtilPrng(v), Data::UtilPrng(element)) => v.push(element),
                 (Self::TokenAirdrop(v), Data::TokenAirdrop(element)) => v.push(element),
-                (Self::TokenClaimAirdrop(v), Data::TokenClaimAirdrop(element)) => v.push(element),
-                (Self::TokenCancelAirdrop(v), Data::TokenCancelAirdrop(element)) => v.push(element),
-
+                                 (Self::TokenClaimAirdrop(v), Data::TokenClaimAirdrop(element)) => v.push(element),
+                 (Self::TokenCancelAirdrop(v), Data::TokenCancelAirdrop(element)) => v.push(element),
+                 (Self::AtomicBatch(v), Data::AtomicBatch(element)) => v.push(element),
                 _ => return Err(Error::from_protobuf("mismatched transaction types")),
             }
         }
@@ -1159,6 +1174,7 @@ macro_rules! impl_cast_any {
                             is_frozen: transaction.body.is_frozen,
                             regenerate_transaction_id: transaction.body.regenerate_transaction_id,
                             custom_fee_limits: transaction.body.custom_fee_limits,
+                            batch_key: transaction.body.batch_key,
                         },
                         signers: transaction.signers,
                         sources: transaction.sources,
@@ -1228,7 +1244,8 @@ impl_cast_any! {
     NodeUpdate,
     NodeDelete,
     TokenReject,
-    TokenAirdrop,
+             TokenAirdrop,
     TokenClaimAirdrop,
-    TokenCancelAirdrop
+    TokenCancelAirdrop,
+    Batch
 }

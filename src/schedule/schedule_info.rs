@@ -91,6 +91,7 @@ impl ScheduleInfo {
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),
                 custom_fee_limits: Vec::new(),
+                batch_key: None,
             },
             Vec::new(),
         ))
