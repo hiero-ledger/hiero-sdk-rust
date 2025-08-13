@@ -543,6 +543,7 @@ impl<D: TransactionExecute> Transaction<D> {
 
     /// Convenience method to mark a transaction as part of a batch transaction.
     /// The Transaction will be frozen and signed by the operator of the client.
+    /// Per HIP-551, inner transactions use node account ID 0.0.0.
     ///
     /// # Errors
     ///
@@ -554,6 +555,8 @@ impl<D: TransactionExecute> Transaction<D> {
     ) -> crate::Result<&mut Self> {
         self.require_not_frozen();
         self.set_batch_key(batch_key);
+        // Set node account ID to 0.0.0 for batch transactions (as per HIP-551)
+        self.node_account_ids([crate::AccountId::new(0, 0, 0)]);
         self.freeze_with(client)?;
         self.sign_with_operator(client)
     }
@@ -833,7 +836,7 @@ impl<D: TransactionExecute> Transaction<D> {
             sig_map: Some(services::SignatureMap { sig_pair: signatures.clone() }),
         };
         services::Transaction {
-            signed_transaction_bytes: Vec::new(),
+            signed_transaction_bytes: signed_transaction.encode_to_vec(),
             body: None,
             sigs: None,
             body_bytes: signed_transaction.body_bytes,
