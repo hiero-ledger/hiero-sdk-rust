@@ -44,27 +44,31 @@ use crate::{
 /// # Example usage
 ///
 /// ```rust,no_run
-/// use hedera::{BatchTransaction, TransferTransaction, PrivateKey, Client, Hbar};
+/// use hedera::{BatchTransaction, TransferTransaction, PrivateKey, Client, Hbar, AccountId};
 ///
 /// # async fn example() -> hedera::Result<()> {
 /// let client = Client::for_testnet();
 /// let batch_key = PrivateKey::generate_ed25519();
+/// let operator_key = PrivateKey::generate_ed25519();
+/// let sender = AccountId::new(0, 0, 123);
+/// let receiver = AccountId::new(0, 0, 456);
+/// let amount = Hbar::new(10);
 ///
 /// // Create and prepare inner transaction
-/// let inner_transaction = TransferTransaction::new()
+/// let mut inner_transaction = TransferTransaction::new();
+/// inner_transaction
 ///     .hbar_transfer(sender, -amount)
 ///     .hbar_transfer(receiver, amount)
-///     .freeze_with(&client)?
-///     .set_batch_key(batch_key.public_key().into())
-///     .sign(&operator_key)?;
+///     .freeze_with(&client)?;
+/// inner_transaction.set_batch_key(batch_key.public_key().into());
+/// inner_transaction.sign(operator_key);
 ///
 /// // Create and execute batch transaction
-/// let response = BatchTransaction::new()
-///     .add_inner_transaction(inner_transaction)?
-///     .freeze_with(&client)?
-///     .sign(&batch_key)?
-///     .execute(&client)
-///     .await?;
+/// let mut batch_transaction = BatchTransaction::new();
+/// batch_transaction.add_inner_transaction(inner_transaction.into())?;
+/// batch_transaction.freeze_with(&client)?;
+/// batch_transaction.sign(batch_key);
+/// let response = batch_transaction.execute(&client).await?;
 /// # Ok(())
 /// # }
 /// ```
