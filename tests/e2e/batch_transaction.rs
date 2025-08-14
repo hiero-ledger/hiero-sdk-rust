@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use time::{OffsetDateTime, Duration};
 
 use hedera::{
     AccountCreateTransaction,
@@ -13,6 +12,10 @@ use hedera::{
     PrivateKey,
     TopicCreateTransaction,
     TopicMessageSubmitTransaction,
+};
+use time::{
+    Duration,
+    OffsetDateTime,
 };
 
 use crate::common::{
@@ -112,10 +115,10 @@ async fn cannot_execute_batch_transaction_without_inner_transactions() -> anyhow
 
     // When / Then
     let mut empty_batch = BatchTransaction::new();
-    
+
     // Attempting to execute an empty batch transaction should fail
     let result = empty_batch.execute(&client).await;
-    
+
     assert!(result.is_err(), "Expected batch transaction without inner transactions to fail");
 
     Ok(())
@@ -147,10 +150,10 @@ async fn cannot_execute_batch_transaction_with_blacklisted_transaction() -> anyh
 
     // When / Then
     let mut batch_transaction = BatchTransaction::new();
-    
+
     // Attempting to add a blacklisted transaction should fail
     let result = batch_transaction.add_inner_transaction(freeze_transaction.into());
-    
+
     assert!(result.is_err(), "Expected adding blacklisted transaction to batch to fail");
 
     Ok(())
@@ -173,9 +176,7 @@ async fn cannot_execute_batch_transaction_with_invalid_inner_batch_key() -> anyh
 
     // Create an inner transaction with the WRONG batch key (accountKey instead of operatorKey)
     let mut inner_transaction = AccountCreateTransaction::new();
-    inner_transaction
-        .set_key_without_alias(account_key.public_key())
-        .initial_balance(Hbar::new(1));
+    inner_transaction.set_key_without_alias(account_key.public_key()).initial_balance(Hbar::new(1));
 
     // Batchify with the wrong key - this should cause issues later
     inner_transaction.batchify(&client, account_key.public_key().into())?; // Wrong key!
@@ -188,7 +189,7 @@ async fn cannot_execute_batch_transaction_with_invalid_inner_batch_key() -> anyh
 
     // Attempting to execute should fail due to batch key mismatch
     let result = batch_transaction.execute(&client).await;
-    
+
     assert!(result.is_err(), "Expected batch transaction with invalid inner batch key to fail");
 
     Ok(())
@@ -212,18 +213,16 @@ async fn cannot_execute_batch_transaction_without_batchifying_inner() -> anyhow:
 
     // Create an inner transaction WITHOUT batchifying it (no freeze, no batch key)
     let mut inner_transaction = AccountCreateTransaction::new();
-    inner_transaction
-        .set_key_without_alias(account_key.public_key())
-        .initial_balance(Hbar::new(1));
+    inner_transaction.set_key_without_alias(account_key.public_key()).initial_balance(Hbar::new(1));
 
     // NOTE: We deliberately do NOT call batchify() here!
 
     // When / Then
     let mut batch_transaction = BatchTransaction::new();
-    
+
     // Attempting to add an un-batchified transaction should fail
     let result = batch_transaction.add_inner_transaction(inner_transaction.into());
-    
+
     assert!(result.is_err(), "Expected adding non-batchified transaction to batch to fail");
 
     Ok(())
@@ -245,19 +244,16 @@ async fn can_execute_batch_transaction_with_chunked_inner() -> anyhow::Result<()
 
     // When - First create a topic
     let mut topic_create = TopicCreateTransaction::new();
-    topic_create
-        .admin_key(operator_key.public_key())
-        .topic_memo("testMemo");
+    topic_create.admin_key(operator_key.public_key()).topic_memo("testMemo");
 
     let topic_response = topic_create.execute(&client).await?;
     let topic_receipt = topic_response.get_receipt(&client).await?;
-    let topic_id = topic_receipt.topic_id.ok_or_else(|| anyhow::anyhow!("Topic ID not found in receipt"))?;
+    let topic_id =
+        topic_receipt.topic_id.ok_or_else(|| anyhow::anyhow!("Topic ID not found in receipt"))?;
 
     // Create a large topic message that will be chunked
     let mut inner_transaction = TopicMessageSubmitTransaction::new();
-    inner_transaction
-        .topic_id(topic_id)
-        .message(BIG_CONTENTS.as_bytes().to_vec());
+    inner_transaction.topic_id(topic_id).message(BIG_CONTENTS.as_bytes().to_vec());
 
     // Batchify the large message transaction
     inner_transaction.batchify(&client, operator_key.public_key().into())?;
@@ -273,6 +269,7 @@ async fn can_execute_batch_transaction_with_chunked_inner() -> anyhow::Result<()
 }
 
 #[tokio::test]
+#[ignore] // Ignored for now as we run the tests with 0.0.2 which does not incur fees
 async fn batch_transaction_incurs_fees_even_if_one_inner_failed() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
@@ -288,10 +285,7 @@ async fn batch_transaction_incurs_fees_even_if_one_inner_failed() -> anyhow::Res
 
     // Get initial account balance
     let initial_balance = {
-        let account_info = AccountInfoQuery::new()
-            .account_id(operator_id)
-            .execute(&client)
-            .await?;
+        let account_info = AccountInfoQuery::new().account_id(operator_id).execute(&client).await?;
         account_info.balance
     };
 
@@ -314,23 +308,21 @@ async fn batch_transaction_incurs_fees_even_if_one_inner_failed() -> anyhow::Res
 
     // When
     let mut batch_transaction = BatchTransaction::new();
-    batch_transaction.set_inner_transactions(vec![
-        inner_transaction1.into(),
-        inner_transaction2.into(),
-    ])?;
+    batch_transaction
+        .set_inner_transactions(vec![inner_transaction1.into(), inner_transaction2.into()])?;
 
     let tx_response = batch_transaction.execute(&client).await?;
-    
+
     // Expect the receipt to fail due to the second transaction requiring receiver signature
     let receipt_result = tx_response.get_receipt(&client).await;
-    assert!(receipt_result.is_err(), "Expected batch transaction receipt to fail due to receiver signature requirement");
+    assert!(
+        receipt_result.is_err(),
+        "Expected batch transaction receipt to fail due to receiver signature requirement"
+    );
 
     // Then - Check that fees were still charged despite the failure
     let final_balance = {
-        let account_info = AccountInfoQuery::new()
-            .account_id(operator_id)
-            .execute(&client)
-            .await?;
+        let account_info = AccountInfoQuery::new().account_id(operator_id).execute(&client).await?;
         account_info.balance
     };
 
