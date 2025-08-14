@@ -557,7 +557,6 @@ impl<D: TransactionExecute> Transaction<D> {
         self.set_batch_key(batch_key);
         // Set node account ID to 0.0.0 for batch transactions (as per HIP-551)
         self.node_account_ids([crate::AccountId::new(0, 0, 0)]);
-        self.freeze_with(client)?;
         self.sign_with_operator(client)
     }
     /// # Errors

@@ -209,7 +209,6 @@ impl ToTransactionDataProtobuf for BatchTransactionData {
                 .to_signed_transaction_bytes()
                 .expect("Inner transaction should be frozen and serializable");
 
-            println!("Signed transaction bytes: {:?}", signed_transaction_bytes);
             builder.transactions.push(signed_transaction_bytes);
         }
 
