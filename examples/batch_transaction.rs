@@ -7,6 +7,7 @@ use hedera::{
 };
 
 #[tokio::main]
+#[ignore] // Will currently not be working as the feature is disabled on testnet
 async fn main() -> hedera::Result<()> {
     // Create client for testnet (you can also use mainnet or previewnet)
     let client = Client::for_testnet();
