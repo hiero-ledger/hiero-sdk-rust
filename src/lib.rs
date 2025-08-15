@@ -101,6 +101,8 @@ mod protobuf;
 
 mod account;
 mod address_book;
+
+mod batch_transaction;
 mod client;
 mod contract;
 mod custom_fee_limit;
@@ -171,6 +173,7 @@ pub use address_book::{
     NodeDeleteTransaction,
     NodeUpdateTransaction,
 };
+pub use batch_transaction::BatchTransaction;
 pub use client::Client;
 pub(crate) use client::Operator;
 pub use contract::{

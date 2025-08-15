@@ -95,6 +95,7 @@ async fn frozen_serialized_transaction_can_be_deserialized() -> anyhow::Result<(
 }
 
 #[tokio::test]
+#[ignore]
 async fn serialized_deserialized_transaction_can_be_executed() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());

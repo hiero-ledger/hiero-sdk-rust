@@ -98,6 +98,9 @@ pub(crate) struct TransactionBody<D> {
     /// If left empty, the user is willing to pay any custom fee.
     /// If used with a transaction type that does not support custom fee limits, the transaction will fail.
     pub(crate) custom_fee_limits: Vec<CustomFeeLimit>,
+
+    /// The public key of the trusted batch assembler.
+    pub(crate) batch_key: Option<crate::Key>,
 }
 
 impl<D> Default for Transaction<D>
@@ -117,6 +120,7 @@ where
                 is_frozen: false,
                 regenerate_transaction_id: None,
                 custom_fee_limits: Vec::new(),
+                batch_key: None,
             },
             signers: Vec::new(),
             sources: None,
@@ -495,9 +499,66 @@ impl<D: ValidateChecksums> Transaction<D> {
 
         Ok(self)
     }
+
+    /// Set the key that will sign the batch of which this Transaction is a part of.
+    #[track_caller]
+    pub fn set_batch_key(&mut self, batch_key: crate::Key) -> &mut Self {
+        self.require_not_frozen();
+        self.body_mut().batch_key = Some(batch_key);
+        self
+    }
+
+    /// Get the key that will sign the batch of which this Transaction is a part of.
+    #[must_use]
+    pub fn get_batch_key(&self) -> Option<&crate::Key> {
+        self.body.batch_key.as_ref()
+    }
 }
 
 impl<D: TransactionExecute> Transaction<D> {
+    /// Convert this transaction to signed transaction bytes.
+    ///
+    /// This is used internally for batch transactions to get the bytes
+    /// of each inner transaction.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the transaction is not frozen or cannot be serialized.
+    pub fn to_signed_transaction_bytes(&self) -> crate::Result<Vec<u8>> {
+        if !self.is_frozen() {
+            return Err(crate::Error::basic_parse(
+                "Transaction must be frozen to get signed transaction bytes",
+            ));
+        }
+
+        let transaction_list = self.make_transaction_list()?;
+
+        // For batch transactions, we need the signed transaction bytes from the first transaction
+        if let Some(first_transaction) = transaction_list.first() {
+            Ok(first_transaction.signed_transaction_bytes.clone())
+        } else {
+            Err(crate::Error::basic_parse("No transactions found"))
+        }
+    }
+
+    /// Convenience method to mark a transaction as part of a batch transaction.
+    /// The Transaction will be frozen and signed by the operator of the client.
+    /// Per HIP-551, inner transactions use node account ID 0.0.0.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the client has no operator configured.
+    pub fn batchify(
+        &mut self,
+        client: &crate::Client,
+        batch_key: crate::Key,
+    ) -> crate::Result<&mut Self> {
+        self.require_not_frozen();
+        self.set_batch_key(batch_key);
+        // Set node account ID to 0.0.0 for batch transactions (as per HIP-551)
+        self.node_account_ids([crate::AccountId::new(0, 0, 0)]);
+        self.sign_with_operator(client)
+    }
     /// # Errors
     /// - If the transaction needs multiple chunks, or has no explicit transaction ID *and* `self.operator` is not set.
     ///
@@ -729,7 +790,7 @@ impl<D: TransactionExecute> Transaction<D> {
                 .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
                 .to_tinybars() as u64,
             max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
-            batch_key: None, // todo: add batch key
+            batch_key: self.body.batch_key.as_ref().map(|key| key.to_protobuf()),
         };
 
         let body_bytes = transaction_body.encode_to_vec();
@@ -774,7 +835,7 @@ impl<D: TransactionExecute> Transaction<D> {
             sig_map: Some(services::SignatureMap { sig_pair: signatures.clone() }),
         };
         services::Transaction {
-            signed_transaction_bytes: Vec::new(),
+            signed_transaction_bytes: signed_transaction.encode_to_vec(),
             body: None,
             sigs: None,
             body_bytes: signed_transaction.body_bytes,
@@ -1215,6 +1276,7 @@ where
             is_frozen,
             regenerate_transaction_id,
             custom_fee_limits,
+            batch_key,
         } = body;
 
         // not a `map().map_err()` because ownership.
@@ -1231,6 +1293,7 @@ where
                     is_frozen,
                     regenerate_transaction_id,
                     custom_fee_limits,
+                    batch_key,
                 },
                 signers,
                 sources,
@@ -1248,6 +1311,7 @@ where
                     is_frozen,
                     regenerate_transaction_id,
                     custom_fee_limits,
+                    batch_key: batch_key.clone(),
                 },
                 signers,
                 sources,
