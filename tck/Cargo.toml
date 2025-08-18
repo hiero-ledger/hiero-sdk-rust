@@ -9,7 +9,7 @@ repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
 [dependencies]
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 tokio = { version = "1.47.0", features = ["signal"] }
-anyhow = "1.0.98"
+anyhow = "1.0.99"
 tower = { version = "0.4.13", features = ["tracing"] }
 tracing = "0.1.41"
 async-trait = "0.1.88"
