@@ -10,9 +10,9 @@ use crate::{
     Client,
     Hbar,
     PrivateKey,
+    TransferTransaction,
     TopicMessageSubmitTransaction,
     TransactionId,
-    TransferTransaction,
 };
 
 #[test]
@@ -58,6 +58,43 @@ fn to_bytes_from_bytes() -> crate::Result<()> {
     assert_eq!(tx.get_transaction_valid_duration(), tx2.get_transaction_valid_duration());
     assert_eq!(lhs, rhs);
     assert!(tx2.sources.is_some());
+
+    Ok(())
+}
+
+#[test]
+fn signed_to_bytes_from_bytes_preserves_signatures() -> crate::Result<()> {
+    let mut tx = TransferTransaction::new();
+
+    // Build a minimal, frozen transaction (no network dependency)
+    let mut tx = tx
+        .max_transaction_fee(Hbar::new(10))
+        .transaction_valid_duration(time::Duration::seconds(119))
+        .transaction_memo("signed-preserve-test")
+        .hbar_transfer(2.into(), Hbar::new(2))
+        .hbar_transfer(101.into(), Hbar::new(-2))
+        .transaction_id(TransactionId {
+            account_id: 101.into(),
+            valid_start: OffsetDateTime::now_utc(),
+            nonce: None,
+            scheduled: false,
+        })
+        .node_account_ids([6.into(), 7.into()])
+        .freeze()?;
+
+    // Sign with an arbitrary key
+    let key: PrivateKey = "302e020100300506032b657004220420e40d4241d093b22910c78135e0501b137cd9205bbb9c0153c5adf2c65e7dc95a"
+        .parse()
+        .unwrap();
+    tx.sign(key);
+
+    // Serialize, then deserialize, then serialize again
+    let bytes_before = tx.to_bytes()?;
+    let tx2 = AnyTransaction::from_bytes(&bytes_before)?;
+    let bytes_after = tx2.to_bytes()?;
+
+    // If signatures are preserved, bytes should match
+    assert_eq!(bytes_before, bytes_after);
 
     Ok(())
 }
