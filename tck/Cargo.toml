@@ -12,7 +12,7 @@ tokio = { version = "1.47.0", features = ["signal"] }
 anyhow = "1.0.98"
 tower = { version = "0.4.13", features = ["tracing"] }
 tracing = "0.1.41"
-async-trait = "0.1.88"
+async-trait = "0.1.89"
 hyper = "1.6.0"
 tower-http = { version = "0.6.6", features = ["full"] }
 hedera = { path = "../." }
