@@ -26,6 +26,6 @@ hex = "0.4.3"
 hex-literal = "1.0.0"
 
 [dependencies.jsonrpsee]
-version = "0.24.9"
+version = "0.26.0"
 features = ["server", "macros", "client-core"]
 
