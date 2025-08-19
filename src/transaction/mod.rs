@@ -588,7 +588,9 @@ impl<D: TransactionExecute> Transaction<D> {
     /// # Panics
     /// - If `!self.is_frozen()`.
     pub fn to_bytes(&self) -> crate::Result<Vec<u8>> {
-        let transaction_list = self.make_transaction_list().unwrap();
+        let transaction_list = self
+            .signed_sources()
+            .map_or_else(|| self.make_transaction_list(), |it| Ok(it.transactions().to_vec()))?;
         Ok(hedera_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
     }
 
