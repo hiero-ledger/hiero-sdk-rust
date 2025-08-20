@@ -32,7 +32,7 @@ env:
   SOLO_NAMESPACE: "solo-rust"
   SOLO_CLUSTER_SETUP_NAMESPACE: "solo-rust-cluster"
   SOLO_DEPLOYMENT: "solo-rust-deployment"
-  CONSENSUS_NODE_VERSION: "v0.60.0-alpha.0"
+  CONSENSUS_NODE_VERSION: "v0.61.4"
   NODE_VERSION: "20.18.3"
 
 jobs:
