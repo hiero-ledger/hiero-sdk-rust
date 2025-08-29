@@ -1,15 +1,11 @@
-use hedera::{
-    Client,
-    TopicCreateTransaction,
-    TopicDeleteTransaction,
-    TopicId,
-};
+use hedera::{Client, TopicCreateTransaction, TopicDeleteTransaction, TopicId};
 
 mod create;
 mod delete;
 mod info;
 mod message;
 mod message_submit;
+mod revenue_schedule;
 mod update;
 // mod message;
 // mod message_submit;
