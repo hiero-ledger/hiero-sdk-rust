@@ -169,11 +169,11 @@ async fn revenue_generating_topic_cannot_charge_hbars_with_lower_limit_schedule(
     // The test verifies that the account balance is reasonable (not completely drained)
     let remaining_balance = account_info.balance.to_tinybars();
     let original_balance = hbar_amount as i64;
-    
+
     // Account should have most of its balance remaining (allowing for transaction fees)
     // We expect at least 40% of the original balance to remain after transaction fees
     let min_expected_balance = (original_balance as f64 * 0.4) as i64;
-    
+
     assert!(
         remaining_balance > min_expected_balance,
         "Expected balance to be greater than {} (40% of original), but was: {} ({})",
@@ -182,8 +182,11 @@ async fn revenue_generating_topic_cannot_charge_hbars_with_lower_limit_schedule(
         remaining_balance
     );
 
-    log::info!("Account balance after scheduled transaction: {} (started with {})", 
-              account_info.balance, Hbar::from_tinybars(original_balance));
+    log::info!(
+        "Account balance after scheduled transaction: {} (started with {})",
+        account_info.balance,
+        Hbar::from_tinybars(original_balance)
+    );
 
     // Clean up - delete the topic
     TopicDeleteTransaction::new()
@@ -197,8 +200,8 @@ async fn revenue_generating_topic_cannot_charge_hbars_with_lower_limit_schedule(
 }
 
 #[tokio::test]
-async fn revenue_generating_topic_get_scheduled_transaction_custom_fee_limits(
-) -> anyhow::Result<()> {
+async fn revenue_generating_topic_get_scheduled_transaction_custom_fee_limits() -> anyhow::Result<()>
+{
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
@@ -252,7 +255,8 @@ async fn revenue_generating_topic_get_scheduled_transaction_custom_fee_limits(
         .topic_id(topic_id)
         .custom_fee_limits([custom_fee_limit.clone()]);
 
-    let receipt = topic_message_submit.schedule().execute(&client).await?.get_receipt(&client).await?;
+    let receipt =
+        topic_message_submit.schedule().execute(&client).await?.get_receipt(&client).await?;
 
     let schedule_id = receipt.schedule_id.unwrap();
 
@@ -260,10 +264,7 @@ async fn revenue_generating_topic_get_scheduled_transaction_custom_fee_limits(
     client.set_operator(original_operator_id, original_operator_key);
 
     // Query the schedule info to get the scheduled transaction
-    let schedule_info = ScheduleInfoQuery::new()
-        .schedule_id(schedule_id)
-        .execute(&client)
-        .await?;
+    let schedule_info = ScheduleInfoQuery::new().schedule_id(schedule_id).execute(&client).await?;
 
     let scheduled_transaction = schedule_info.scheduled_transaction()?;
 
@@ -277,7 +278,7 @@ async fn revenue_generating_topic_get_scheduled_transaction_custom_fee_limits(
     // For now, we'll verify that the transaction was scheduled successfully
     // and the basic transaction data is preserved
     let retrieved_fee_limits = topic_message_submit_transaction.get_custom_fee_limits();
-    
+
     // Currently expecting 0 due to implementation limitation
     assert_eq!(
         retrieved_fee_limits.len(),
@@ -289,7 +290,9 @@ async fn revenue_generating_topic_get_scheduled_transaction_custom_fee_limits(
     assert_eq!(topic_message_submit_transaction.get_topic_id(), Some(topic_id));
     assert_eq!(topic_message_submit_transaction.get_message(), Some("message".as_bytes()));
 
-    log::info!("Note: Custom fee limits preservation in scheduled transactions is not yet implemented");
+    log::info!(
+        "Note: Custom fee limits preservation in scheduled transactions is not yet implemented"
+    );
 
     // Clean up - delete the topic
     TopicDeleteTransaction::new()
