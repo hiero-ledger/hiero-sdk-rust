@@ -35,7 +35,7 @@ async fn increment_nonce_through_contract_constructor() -> anyhow::Result<()> {
 
     let response = ContractCreateTransaction::new()
         .admin_key(op.private_key.public_key())
-        .gas(100000)
+        .gas(1000000)
         .bytecode_file_id(file_id)
         .contract_memo("[e2e::ContractADeploysContractBInConstructor]")
         .execute(&client)
