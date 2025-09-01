@@ -193,6 +193,7 @@ pub use contract::{
     ContractUpdateTransaction,
     DelegateContractId,
 };
+pub use custom_fee_limit::CustomFeeLimit;
 pub use custom_fixed_fee::CustomFixedFee;
 pub use entity_id::EntityId;
 pub(crate) use entity_id::ValidateChecksums;
