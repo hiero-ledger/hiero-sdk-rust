@@ -633,7 +633,7 @@ async fn invalid_body_fail() -> anyhow::Result<()> {
     assert_matches!(
         res,
         Err(hedera::Error::TransactionPreCheckStatus {
-            status: Status::InvalidTransactionBody,
+            status: Status::AirdropContainsMultipleSendersForAToken,
             ..
         })
     );

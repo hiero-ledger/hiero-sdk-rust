@@ -39,7 +39,7 @@ async fn query() -> anyhow::Result<()> {
 
     let contract_id = ContractCreateTransaction::new()
         .admin_key(op.private_key.public_key())
-        .gas(200000)
+        .gas(2000000)
         .constructor_parameters(
             ContractFunctionParameters::new().add_string("Hello from Hedera.").to_bytes(None),
         )
@@ -101,7 +101,7 @@ async fn get_cost_big_max_query() -> anyhow::Result<()> {
 
     let contract_id = ContractCreateTransaction::new()
         .admin_key(op.private_key.public_key())
-        .gas(200000)
+        .gas(2000000)
         .constructor_parameters(
             ContractFunctionParameters::new().add_string("Hello from Hedera.").to_bytes(None),
         )
@@ -166,7 +166,7 @@ async fn get_cost_small_max_query() -> anyhow::Result<()> {
 
     let contract_id = ContractCreateTransaction::new()
         .admin_key(op.private_key.public_key())
-        .gas(200000)
+        .gas(2000000)
         .constructor_parameters(
             ContractFunctionParameters::new().add_string("Hello from Hedera.").to_bytes(None),
         )

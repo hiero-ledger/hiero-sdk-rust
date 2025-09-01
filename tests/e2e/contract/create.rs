@@ -29,7 +29,7 @@ async fn basic() -> anyhow::Result<()> {
 
     let contract_id = ContractCreateTransaction::new()
         .admin_key(op.private_key.public_key())
-        .gas(200_000)
+        .gas(2000000)
         .constructor_parameters(
             ContractFunctionParameters::new().add_string("Hello from Hedera.").to_bytes(None),
         )
@@ -75,7 +75,7 @@ async fn no_admin_key() -> anyhow::Result<()> {
     let file_id = bytecode_file_id(&client, op.private_key.public_key()).await?;
 
     let contract_id = ContractCreateTransaction::new()
-        .gas(200_000)
+        .gas(2000000)
         .constructor_parameters(
             ContractFunctionParameters::new().add_string("Hello from Hedera.").to_bytes(None),
         )
