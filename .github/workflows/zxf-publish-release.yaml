@@ -381,6 +381,15 @@ jobs:
           installMirrorNode: true
           hieroVersion: ${{ env.CONSENSUS_NODE_VERSION }}
 
+      - name: Create env file
+        run: |
+          touch .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
+          echo TEST_NETWORK_NAME="localhost" >> .env
+          echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
+
       # Update the Cargo.toml files for the hiero-sdk-* packages
       - name: Update Cargo.toml for hiero publishing
         if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
