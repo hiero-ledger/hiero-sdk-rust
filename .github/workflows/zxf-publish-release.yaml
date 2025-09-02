@@ -19,6 +19,9 @@ on:
   push:
     tags:
       - "v*.*.*"
+  pull_request:
+    branches:
+      - main
 
 defaults:
   run:
@@ -298,6 +301,7 @@ jobs:
 
   publish:
     name: Publish SDK to crates.io
+    if: github.event_name != 'pull_request'
     needs:
       - validate-release
       - run-safety-checks
