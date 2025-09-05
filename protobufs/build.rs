@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::env;
-use std::fs::{self, create_dir_all, read_dir};
+use std::fs::{
+    self,
+    create_dir_all,
+    read_dir,
+};
 use std::path::Path;
 
 use anyhow::Ok;
