@@ -56,7 +56,7 @@ async fn main() -> anyhow::Result<()> {
 
     let bobs_id = AccountCreateTransaction::new()
         .receiver_signature_required(true)
-        .key(bobs_key.public_key())
+        .set_key_without_alias(bobs_key.public_key())
         .initial_balance(Hbar::new(10))
         .freeze_with(&client)?
         .sign(bobs_key.clone())

@@ -1,7 +1,8 @@
 # Hiero™ Rust SDK
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/hiero-ledger/hiero-sdk-rust/badge)](https://api.scorecard.dev/projects/github.com/hiero-ledger/hiero-sdk-rust)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/hiero-ledger/hiero-sdk-rust/badge)](https://scorecard.dev/viewer/?uri=github.com/hiero-ledger/hiero-sdk-rust)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/10697/badge)](https://bestpractices.coreinfrastructure.org/projects/10697)
+[![License](https://img.shields.io/badge/license-apache2-blue.svg)](LICENSE)
 
 > The SDK for interacting with Hiero: the official distributed
 > consensus platform built using the Hashgraph consensus algorithm for fast,

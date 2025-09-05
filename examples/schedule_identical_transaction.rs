@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
         println!("public key: {public_key}");
 
         let receipt = AccountCreateTransaction::new()
-            .key(public_key)
+            .set_key_without_alias(public_key)
             .initial_balance(Hbar::new(1))
             .execute(&client)
             .await?
@@ -73,7 +73,7 @@ async fn main() -> anyhow::Result<()> {
     // The key that must sign each transfer out of the account. If receiverSigRequired is true, then
     // it must also sign any transfer into the account.
     let threshold_account = AccountCreateTransaction::new()
-        .key(key_list.clone())
+        .set_key_without_alias(key_list.clone())
         .initial_balance(Hbar::new(10))
         .execute(&client)
         .await?

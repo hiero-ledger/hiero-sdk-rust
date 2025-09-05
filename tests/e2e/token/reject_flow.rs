@@ -208,7 +208,7 @@ async fn create_receiver_account(
     client: &hedera::Client,
 ) -> hedera::Result<Account> {
     let receipt = hedera::AccountCreateTransaction::new()
-        .key(account_key.public_key())
+        .set_key_without_alias(account_key.public_key())
         .initial_balance(Hbar::new(1))
         .max_automatic_token_associations(max_automatic_token_associations)
         .execute(client)

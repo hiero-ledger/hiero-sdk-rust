@@ -91,6 +91,7 @@ impl ScheduleInfo {
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),
                 custom_fee_limits: Vec::new(),
+                batch_key: None,
             },
             Vec::new(),
         ))
@@ -274,6 +275,7 @@ mod tests {
                     SchedulableTransactionBody {
                         transaction_fee: 200000000,
                         memo: "",
+                        max_custom_fees: [],
                         data: Some(
                             CryptoDelete(
                                 CryptoDeleteTransactionBody {
@@ -459,6 +461,7 @@ mod tests {
                     SchedulableTransactionBody {
                         transaction_fee: 200000000,
                         memo: "",
+                        max_custom_fees: [],
                         data: Some(
                             CryptoDelete(
                                 CryptoDeleteTransactionBody {

@@ -110,7 +110,7 @@ async fn create_contract(
         }
 
         let contract_id = tx
-            .gas(200_000)
+            .gas(300_000)
             .constructor_parameters(
                 ContractFunctionParameters::new().add_string("Hello from Hedera.").to_bytes(None),
             )

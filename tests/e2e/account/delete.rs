@@ -22,7 +22,7 @@ async fn create_then_delete() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let receipt = AccountCreateTransaction::new()
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .initial_balance(Hbar::new(1))
         .execute(&client)
         .await?
@@ -81,7 +81,7 @@ async fn missing_deletee_signature_fails() -> anyhow::Result<()> {
     let key = PrivateKey::generate_ed25519();
 
     let receipt = AccountCreateTransaction::new()
-        .key(key.public_key())
+        .set_key_without_alias(key.public_key())
         .initial_balance(Hbar::new(1))
         .execute(&client)
         .await?

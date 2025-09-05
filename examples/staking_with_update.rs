@@ -38,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
     // If you really want to stake to node 0, you should use
     // `.setStakedNodeId()` instead
     let new_account_id = AccountCreateTransaction::new()
-        .key(new_key.public_key())
+        .set_key_without_alias(new_key.public_key())
         .initial_balance(Hbar::new(10))
         .staked_account_id("0.0.3".parse()?)
         .execute(&client)

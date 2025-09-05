@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     println!("public key = {}", new_key.public_key());
 
     let response = AccountCreateTransaction::new()
-        .key(new_key.public_key())
+        .set_key_without_alias(new_key.public_key())
         .execute(&client)
         .await?;
 

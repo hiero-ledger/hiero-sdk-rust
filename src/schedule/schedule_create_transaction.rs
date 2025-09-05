@@ -185,6 +185,7 @@ impl ToTransactionDataProtobuf for ScheduleCreateTransactionData {
                     .max_transaction_fee
                     .unwrap_or_else(|| scheduled.data.default_max_transaction_fee())
                     .to_tinybars() as u64,
+                max_custom_fees: vec![],
             }
         });
 
@@ -293,6 +294,7 @@ mod tests {
                         SchedulableTransactionBody {
                             transaction_fee: 200000000,
                             memo: "",
+                            max_custom_fees: [],
                             data: Some(
                                 CryptoTransfer(
                                     CryptoTransferTransactionBody {
@@ -427,6 +429,7 @@ mod tests {
                 data: Some(
                     scheduled_transaction().data().to_schedulable_transaction_data_protobuf(),
                 ),
+                max_custom_fees: vec![],
             }),
             memo: SCHEDULE_MEMO.to_owned(),
             admin_key: Some(admin_key().to_protobuf()),

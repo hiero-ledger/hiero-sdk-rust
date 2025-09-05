@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
     let key2 = PrivateKey::generate_ed25519();
 
     let response = AccountCreateTransaction::new()
-        .key(key1.public_key())
+        .set_key_without_alias(key1.public_key())
         .initial_balance(Hbar::new(1))
         .execute(&client)
         .await?;

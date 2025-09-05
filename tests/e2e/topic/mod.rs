@@ -10,6 +10,7 @@ mod delete;
 mod info;
 mod message;
 mod message_submit;
+mod revenue_schedule;
 mod update;
 // mod message;
 // mod message_submit;

@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
     // The only _required_ property here is `key`
     let response = AccountCreateTransaction::new()
         .node_account_ids([AccountId::from(3)])
-        .key(key_list)
+        .set_key_without_alias(key_list)
         .initial_balance(Hbar::new(10))
         .execute(&client)
         .await?;

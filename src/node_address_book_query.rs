@@ -47,6 +47,10 @@ pub struct NodeAddressBookQueryData {
     /// The maximum number of node addresses to receive.
     /// Defaults to _all_.
     limit: u32,
+
+    /// The shard and realm of the address book file on the network.
+    shard: Option<u64>,
+    realm: Option<u64>,
 }
 
 impl NodeAddressBookQueryData {
@@ -60,7 +64,12 @@ impl NodeAddressBookQueryData {
 
 impl Default for NodeAddressBookQueryData {
     fn default() -> Self {
-        Self { file_id: FileId::ADDRESS_BOOK, limit: 0 }
+        Self {
+            file_id: FileId::get_address_book_file_id_for(0, 0),
+            limit: 0,
+            shard: None,
+            realm: None,
+        }
     }
 }
 
@@ -90,6 +99,18 @@ impl NodeAddressBookQuery {
         self.data.limit = limit;
         self
     }
+
+    /// Sets the shard of the address book file on the network.
+    pub fn shard(&mut self, shard: u64) -> &mut Self {
+        self.data.shard = Some(shard);
+        self
+    }
+
+    /// Sets the realm of the address book file on the network.
+    pub fn realm(&mut self, realm: u64) -> &mut Self {
+        self.data.realm = Some(realm);
+        self
+    }
 }
 
 impl From<NodeAddressBookQueryData> for AnyMirrorQueryData {
@@ -117,7 +138,13 @@ impl MirrorRequest for NodeAddressBookQueryData {
         channel: Channel,
     ) -> BoxFuture<'_, tonic::Result<Self::ConnectStream>> {
         Box::pin(async {
-            let file_id = self.file_id.to_protobuf();
+            let file_id = if self.shard.is_some() && self.realm.is_some() {
+                FileId::get_address_book_file_id_for(self.shard.unwrap(), self.realm.unwrap())
+                    .to_protobuf()
+            } else {
+                FileId::get_address_book_file_id_for(0, 0).to_protobuf()
+            };
+
             let request =
                 mirror::AddressBookQuery { file_id: Some(file_id), limit: self.limit as i32 };
 

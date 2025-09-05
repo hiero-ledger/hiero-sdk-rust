@@ -1,5 +1,6 @@
 mod account;
 mod address_book;
+mod batch_transaction;
 mod client;
 mod common;
 mod contract;

@@ -96,6 +96,45 @@ impl Default for AccountCreateTransactionData {
 }
 
 impl AccountCreateTransaction {
+    /// Sets the ECDSA(secp256k1) private key as the account key and derives the alias (EVM address) from it.
+    pub fn set_ecdsa_key_with_alias(&mut self, ecdsa_key: crate::PrivateKey) -> &mut Self {
+        if !ecdsa_key.is_ecdsa() {
+            panic!("Provided key is not an ECDSA(secp256k1) private key");
+        }
+        let public_key = ecdsa_key.public_key();
+        let evm_address = public_key
+            .to_evm_address()
+            .expect("Failed to derive EVM address from ECDSA public key");
+        self.data_mut().key = Some(public_key.clone().into());
+        self.alias(evm_address);
+        self
+    }
+
+    /// Sets a generic key and an ECDSA(secp256k1) private key, and derives the alias from the ECDSA key.
+    pub fn set_key_with_alias(
+        &mut self,
+        key: impl Into<Key>,
+        ecdsa_key: crate::PrivateKey,
+    ) -> &mut Self {
+        if !ecdsa_key.is_ecdsa() {
+            panic!("Provided key is not an ECDSA(secp256k1) private key");
+        }
+        let public_key = ecdsa_key.public_key();
+        let evm_address = public_key
+            .to_evm_address()
+            .expect("Failed to derive EVM address from ECDSA public key");
+        self.data_mut().key = Some(key.into());
+        self.alias(evm_address);
+        self
+    }
+
+    /// Sets a generic key and unsets the alias.
+    pub fn set_key_without_alias(&mut self, key: impl Into<Key>) -> &mut Self {
+        self.data_mut().key = Some(key.into());
+        self.data_mut().alias = None;
+        self
+    }
+
     /// Get the key this account will be created with.
     ///
     /// Returns `Some(key)` if previously set, `None` otherwise.
@@ -105,6 +144,7 @@ impl AccountCreateTransaction {
     }
 
     /// Sets the key for this account.
+    #[deprecated(note = "use set_key_without_alias instead")]
     pub fn key(&mut self, key: impl Into<Key>) -> &mut Self {
         self.data_mut().key = Some(key.into());
         self
@@ -398,7 +438,7 @@ mod tests {
     fn make_transaction() -> AccountCreateTransaction {
         let mut tx = AccountCreateTransaction::new_for_tests();
 
-        tx.key(key())
+        tx.set_key_without_alias(key())
             .initial_balance(INITIAL_BALANCE)
             .account_memo(ACCOUNT_MEMO)
             .receiver_signature_required(RECEIVER_SIGNATURE_REQUIRED)
@@ -415,7 +455,7 @@ mod tests {
     fn make_transaction2() -> AccountCreateTransaction {
         let mut tx = AccountCreateTransaction::new_for_tests();
 
-        tx.key(key())
+        tx.set_key_without_alias(key())
             .initial_balance(INITIAL_BALANCE)
             .account_memo(ACCOUNT_MEMO)
             .receiver_signature_required(RECEIVER_SIGNATURE_REQUIRED)
@@ -719,7 +759,7 @@ mod tests {
     #[test]
     fn get_set_key() {
         let mut tx = AccountCreateTransaction::new();
-        tx.key(key());
+        tx.set_key_without_alias(key());
 
         assert_eq!(tx.get_key(), Some(&key().into()));
     }
@@ -729,7 +769,7 @@ mod tests {
     fn get_set_key_frozen_panics() {
         let mut tx = make_transaction();
 
-        tx.key(key());
+        tx.set_key_without_alias(key());
     }
 
     #[test]
@@ -842,5 +882,54 @@ mod tests {
         let mut tx = make_transaction();
 
         tx.max_automatic_token_associations(MAX_AUTOMATIC_TOKEN_ASSOCIATIONS);
+    }
+
+    #[test]
+    fn set_ecdsa_key_with_alias_sets_key_and_alias() {
+        use crate::PrivateKey;
+        let ecdsa_key = PrivateKey::generate_ecdsa();
+        let public_key = ecdsa_key.public_key();
+        let evm_address = public_key.to_evm_address().unwrap();
+
+        let mut tx = AccountCreateTransaction::new();
+        tx.set_ecdsa_key_with_alias(ecdsa_key.clone());
+
+        assert_eq!(tx.get_key(), Some(&public_key.into()));
+        assert_eq!(tx.get_alias(), Some(evm_address));
+    }
+
+    #[test]
+    fn set_key_with_alias_sets_key_and_alias() {
+        use crate::{
+            Key,
+            PrivateKey,
+        };
+        let ecdsa_key = PrivateKey::generate_ecdsa();
+        let public_key = ecdsa_key.public_key();
+        let evm_address = public_key.to_evm_address().unwrap();
+        let generic_key = Key::Single(public_key.clone());
+
+        let mut tx = AccountCreateTransaction::new();
+        tx.set_key_with_alias(generic_key.clone(), ecdsa_key.clone());
+
+        assert_eq!(tx.get_key(), Some(&generic_key));
+        assert_eq!(tx.get_alias(), Some(evm_address));
+    }
+
+    #[test]
+    fn set_key_without_alias_sets_key_and_unsets_alias() {
+        use crate::{
+            Key,
+            PrivateKey,
+        };
+        let ecdsa_key = PrivateKey::generate_ecdsa();
+        let public_key = ecdsa_key.public_key();
+        let generic_key = Key::Single(public_key.clone());
+
+        let mut tx = AccountCreateTransaction::new();
+        tx.set_key_without_alias(generic_key.clone());
+
+        assert_eq!(tx.get_key(), Some(&generic_key));
+        assert_eq!(tx.get_alias(), None);
     }
 }

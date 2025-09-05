@@ -274,6 +274,15 @@ impl Client {
 
     /// Construct a client from a select mirror network
     pub async fn for_mirror_network(mirror_networks: Vec<String>) -> crate::Result<Self> {
+        Self::for_mirror_network_with_shard_realm(mirror_networks, 0, 0).await
+    }
+
+    /// Construct a client from a select mirror network with a specific shard and realm.
+    pub async fn for_mirror_network_with_shard_realm(
+        mirror_networks: Vec<String>,
+        shard: u64,
+        realm: u64,
+    ) -> crate::Result<Self> {
         let network_addresses: HashMap<String, AccountId> = HashMap::new();
         let network = ManagedNetwork::new(
             Network::from_addresses(&network_addresses)?,
@@ -281,7 +290,11 @@ impl Client {
         );
 
         let client = ClientBuilder::new(network).build();
-        let address_book = NodeAddressBookQuery::default().execute(&client).await?;
+        let address_book = if shard == 0 && realm == 0 {
+            NodeAddressBookQuery::default().execute(&client).await?
+        } else {
+            NodeAddressBookQuery::new().shard(shard).realm(realm).execute(&client).await?
+        };
 
         client.set_network_from_address_book(address_book);
 

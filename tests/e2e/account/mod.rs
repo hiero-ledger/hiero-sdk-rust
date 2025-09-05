@@ -23,7 +23,7 @@ impl Account {
         let key = PrivateKey::generate_ed25519();
 
         let receipt = hedera::AccountCreateTransaction::new()
-            .key(key.public_key())
+            .set_key_without_alias(key.public_key())
             .initial_balance(initial_balance)
             .execute(client)
             .await?
@@ -55,7 +55,7 @@ impl Account {
         client: &hedera::Client,
     ) -> hedera::Result<Self> {
         let receipt = hedera::AccountCreateTransaction::new()
-            .key(account_key.public_key())
+            .set_key_without_alias(account_key.public_key())
             .initial_balance(Hbar::new(10))
             .max_automatic_token_associations(max_automatic_token_associations)
             .execute(client)

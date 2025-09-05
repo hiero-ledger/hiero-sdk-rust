@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
      * Step 2: Create an account
      */
     let alice_id = AccountCreateTransaction::new()
-        .key(private_key.public_key())
+        .set_key_without_alias(private_key.public_key())
         .initial_balance(Hbar::new(5))
         .execute(&client)
         .await?

@@ -101,6 +101,8 @@ mod protobuf;
 
 mod account;
 mod address_book;
+
+mod batch_transaction;
 mod client;
 mod contract;
 mod custom_fee_limit;
@@ -171,6 +173,7 @@ pub use address_book::{
     NodeDeleteTransaction,
     NodeUpdateTransaction,
 };
+pub use batch_transaction::BatchTransaction;
 pub use client::Client;
 pub(crate) use client::Operator;
 pub use contract::{
@@ -190,6 +193,7 @@ pub use contract::{
     ContractUpdateTransaction,
     DelegateContractId,
 };
+pub use custom_fee_limit::CustomFeeLimit;
 pub use custom_fixed_fee::CustomFixedFee;
 pub use entity_id::EntityId;
 pub(crate) use entity_id::ValidateChecksums;
@@ -261,6 +265,7 @@ pub use node_address::NodeAddress;
 pub use node_address_book::NodeAddressBook;
 pub use node_address_book_query::NodeAddressBookQuery;
 pub(crate) use node_address_book_query::NodeAddressBookQueryData;
+pub use pending_airdrop_id::PendingAirdropId;
 pub use pending_airdrop_record::PendingAirdropRecord;
 pub use prng_transaction::PrngTransaction;
 pub(crate) use protobuf::{

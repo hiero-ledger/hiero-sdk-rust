@@ -25,7 +25,7 @@ async fn set_key() -> anyhow::Result<()> {
     let key2 = PrivateKey::generate_ed25519();
 
     let account_id = AccountCreateTransaction::new()
-        .key(key1.public_key())
+        .set_key_without_alias(key1.public_key())
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -97,7 +97,7 @@ async fn cannot_update_max_token_association_to_lower_value_fails() -> anyhow::R
 
     // Create account with max token associations of 1
     let account_id = AccountCreateTransaction::new()
-        .key(account_key.public_key())
+        .set_key_without_alias(account_key.public_key())
         .max_automatic_token_associations(1)
         .execute(&client)
         .await?

@@ -93,7 +93,7 @@ async fn main() -> anyhow::Result<()> {
     println!("Set token NFT metadata: {:?}", token_nfts_info.metadata);
 
     let account_id = AccountCreateTransaction::new()
-        .key(client.get_operator_public_key().unwrap())
+        .set_key_without_alias(client.get_operator_public_key().unwrap())
         .max_automatic_token_associations(10)
         .initial_balance(Hbar::new(100))
         .freeze_with(&client)?

@@ -51,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
      */
     println!("Creating account with threshold key...");
     let alice_id = AccountCreateTransaction::new()
-        .key(Key::KeyList(threshold_key))
+        .set_key_without_alias(Key::KeyList(threshold_key))
         .initial_balance(Hbar::new(2))
         .execute(&client)
         .await?
