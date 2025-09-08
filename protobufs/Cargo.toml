@@ -43,7 +43,7 @@ features = ["std", "prost-derive"]
 
 # todo: get the tonic devs to actually make `channel` usable without `transport` (it *should*, it's *documented* as such, but it just doesn't work).
 [dependencies.tonic]
-version = "0.12.3"
+version = "0.14.2"
 
 [build-dependencies]
 anyhow = "1.0.99"
