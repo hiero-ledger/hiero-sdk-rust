@@ -73,7 +73,7 @@ default-features = false
 features = ["std"]
 
 [dependencies.rust_decimal]
-version = "1.37.2"
+version = "1.38.0"
 default-features = false
 features = ["std"]
 
