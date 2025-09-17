@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "protobufs", "tck"]
+members = [".", "protobufs", "hedera-proto-wasm", "tck"]
 
 [package]
 description = "The SDK for interacting with Hedera Hashgraph."
