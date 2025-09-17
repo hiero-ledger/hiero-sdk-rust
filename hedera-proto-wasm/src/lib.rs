@@ -1,5 +1,7 @@
-// Minimal Hedera protobuf definitions for WASM transaction serialization
-// This crate provides only the essential protobuf structures needed to create and serialize Hedera transactions
+// Complete Hedera protobuf definitions for WASM
+// Generated from ALL .proto files using prost-build
+
+#![recursion_limit = "2048"]
 
 use prost::Message;
 use wasm_bindgen::prelude::*;
@@ -16,216 +18,21 @@ macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
-/// Account identifier on the Hedera network
-#[derive(Clone, PartialEq, Message)]
-pub struct AccountId {
-    #[prost(int64, tag = "1")]
-    pub shard_num: i64,
-    #[prost(int64, tag = "2")]
-    pub realm_num: i64,
-    #[prost(int64, tag = "3")]
-    pub account_num: i64,
+// Include ALL generated protobuf definitions
+pub mod proto {
+    include!(concat!(env!("OUT_DIR"), "/hedera_protos.rs"));
 }
 
-/// Timestamp for transactions
-#[derive(Clone, PartialEq, Message)]
-pub struct Timestamp {
-    #[prost(int64, tag = "1")]
-    pub seconds: i64,
-    #[prost(int32, tag = "2")]
-    pub nanos: i32,
-}
+// Re-export commonly used types for convenience
+pub use proto::proto::{
+    AccountId, Timestamp, TransactionId, Duration, AccountAmount,
+    TransferList, CryptoTransferTransactionBody, TransactionBody,
+    SignaturePair, SignatureMap, Transaction
+};
 
-/// Transaction identifier
-#[derive(Clone, PartialEq, Message)]
-pub struct TransactionId {
-    #[prost(message, optional, tag = "1")]
-    pub account_id: Option<AccountId>,
-    #[prost(message, optional, tag = "2")]
-    pub transaction_valid_start: Option<Timestamp>,
-    #[prost(bool, tag = "3")]
-    pub scheduled: bool,
-    #[prost(int32, tag = "4")]
-    pub nonce: i32,
-}
-
-/// Duration for transaction validity
-#[derive(Clone, PartialEq, Message)]
-pub struct Duration {
-    #[prost(int64, tag = "1")]
-    pub seconds: i64,
-}
-
-/// Account amount for transfers
-#[derive(Clone, PartialEq, Message)]
-pub struct AccountAmount {
-    #[prost(message, optional, tag = "1")]
-    pub account_id: Option<AccountId>,
-    #[prost(int64, tag = "2")]
-    pub amount: i64,
-    #[prost(bool, tag = "3")]
-    pub is_approval: bool,
-}
-
-/// Transfer list for crypto transfers
-#[derive(Clone, PartialEq, Message)]
-pub struct TransferList {
-    #[prost(message, repeated, tag = "1")]
-    pub account_amounts: Vec<AccountAmount>,
-}
-
-/// Crypto transfer transaction body
-#[derive(Clone, PartialEq, Message)]
-pub struct CryptoTransferTransactionBody {
-    #[prost(message, optional, tag = "1")]
-    pub transfers: Option<TransferList>,
-}
-
-/// Transaction body - the core transaction data that gets signed
-#[derive(Clone, PartialEq, Message)]
-pub struct TransactionBody {
-    #[prost(message, optional, tag = "1")]
-    pub transaction_id: Option<TransactionId>,
-    #[prost(message, optional, tag = "2")]
-    pub node_account_id: Option<AccountId>,
-    #[prost(uint64, tag = "3")]
-    pub transaction_fee: u64,
-    #[prost(message, optional, tag = "4")]
-    pub transaction_valid_duration: Option<Duration>,
-    #[prost(bool, tag = "5")]
-    pub generate_record: bool,
-    #[prost(string, tag = "6")]
-    pub memo: String,
-    #[prost(oneof = "transaction_body::Data", tags = "14")]
-    pub data: Option<transaction_body::Data>,
-}
-
-pub mod transaction_body {
-    #[derive(Clone, PartialEq, prost::Oneof)]
-    pub enum Data {
-        #[prost(message, tag = "14")]
-        CryptoTransfer(super::CryptoTransferTransactionBody),
-    }
-}
-
-/// Signature pair for transaction signing
-#[derive(Clone, PartialEq, Message)]
-pub struct SignaturePair {
-    #[prost(bytes = "vec", tag = "1")]
-    pub pub_key_prefix: Vec<u8>,
-    #[prost(oneof = "signature_pair::Signature", tags = "4")]
-    pub signature: Option<signature_pair::Signature>,
-}
-
-pub mod signature_pair {
-    #[derive(Clone, PartialEq, prost::Oneof)]
-    pub enum Signature {
-        #[prost(bytes, tag = "4")]
-        Ed25519(Vec<u8>),
-    }
-}
-
-/// Signature map containing all signatures for a transaction
-#[derive(Clone, PartialEq, Message)]
-pub struct SignatureMap {
-    #[prost(message, repeated, tag = "1")]
-    pub sig_pair: Vec<SignaturePair>,
-}
-
-/// Complete signed transaction ready for submission
-#[derive(Clone, PartialEq, Message)]
-pub struct Transaction {
-    #[prost(bytes = "vec", tag = "1")]
-    pub body_bytes: Vec<u8>,
-    #[prost(message, optional, tag = "2")]
-    pub sig_map: Option<SignatureMap>,
-}
-
-// Utility functions for WASM and native use
-impl TransactionBody {
-    /// Serialize this transaction body to bytes for signing
-    /// This is what you would sign with your private key
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.encode_to_vec()
-    }
-    
-    /// Create a simple crypto transfer transaction
-    pub fn new_crypto_transfer(
-        transaction_id: TransactionId,
-        node_account_id: AccountId,
-        transaction_fee: u64,
-        transfers: Vec<AccountAmount>,
-    ) -> Self {
-        Self {
-            transaction_id: Some(transaction_id),
-            node_account_id: Some(node_account_id),
-            transaction_fee,
-            transaction_valid_duration: Some(Duration { seconds: 180 }), // 3 minutes
-            generate_record: false,
-            memo: String::new(),
-            data: Some(transaction_body::Data::CryptoTransfer(
-                CryptoTransferTransactionBody {
-                    transfers: Some(TransferList {
-                        account_amounts: transfers,
-                    }),
-                },
-            )),
-        }
-    }
-}
-
-impl Transaction {
-    /// Create a new transaction from body bytes and signatures
-    pub fn new(body_bytes: Vec<u8>, sig_map: SignatureMap) -> Self {
-        Self {
-            body_bytes,
-            sig_map: Some(sig_map),
-        }
-    }
-    
-    /// Serialize this transaction to bytes for submission to Hedera
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.encode_to_vec()
-    }
-}
-
-impl AccountId {
-    /// Create a new account ID
-    pub fn new(shard: i64, realm: i64, account: i64) -> Self {
-        Self {
-            shard_num: shard,
-            realm_num: realm,
-            account_num: account,
-        }
-    }
-}
-
-impl Timestamp {
-    /// Create a timestamp from seconds and nanoseconds
-    pub fn new(seconds: i64, nanos: i32) -> Self {
-        Self { seconds, nanos }
-    }
-    
-    /// Create a timestamp for "now" using JavaScript Date
-    pub fn now() -> Self {
-        let now = js_sys::Date::now();
-        let seconds = (now / 1000.0) as i64;
-        let nanos = ((now % 1000.0) * 1_000_000.0) as i32;
-        Self { seconds, nanos }
-    }
-}
-
-impl TransactionId {
-    /// Create a new transaction ID
-    pub fn new(account_id: AccountId) -> Self {
-        Self {
-            account_id: Some(account_id),
-            transaction_valid_start: Some(Timestamp::now()),
-            scheduled: false,
-            nonce: 0,
-        }
-    }
-}
+// Re-export nested modules
+pub use proto::proto::transaction_body;
+pub use proto::proto::signature_pair;
 
 // JavaScript-friendly wrapper functions using wasm-bindgen
 #[wasm_bindgen]
@@ -243,8 +50,16 @@ impl HederaTransactionBuilder {
                transaction_fee: u64) -> HederaTransactionBuilder {
         console_log!("Creating Hedera transaction builder");
         HederaTransactionBuilder {
-            payer_account: AccountId::new(payer_shard, payer_realm, payer_account),
-            node_account: AccountId::new(node_shard, node_realm, node_account),
+            payer_account: AccountId {
+                shard_num: payer_shard,
+                realm_num: payer_realm,
+                account: Some(proto::proto::account_id::Account::AccountNum(payer_account)),
+            },
+            node_account: AccountId {
+                shard_num: node_shard,
+                realm_num: node_realm,
+                account: Some(proto::proto::account_id::Account::AccountNum(node_account)),
+            },
             transaction_fee,
         }
     }
@@ -258,8 +73,22 @@ impl HederaTransactionBuilder {
                                   amount: i64) -> Vec<u8> {
         console_log!("Creating crypto transfer for {} tinybars", amount);
         
-        let receiver = AccountId::new(receiver_shard, receiver_realm, receiver_account);
-        let transaction_id = TransactionId::new(self.payer_account.clone());
+        let receiver = AccountId {
+            shard_num: receiver_shard,
+            realm_num: receiver_realm,
+            account: Some(proto::proto::account_id::Account::AccountNum(receiver_account)),
+        };
+        
+        let now = js_sys::Date::now();
+        let transaction_id = TransactionId {
+            account_id: Some(self.payer_account.clone()),
+            transaction_valid_start: Some(Timestamp {
+                seconds: (now / 1000.0) as i64,
+                nanos: ((now % 1000.0) * 1_000_000.0) as i32,
+            }),
+            scheduled: false,
+            nonce: 0,
+        };
         
         let transfers = vec![
             AccountAmount {
@@ -274,14 +103,26 @@ impl HederaTransactionBuilder {
             },
         ];
         
-        let transaction_body = TransactionBody::new_crypto_transfer(
-            transaction_id,
-            self.node_account.clone(),
-            self.transaction_fee,
-            transfers,
-        );
+        let transaction_body = TransactionBody {
+            transaction_id: Some(transaction_id),
+            node_account_id: Some(self.node_account.clone()),
+            transaction_fee: self.transaction_fee,
+            transaction_valid_duration: Some(Duration { seconds: 180 }), // 3 minutes
+            generate_record: false,
+            memo: String::new(),
+            batch_key: None,
+            max_custom_fees: vec![],
+            data: Some(transaction_body::Data::CryptoTransfer(
+                CryptoTransferTransactionBody {
+                    transfers: Some(TransferList {
+                        account_amounts: transfers,
+                    }),
+                    token_transfers: vec![], // Empty for crypto transfers
+                },
+            )),
+        };
         
-        let bytes = transaction_body.to_bytes();
+        let bytes = transaction_body.encode_to_vec();
         console_log!("Generated transaction bytes: {} bytes", bytes.len());
         bytes
     }
@@ -300,8 +141,45 @@ impl HederaTransactionBuilder {
             sig_pair: vec![signature_pair],
         };
         
-        let transaction = Transaction::new(body_bytes, signature_map);
-        let bytes = transaction.to_bytes();
+        let transaction = Transaction {
+            body: Some(proto::proto::TransactionBody::decode(&body_bytes[..]).unwrap()),
+            signed_transaction_bytes: vec![],
+            sigs: Some(proto::proto::SignatureList {
+                sigs: signature_map.sig_pair.iter().map(|pair| {
+                    match &pair.signature {
+                        Some(signature_pair::Signature::Ed25519(sig)) => {
+                            proto::proto::Signature {
+                                signature: Some(proto::proto::signature::Signature::Ed25519(sig.clone())),
+                            }
+                        }
+                        Some(signature_pair::Signature::Contract(sig)) => {
+                            proto::proto::Signature {
+                                signature: Some(proto::proto::signature::Signature::Contract(sig.clone())),
+                            }
+                        }
+                        Some(signature_pair::Signature::Rsa3072(sig)) => {
+                            proto::proto::Signature {
+                                signature: Some(proto::proto::signature::Signature::Rsa3072(sig.clone())),
+                            }
+                        }
+                        Some(signature_pair::Signature::Ecdsa384(sig)) => {
+                            proto::proto::Signature {
+                                signature: Some(proto::proto::signature::Signature::Ecdsa384(sig.clone())),
+                            }
+                        }
+                        Some(_) => {
+                            // Handle any other signature types with default empty signature
+                            proto::proto::Signature { signature: None }
+                        }
+                        None => proto::proto::Signature { signature: None },
+                    }
+                }).collect(),
+            }),
+            body_bytes,
+            sig_map: Some(signature_map),
+        };
+        
+        let bytes = transaction.encode_to_vec();
         
         console_log!("Generated signed transaction: {} bytes", bytes.len());
         bytes
@@ -311,10 +189,5 @@ impl HederaTransactionBuilder {
 // Utility functions exposed to JavaScript
 #[wasm_bindgen]
 pub fn get_current_timestamp_seconds() -> i64 {
-    Timestamp::now().seconds
-}
-
-#[wasm_bindgen]
-pub fn log_to_console(message: &str) {
-    console_log!("{}", message);
+    (js_sys::Date::now() / 1000.0) as i64
 }

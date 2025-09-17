@@ -2,7 +2,7 @@
 name = "hedera-proto-wasm"
 version = "0.1.0"
 edition = "2021"
-description = "Minimal Hedera protobuf definitions for WASM transaction serialization"
+description = "Complete Hedera protobuf definitions for WASM compiled with prost-build"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -16,6 +16,11 @@ js-sys = "0.3"
 [dependencies.web-sys]
 version = "0.3"
 features = ["console"]
+
+[build-dependencies]
+anyhow = "1.0.99"
+prost-build = "0.13.5"
+walkdir = "2.5.0"
 
 [features]
 default = ["wasm"]
