@@ -9,10 +9,12 @@ fn main() -> anyhow::Result<()> {
         read_dir,
     };
     use std::path::Path;
+
     use regex::RegexBuilder;
-    
+
     const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
-    const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
+    const SERVICES_FOLDER: &str =
+        "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
 
     // services is the "base" module for the hedera protobufs
     // in the beginning, there was only services and it was named "protos"
