@@ -1,20 +1,192 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::env;
-use std::fs::{
-    self,
-    create_dir_all,
-    read_dir,
-};
-use std::path::Path;
-
-use anyhow::Ok;
-use regex::RegexBuilder;
-
-const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
-const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
 
 fn main() -> anyhow::Result<()> {
+    // Check if we're building for WASM
+    let target = env::var("TARGET").unwrap_or_default();
+    let is_wasm = target.contains("wasm32");
+    
+    if is_wasm {
+        build_for_wasm()
+    } else {
+        build_for_native()
+    }
+}
+
+fn build_for_wasm() -> anyhow::Result<()> {
+    println!("cargo:warning=Building minimal protobufs for WASM - transaction serialization only");
+    
+    // For WASM builds, we'll create minimal protobuf structs manually
+    // This completely avoids the tonic/mio dependency chain
+    
+    let out_dir = env::var("OUT_DIR")?;
+    let proto_rs_path = std::path::Path::new(&out_dir).join("proto.rs");
+    
+    // Generate minimal protobuf structures that your main SDK can use
+    let minimal_proto_code = r#"
+// Minimal protobuf structures for WASM transaction serialization
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AccountId {
+    #[prost(int64, tag = "1")]
+    pub shard_num: i64,
+    #[prost(int64, tag = "2")]
+    pub realm_num: i64,
+    #[prost(int64, tag = "3")]
+    pub account_num: i64,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Timestamp {
+    #[prost(int64, tag = "1")]
+    pub seconds: i64,
+    #[prost(int32, tag = "2")]
+    pub nanos: i32,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransactionId {
+    #[prost(message, optional, tag = "1")]
+    pub account_id: ::core::option::Option<AccountId>,
+    #[prost(message, optional, tag = "2")]
+    pub transaction_valid_start: ::core::option::Option<Timestamp>,
+    #[prost(bool, tag = "3")]
+    pub scheduled: bool,
+    #[prost(int32, tag = "4")]
+    pub nonce: i32,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Duration {
+    #[prost(int64, tag = "1")]
+    pub seconds: i64,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CryptoTransferTransactionBody {
+    #[prost(message, optional, tag = "1")]
+    pub transfers: ::core::option::Option<TransferList>,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransferList {
+    #[prost(message, repeated, tag = "1")]
+    pub account_amounts: ::std::vec::Vec<AccountAmount>,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AccountAmount {
+    #[prost(message, optional, tag = "1")]
+    pub account_id: ::core::option::Option<AccountId>,
+    #[prost(int64, tag = "2")]
+    pub amount: i64,
+    #[prost(bool, tag = "3")]
+    pub is_approval: bool,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransactionBody {
+    #[prost(message, optional, tag = "1")]
+    pub transaction_id: ::core::option::Option<TransactionId>,
+    #[prost(message, optional, tag = "2")]
+    pub node_account_id: ::core::option::Option<AccountId>,
+    #[prost(uint64, tag = "3")]
+    pub transaction_fee: u64,
+    #[prost(message, optional, tag = "4")]
+    pub transaction_valid_duration: ::core::option::Option<Duration>,
+    #[prost(bool, tag = "5")]
+    pub generate_record: bool,
+    #[prost(string, tag = "6")]
+    pub memo: ::std::string::String,
+    #[prost(oneof = "transaction_body::Data", tags = "14")]
+    pub data: ::core::option::Option<transaction_body::Data>,
+}
+
+pub mod transaction_body {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Data {
+        #[prost(message, tag = "14")]
+        CryptoTransfer(super::CryptoTransferTransactionBody),
+    }
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Transaction {
+    #[prost(bytes = "vec", tag = "1")]
+    pub body_bytes: ::std::vec::Vec<u8>,
+    #[prost(message, optional, tag = "2")]
+    pub sig_map: ::core::option::Option<SignatureMap>,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SignatureMap {
+    #[prost(message, repeated, tag = "1")]
+    pub sig_pair: ::std::vec::Vec<SignaturePair>,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SignaturePair {
+    #[prost(bytes = "vec", tag = "1")]
+    pub pub_key_prefix: ::std::vec::Vec<u8>,
+    #[prost(oneof = "signature_pair::Signature", tags = "4")]
+    pub signature: ::core::option::Option<signature_pair::Signature>,
+}
+
+pub mod signature_pair {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Signature {
+        #[prost(bytes, tag = "4")]
+        Ed25519(::std::vec::Vec<u8>),
+    }
+}
+
+// Utility functions for WASM
+impl TransactionBody {
+    /// Serialize this transaction body to bytes for signing
+    pub fn to_bytes(&self) -> Vec<u8> {
+        use prost::Message;
+        self.encode_to_vec()
+    }
+}
+
+impl Transaction {
+    /// Create a new transaction from body bytes and signatures
+    pub fn new(body_bytes: Vec<u8>, sig_map: SignatureMap) -> Self {
+        Self {
+            body_bytes,
+            sig_map: Some(sig_map),
+        }
+    }
+    
+    /// Serialize this transaction to bytes for submission
+    pub fn to_bytes(&self) -> Vec<u8> {
+        use prost::Message;
+        self.encode_to_vec()
+    }
+}
+"#;
+
+    std::fs::write(&proto_rs_path, minimal_proto_code)?;
+    
+    println!("cargo:warning=Generated minimal protobuf code for WASM at {}", proto_rs_path.display());
+    
+    Ok(())
+}
+
+#[cfg(feature = "native")]
+fn build_for_native() -> anyhow::Result<()> {
+    use std::fs::{
+        self,
+        create_dir_all,
+        read_dir,
+    };
+    use std::path::Path;
+    use regex::RegexBuilder;
+    
+    const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
+    const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
+
     // services is the "base" module for the hedera protobufs
     // in the beginning, there was only services and it was named "protos"
 
@@ -243,7 +415,15 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
+#[cfg(not(feature = "native"))]
+fn build_for_native() -> anyhow::Result<()> {
+    println!("cargo:warning=Native protobuf generation disabled - missing native feature or dependencies");
+    Ok(())
+}
+
+#[cfg(feature = "native")]
+fn remove_useless_comments(path: &std::path::Path) -> anyhow::Result<()> {
+    use std::fs;
     let mut contents = fs::read_to_string(path)?;
 
     contents = contents.replace("///*\n", "");
@@ -260,6 +440,7 @@ fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
 }
 
 // Temporary function to remove unused types in transaction.proto
+#[cfg(feature = "native")]
 fn remove_unused_types(contents: &str) -> String {
     let contents = contents.replace(
         "import \"platform/event/state_signature_transaction.proto\";",
@@ -335,6 +516,7 @@ fn remove_unused_types(contents: &str) -> String {
     contents
 }
 
+#[cfg(feature = "native")]
 trait BuilderExtensions {
     fn services_path<T: AsRef<str>, U: AsRef<str>>(self, proto_name: T, rust_name: U) -> Self
     where
@@ -348,6 +530,7 @@ trait BuilderExtensions {
     }
 }
 
+#[cfg(feature = "native")]
 impl BuilderExtensions for tonic_build::Builder {
     fn services_path<T: AsRef<str>, U: AsRef<str>>(self, proto_name: T, rust_name: U) -> Self {
         let proto_name = proto_name.as_ref();
@@ -357,6 +540,7 @@ impl BuilderExtensions for tonic_build::Builder {
     }
 }
 
+#[cfg(feature = "native")]
 mod builder {
     use crate::BuilderExtensions;
 
