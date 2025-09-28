@@ -197,7 +197,13 @@ impl TokenAirdropTransaction {
         amount: i64,
         is_approved: bool,
     ) -> &mut Self {
-        let transfer = Transfer { account_id, amount, is_approval: is_approved };
+        let transfer = Transfer {
+            account_id,
+            amount,
+            is_approval: is_approved,
+            pre_tx_allowance_hook: None,
+            pre_post_tx_allowance_hook: None,
+        };
         let data = self.data_mut();
 
         if let Some(tt) = data.token_transfers.iter_mut().find(|tt| tt.token_id == token_id) {
@@ -216,6 +222,8 @@ impl TokenAirdropTransaction {
                 expected_decimals: None,
                 nft_transfers: Vec::new(),
                 transfers: vec![transfer],
+                pre_tx_allowance_hook: None,
+                pre_post_tx_allowance_hook: None,
             });
         }
         self
@@ -229,7 +237,13 @@ impl TokenAirdropTransaction {
         approved: bool,
         expected_decimals: Option<u32>,
     ) -> &mut Self {
-        let transfer = Transfer { account_id, amount, is_approval: approved };
+        let transfer = Transfer {
+            account_id,
+            amount,
+            is_approval: approved,
+            pre_tx_allowance_hook: None,
+            pre_post_tx_allowance_hook: None,
+        };
         let data = self.data_mut();
 
         if let Some(tt) = data.token_transfers.iter_mut().find(|tt| tt.token_id == token_id) {
@@ -254,6 +268,8 @@ impl TokenAirdropTransaction {
                 expected_decimals,
                 nft_transfers: Vec::new(),
                 transfers: vec![transfer],
+                pre_tx_allowance_hook: None,
+                pre_post_tx_allowance_hook: None,
             });
         }
         self
@@ -279,6 +295,8 @@ impl TokenAirdropTransaction {
                 expected_decimals: None,
                 transfers: Vec::new(),
                 nft_transfers: vec![transfer],
+                pre_tx_allowance_hook: None,
+                pre_post_tx_allowance_hook: None,
             });
         }
 
