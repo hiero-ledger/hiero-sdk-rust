@@ -57,6 +57,9 @@ pub struct ContractCreateTransactionData {
     staked_id: Option<StakedId>,
 
     decline_staking_reward: bool,
+
+    /// Hooks to add immediately after creating this contract.
+    hooks: Vec<LambdaEvmHook>,
 }
 
 impl Default for ContractCreateTransactionData {
@@ -74,6 +77,7 @@ impl Default for ContractCreateTransactionData {
             auto_renew_account_id: None,
             staked_id: None,
             decline_staking_reward: false,
+            hooks: Vec::new(),
         }
     }
 }
@@ -313,6 +317,11 @@ impl FromProtobuf<services::ContractCreateTransactionBody> for ContractCreateTra
             auto_renew_account_id: Option::from_protobuf(pb.auto_renew_account_id)?,
             staked_id: Option::from_protobuf(pb.staked_id)?,
             decline_staking_reward: pb.decline_reward,
+            hooks: pb
+                .hook_creation_details
+                .into_iter()
+                .map(LambdaEvmHook::from_protobuf)
+                .collect::<Result<Vec<_>, _>>()?,
         })
     }
 }
@@ -372,6 +381,7 @@ impl ToProtobuf for ContractCreateTransactionData {
             decline_reward: self.decline_staking_reward,
             initcode_source,
             staked_id,
+            hooks: self.hooks.iter().map(|hook| hook.to_protobuf()).collect(),
         }
     }
 }

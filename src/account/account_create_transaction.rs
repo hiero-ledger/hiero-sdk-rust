@@ -76,6 +76,9 @@ pub struct AccountCreateTransactionData {
 
     /// If true, the account declines receiving a staking reward. The default value is false.
     decline_staking_reward: bool,
+
+    /// Hooks to add immediately after creating this account.
+    hooks: Vec<LambdaEvmHook>,
 }
 
 impl Default for AccountCreateTransactionData {
@@ -91,6 +94,7 @@ impl Default for AccountCreateTransactionData {
             alias: None,
             staked_id: None,
             decline_staking_reward: false,
+            hooks: Vec::new(),
         }
     }
 }
@@ -293,6 +297,20 @@ impl AccountCreateTransaction {
         self.data_mut().decline_staking_reward = decline;
         self
     }
+
+    pub fn add_hook(&mut self, hook: LambdaEvmHook) -> &mut Self {
+        self.data_mut().hooks.push(hook);
+        self
+    }
+
+    pub fn set_hooks(&mut self, hooks: Vec<LambdaEvmHook>) -> &mut Self {
+        self.data_mut().hooks = hooks;
+        self
+    }
+
+    pub fn get_hooks(&self) -> &[LambdaEvmHook] {
+        &self.data().hooks
+    }
 }
 
 impl TransactionData for AccountCreateTransactionData {}
@@ -353,6 +371,11 @@ impl FromProtobuf<services::CryptoCreateTransactionBody> for AccountCreateTransa
             alias,
             staked_id: Option::from_protobuf(pb.staked_id)?,
             decline_staking_reward: pb.decline_reward,
+            hooks: pb
+                .hook_creation_details
+                .into_iter()
+                .map(LambdaEvmHook::from_protobuf)
+                .collect::<Result<Vec<_>, _>>()?,
         })
     }
 }
@@ -391,6 +414,7 @@ impl ToProtobuf for AccountCreateTransactionData {
             alias: self.alias.map_or(vec![], |it| it.to_bytes().to_vec()),
             decline_reward: self.decline_staking_reward,
             staked_id,
+            hooks: self.hooks.iter().map(|hook| hook.to_protobuf()).collect(),
         }
     }
 }
