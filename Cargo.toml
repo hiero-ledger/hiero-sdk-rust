@@ -99,7 +99,7 @@ clap = { version = "4.5.45", features = ["derive", "env"] }
 dotenvy = "0.15.5"
 expect-test = "1.5.1"
 hex-literal = "1.0.0"
-miniserde = "0.1.42"
+miniserde = "0.1.43"
 parking_lot = "0.12.4"
 
 [dev-dependencies.tokio]
