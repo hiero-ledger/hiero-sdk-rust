@@ -3,8 +3,10 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
@@ -20,11 +22,12 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
-    TransactionExecuteChunked,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecuteChunked;
 use crate::{
-    BoxGrpcFuture,
     Error,
     TopicId,
     Transaction,
@@ -96,16 +99,18 @@ impl ChunkedTransactionData for TopicMessageSubmitTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TopicMessageSubmitTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { ConsensusServiceClient::new(channel).submit_message(request).await })
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecuteChunked for TopicMessageSubmitTransactionData {}
 
 impl ValidateChecksums for TopicMessageSubmitTransactionData {

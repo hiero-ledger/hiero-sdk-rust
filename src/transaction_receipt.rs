@@ -2,7 +2,7 @@
 
 use std::ops::Not;
 
-use hedera_proto::services;
+use crate::proto::services;
 #[cfg(test)]
 pub(super) use tests::make_receipt;
 

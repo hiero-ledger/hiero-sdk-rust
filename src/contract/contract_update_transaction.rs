@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::smart_contract_service_client::SmartContractServiceClient;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::smart_contract_service_client::SmartContractServiceClient;
+
 use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
@@ -17,11 +18,11 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     ContractId,
     Error,
     Key,
@@ -199,12 +200,13 @@ impl ContractUpdateTransaction {
 
 impl TransactionData for ContractUpdateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for ContractUpdateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { SmartContractServiceClient::new(channel).update_contract(request).await })
     }
 }
@@ -315,7 +317,7 @@ impl From<ContractUpdateTransactionData> for AnyTransactionData {
 mod tests {
 
     use expect_test::expect;
-    use hedera_proto::services;
+    use crate::proto::services;
     use time::{
         Duration,
         OffsetDateTime,

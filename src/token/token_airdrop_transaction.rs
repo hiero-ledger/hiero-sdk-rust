@@ -2,9 +2,9 @@
 
 use std::collections::HashMap;
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 
 use super::{
     NftId,
@@ -22,15 +22,15 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transfer_transaction::{
     TokenTransfer,
     Transfer,
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Transaction,
     ValidateChecksums,
@@ -288,12 +288,13 @@ impl TokenAirdropTransaction {
 
 impl TransactionData for TokenAirdropTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TokenAirdropTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { TokenServiceClient::new(channel).airdrop_tokens(request).await })
     }
 }

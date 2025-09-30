@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
 use time::{
     Duration,
     OffsetDateTime,
 };
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::custom_fixed_fee::CustomFixedFee;
@@ -20,11 +22,11 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Key,
     TopicId,
@@ -249,12 +251,13 @@ impl TopicUpdateTransaction {
 
 impl TransactionData for TopicUpdateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TopicUpdateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { ConsensusServiceClient::new(channel).update_topic(request).await })
     }
 }

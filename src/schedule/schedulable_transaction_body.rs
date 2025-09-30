@@ -1,4 +1,4 @@
-use hedera_proto::services;
+use crate::proto::services;
 
 use crate::protobuf::FromProtobuf;
 use crate::transaction::{

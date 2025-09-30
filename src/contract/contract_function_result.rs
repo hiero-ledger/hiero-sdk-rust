@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::str;
 
-use hedera_proto::services;
+use crate::proto::services;
 use num_bigint::{
     BigInt,
     BigUint,
@@ -298,7 +298,7 @@ impl ToProtobuf for ContractFunctionResult {
 
 #[cfg(test)]
 mod tests {
-    use hedera_proto::services;
+    use crate::proto::services;
     use hex_literal::hex;
     use num_bigint::{
         BigInt,

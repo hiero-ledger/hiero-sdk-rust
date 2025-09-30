@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
@@ -15,11 +15,11 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     NftId,
     TokenId,
@@ -84,12 +84,13 @@ impl AccountAllowanceDeleteTransaction {
 
 impl TransactionData for AccountAllowanceDeleteTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for AccountAllowanceDeleteTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { CryptoServiceClient::new(channel).delete_allowances(request).await })
     }
 }
@@ -123,6 +124,7 @@ impl ToSchedulableTransactionDataProtobuf for AccountAllowanceDeleteTransactionD
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl From<AccountAllowanceDeleteTransactionData> for AnyTransactionData {
     fn from(transaction: AccountAllowanceDeleteTransactionData) -> Self {
         Self::AccountAllowanceDelete(transaction)

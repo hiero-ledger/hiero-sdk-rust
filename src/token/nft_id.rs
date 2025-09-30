@@ -8,7 +8,7 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use hedera_proto::services;
+use crate::proto::services;
 
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
@@ -116,7 +116,7 @@ impl ValidateChecksums for NftId {
 mod tests {
     use std::str::FromStr;
 
-    use hedera_proto::services;
+    use crate::proto::services;
 
     use crate::ledger_id::RefLedgerId;
     use crate::token::nft_id::NftId;

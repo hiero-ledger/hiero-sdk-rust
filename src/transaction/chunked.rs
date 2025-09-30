@@ -1,7 +1,8 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use super::{
@@ -175,7 +176,7 @@ where
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: Self::GrpcRequest,
     ) -> BoxGrpcFuture<'_, Self::GrpcResponse> {
         self.transaction.body.data.execute(channel, request)
@@ -279,7 +280,7 @@ where
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: Self::GrpcRequest,
     ) -> BoxGrpcFuture<'_, Self::GrpcResponse> {
         self.transaction.body.data.execute(channel, request)

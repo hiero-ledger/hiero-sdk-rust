@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+use crate::proto::services;
 use time::{
     Duration,
     OffsetDateTime,
@@ -124,7 +124,7 @@ impl ToProtobuf for FileInfo {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use crate::proto::services;
     use prost::Message;
 
     use crate::protobuf::{

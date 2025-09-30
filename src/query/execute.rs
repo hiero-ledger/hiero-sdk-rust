@@ -2,8 +2,7 @@
 
 use std::fmt::Debug;
 
-use hedera_proto::services;
-use tonic::transport::Channel;
+use crate::proto::services;
 
 use crate::entity_id::ValidateChecksums;
 use crate::execute::Execute;
@@ -13,7 +12,6 @@ use crate::query::{
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     FromProtobuf,
     Hbar,
@@ -65,9 +63,9 @@ pub trait QueryExecute:
     /// Execute the prepared query request against the provided GRPC channel.
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response>;
+    ) -> services::BoxGrpcFuture<'_, services::Response>;
 }
 
 impl<D> Execute for Query<D>
@@ -124,9 +122,9 @@ where
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: Self::GrpcRequest,
-    ) -> BoxGrpcFuture<'_, Self::GrpcResponse> {
+    ) -> services::BoxGrpcFuture<'_, Self::GrpcResponse> {
         self.data.execute(channel, request)
     }
 

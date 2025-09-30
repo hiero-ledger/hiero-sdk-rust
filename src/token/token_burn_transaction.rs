@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 
 use crate::protobuf::{
     FromProtobuf,
@@ -14,10 +14,10 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
-    BoxGrpcFuture,
     Error,
     TokenId,
     Transaction,
@@ -101,12 +101,13 @@ impl TokenBurnTransaction {
 
 impl TransactionData for TokenBurnTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TokenBurnTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { TokenServiceClient::new(channel).burn_token(request).await })
     }
 }
@@ -167,7 +168,7 @@ impl ToProtobuf for TokenBurnTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use hedera_proto::services;
+    use crate::proto::services;
 
     use super::TokenBurnTransactionData;
     use crate::protobuf::{

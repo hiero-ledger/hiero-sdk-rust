@@ -1024,14 +1024,17 @@ dependencies = [
  "fraction",
  "futures-core",
  "futures-util",
+ "getrandom 0.2.16",
  "h2",
  "hedera-proto",
+ "hedera-proto-wasm",
  "hex",
  "hex-literal",
  "hmac",
  "hyper",
  "hyper-openssl",
  "hyper-util",
+ "js-sys",
  "k256",
  "log",
  "md5",
@@ -1062,6 +1065,8 @@ dependencies = [
  "tower 0.5.2",
  "triomphe",
  "unsize",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::ops::Range;
 
-use hedera_proto::services::{
+use crate::proto::services::{
     self,
     SignedTransaction,
 };

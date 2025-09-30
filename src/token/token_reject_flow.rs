@@ -15,8 +15,10 @@ use crate::{
     Client,
     PrivateKey,
     PublicKey,
-    TransactionResponse,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionResponse;
 
 ///  Reject undesired token(s) and dissociate in a single flow.
 ///
@@ -158,11 +160,13 @@ impl TokenRejectFlow {
         self
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Generates the required transactions and executes them all.
     pub async fn execute(&self, client: &Client) -> crate::Result<TransactionResponse> {
         self.execute_with_optional_timeout(client, None).await
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Generates the required transactions and executes them all.
     pub async fn execute_with_timeout(
         &self,
@@ -172,6 +176,7 @@ impl TokenRejectFlow {
         self.execute_with_optional_timeout(client, Some(timeout_per_transaction)).await
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn execute_with_optional_timeout(
         &self,
         client: &Client,

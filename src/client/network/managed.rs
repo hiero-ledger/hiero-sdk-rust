@@ -58,6 +58,7 @@ pub(crate) fn spawn_network_update(
     let (tx, rx) = watch::channel(initial_update_interval);
 
     // note: this 100% dies if there's no runtime.
+    #[cfg(not(target_arch = "wasm32"))]
     tokio::task::spawn(update_network(network, rx));
 
     tx
@@ -70,10 +71,12 @@ async fn update_network(
     network: ManagedNetwork,
     mut update_interval_rx: watch::Receiver<Option<Duration>>,
 ) {
+    #[cfg(not(target_arch = "wasm32"))]
     tokio::time::sleep(ManagedNetwork::NETWORK_FIRST_UPDATE_DELAY).await;
 
     'outer: loop {
         // log::debug!("updating network");
+        #[cfg(not(target_arch = "wasm32"))]
         let start = tokio::time::Instant::now();
 
         // note: ideally we'd have a `select!` on the channel closing, but, we can't
@@ -108,6 +111,7 @@ async fn update_network(
                 }
             };
 
+            #[cfg(not(target_arch = "wasm32"))]
             tokio::select! {
                 // We very specifically want to use a `sleep_until` here because it means we don't wait at all if the time is in the past
                 // and this can be called multiple times per `'outer` loop which means we don't want to wait the sum of all times.

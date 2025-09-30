@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use services::crypto_service_client::CryptoServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
@@ -12,11 +12,11 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Hbar,
     NftId,
@@ -204,12 +204,13 @@ pub struct NftAllowance {
 
 impl TransactionData for AccountAllowanceApproveTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for AccountAllowanceApproveTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> crate::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { CryptoServiceClient::new(channel).approve_allowances(request).await })
     }
 }

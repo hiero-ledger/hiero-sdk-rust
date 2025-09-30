@@ -10,8 +10,10 @@ use crate::{
     FileCreateTransaction,
     FileId,
     Hbar,
-    TransactionResponse,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionResponse;
 
 /// Flow for executing ethereum transactions.
 #[derive(Default, Debug)]
@@ -58,11 +60,13 @@ impl EthereumFlow {
         self
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Generates the required transactions and executes them all.
     pub async fn execute(&self, client: &Client) -> crate::Result<TransactionResponse> {
         self.execute_with_optional_timeout(client, None).await
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Generates the required transactions and executes them all.
     pub async fn execute_with_timeout(
         &self,
@@ -72,6 +76,7 @@ impl EthereumFlow {
         self.execute_with_optional_timeout(client, Some(timeout_per_transaction)).await
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn execute_with_optional_timeout(
         &self,
         client: &Client,
@@ -122,6 +127,7 @@ fn split_call_data(call_data: Vec<u8>) -> (Vec<u8>, Option<Vec<u8>>) {
     (file_create_call_data, Some(file_append_call_data))
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 async fn create_file(
     client: &Client,
     call_data: Vec<u8>,

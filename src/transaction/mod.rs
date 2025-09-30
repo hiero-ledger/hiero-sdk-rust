@@ -9,7 +9,7 @@ use std::fmt::{
 };
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+use crate::proto::services;
 use prost::Message;
 use time::Duration;
 use triomphe::Arc;
@@ -30,29 +30,47 @@ use crate::{
     ToProtobuf,
     TransactionHash,
     TransactionId,
-    TransactionResponse,
     ValidateChecksums,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::transaction_response::TransactionResponse;
+
+#[cfg(not(target_arch = "wasm32"))] // Any transaction requires networking
 mod any;
+#[cfg(not(target_arch = "wasm32"))] // Chunked execution requires networking
 mod chunked;
+#[cfg(not(target_arch = "wasm32"))] // Cost queries require networking
 mod cost;
+mod data; // Transaction data traits - WASM compatible
+#[cfg(not(target_arch = "wasm32"))] // Execute requires networking
 mod execute;
 mod protobuf;
 mod source;
 #[cfg(test)]
 mod tests;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub use any::AnyTransaction;
+// Native: Use full enum from any.rs
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use any::AnyTransactionData;
+// WASM: Use stub from data.rs
+#[cfg(target_arch = "wasm32")]
+pub(crate) use data::AnyTransactionData;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use chunked::{
     ChunkData,
     ChunkInfo,
     ChunkedTransactionData,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use cost::CostTransaction;
+pub(crate) use data::TransactionData;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use data::ChunkInfo;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use execute::{
-    TransactionData,
     TransactionExecute,
     TransactionExecuteChunked,
 };
@@ -341,6 +359,7 @@ impl<D> Transaction<D> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D: ChunkedTransactionData> Transaction<D> {
     /// Returns the maximum number of chunks this transaction will be split into.
     #[must_use]
@@ -515,6 +534,7 @@ impl<D: ValidateChecksums> Transaction<D> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D: TransactionExecute> Transaction<D> {
     /// Convert this transaction to signed transaction bytes.
     ///
@@ -591,7 +611,7 @@ impl<D: TransactionExecute> Transaction<D> {
         let transaction_list = self
             .signed_sources()
             .map_or_else(|| self.make_transaction_list(), |it| Ok(it.transactions().to_vec()))?;
-        Ok(hedera_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
+        Ok(crate::proto::sdk::TransactionList { transaction_list }.encode_to_vec())
     }
 
     pub(crate) fn add_signature_signer(&mut self, signer: &AnySigner) -> Vec<u8> {
@@ -726,6 +746,7 @@ impl<D: TransactionExecute> Transaction<D> {
     #[allow(deprecated)]
     fn make_transaction_list_chunked(&self) -> crate::Result<Vec<services::Transaction>> {
         // todo: fix this with chunked transactions.
+        #[cfg(not(target_arch = "wasm32"))]
         let used_chunks = self.data().maybe_chunk_data().map_or(1, ChunkData::used_chunks);
         let node_account_ids = self.body.node_account_ids.as_deref().unwrap();
 
@@ -773,6 +794,7 @@ impl<D: TransactionExecute> Transaction<D> {
             transaction_id: self.get_transaction_id().map(|id| id.to_protobuf()),
             generate_record: false,
             memo: self.body.transaction_memo.clone(),
+            #[cfg(not(target_arch = "wasm32"))]
             data: Some(self.body.data.to_transaction_data_protobuf(&ChunkInfo {
                 current: 0,
                 total: 1,
@@ -862,12 +884,14 @@ where
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D> Transaction<D>
 where
     D: TransactionExecute,
 {
     /// Get the estimated transaction cost for this transaction.
     pub async fn get_cost(&self, client: &Client) -> crate::Result<Hbar> {
+        #[cfg(not(target_arch = "wasm32"))]
         let result = CostTransaction::from_transaction(self).execute(client).await;
 
         match result {
@@ -958,6 +982,7 @@ where
         let initial_transaction_id = {
             let resp = execute(
                 client,
+                #[cfg(not(target_arch = "wasm32"))]
                 &chunked::FirstChunkView { transaction: self, total_chunks: used_chunks },
                 timeout_per_chunk,
             )
@@ -978,6 +1003,7 @@ where
         for chunk in 1..used_chunks {
             let resp = execute(
                 client,
+                #[cfg(not(target_arch = "wasm32"))]
                 &chunked::ChunkView {
                     transaction: self,
                     initial_transaction_id,
@@ -1013,6 +1039,7 @@ where
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D> Transaction<D>
 where
     D: TransactionExecuteChunked,
@@ -1064,6 +1091,7 @@ where
 }
 
 // these impls are on `AnyTransaction`, but they're here instead of in `any` because actually implementing them is only possible here.
+#[cfg(not(target_arch = "wasm32"))]
 impl AnyTransaction {
     /// # Examples
     /// ```
@@ -1086,8 +1114,8 @@ impl AnyTransaction {
     /// - [`Error::FromProtobuf`] if a valid transaction cannot be parsed from the bytes.
     #[allow(deprecated)]
     pub fn from_bytes(bytes: &[u8]) -> crate::Result<Self> {
-        let list: hedera_proto::sdk::TransactionList =
-            hedera_proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
+        let list: crate::proto::sdk::TransactionList =
+            crate::proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
 
         let list = if list.transaction_list.is_empty() {
             Vec::from([services::Transaction::decode(bytes).map_err(Error::from_protobuf)?])
@@ -1324,7 +1352,7 @@ where
 
 #[cfg(test)]
 pub(crate) mod test_helpers {
-    use hedera_proto::services;
+    use crate::proto::services;
     use prost::Message;
     use time::{
         Duration,

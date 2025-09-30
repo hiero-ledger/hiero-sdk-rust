@@ -7,7 +7,7 @@ use std::fmt::{
     Formatter,
 };
 
-use hedera_proto::services;
+use crate::proto::services;
 
 use crate::{
     FromProtobuf,

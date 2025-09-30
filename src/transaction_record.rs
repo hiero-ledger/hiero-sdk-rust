@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use hedera_proto::services;
+use crate::proto::services;
 use time::OffsetDateTime;
 
 use crate::protobuf::ToProtobuf;

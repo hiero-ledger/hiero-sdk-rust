@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -12,7 +12,6 @@ use crate::query::{
 };
 use crate::token::token_info::TokenInfo;
 use crate::{
-    BoxGrpcFuture,
     Error,
     Query,
     ToProtobuf,
@@ -63,14 +62,15 @@ impl ToQueryProtobuf for TokenInfoQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for TokenInfoQueryData {
     type Response = TokenInfo;
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { TokenServiceClient::new(channel).get_token_info(request).await })
     }
 }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::schedule_service_client::ScheduleServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::schedule_service_client::ScheduleServiceClient;
 
 use crate::query::{
     AnyQueryData,
@@ -10,7 +10,6 @@ use crate::query::{
     ToQueryProtobuf,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     Query,
     ScheduleId,
@@ -61,14 +60,15 @@ impl ToQueryProtobuf for ScheduleInfoQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for ScheduleInfoQueryData {
     type Response = ScheduleInfo;
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { ScheduleServiceClient::new(channel).get_schedule_info(request).await })
     }
 }

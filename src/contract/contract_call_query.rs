@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::smart_contract_service_client::SmartContractServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::smart_contract_service_client::SmartContractServiceClient;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -12,7 +12,6 @@ use crate::query::{
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     ContractFunctionParameters,
     ContractFunctionResult,
     ContractId,
@@ -138,14 +137,15 @@ impl ToQueryProtobuf for ContractCallQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for ContractCallQueryData {
     type Response = ContractFunctionResult;
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async {
             SmartContractServiceClient::new(channel).contract_call_local_method(request).await
         })
@@ -162,7 +162,7 @@ impl ValidateChecksums for ContractCallQueryData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use crate::proto::services;
 
     use crate::query::ToQueryProtobuf;
     use crate::{

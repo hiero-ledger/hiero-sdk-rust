@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
 use time::Duration;
-use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
@@ -17,11 +17,11 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     EvmAddress,
     Hbar,
@@ -297,12 +297,13 @@ impl AccountCreateTransaction {
 
 impl TransactionData for AccountCreateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for AccountCreateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { CryptoServiceClient::new(channel).create_account(request).await })
     }
 }
@@ -398,7 +399,7 @@ impl ToProtobuf for AccountCreateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use crate::proto::services;
     use hex_literal::hex;
     use time::Duration;
 

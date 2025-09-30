@@ -1,4 +1,4 @@
-use hedera_proto::services;
+use crate::proto::services;
 
 use crate::protobuf::{
     FromProtobuf,
@@ -72,7 +72,7 @@ impl ToProtobuf for AssessedCustomFee {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use crate::proto::services;
 
     use crate::protobuf::{
         FromProtobuf,

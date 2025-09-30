@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use super::chunked::ChunkInfo;
@@ -20,7 +21,6 @@ use crate::transaction::{
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Hbar,
     Transaction,
@@ -476,12 +476,13 @@ impl TransactionData for AnyTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for AnyTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         match self {
             Self::Transfer(transaction) => transaction.execute(channel, request),
             Self::AccountCreate(transaction) => transaction.execute(channel, request),

@@ -17,10 +17,12 @@ mod token_freeze_transaction;
 mod token_grant_kyc_transaction;
 mod token_id;
 mod token_info;
+#[cfg(not(target_arch = "wasm32"))] // Query requires networking
 mod token_info_query;
 mod token_key_validation_type;
 mod token_mint_transaction;
 mod token_nft_info;
+#[cfg(not(target_arch = "wasm32"))] // Query requires networking
 mod token_nft_info_query;
 mod token_nft_transfer;
 mod token_pause_transaction;
@@ -96,6 +98,7 @@ pub use token_grant_kyc_transaction::{
 };
 pub use token_id::TokenId;
 pub use token_info::TokenInfo;
+#[cfg(not(target_arch = "wasm32"))]
 pub use token_info_query::{
     TokenInfoQuery,
     TokenInfoQueryData,
@@ -106,6 +109,7 @@ pub use token_mint_transaction::{
     TokenMintTransactionData,
 };
 pub use token_nft_info::TokenNftInfo;
+#[cfg(not(target_arch = "wasm32"))]
 pub use token_nft_info_query::{
     TokenNftInfoQuery,
     TokenNftInfoQueryData,

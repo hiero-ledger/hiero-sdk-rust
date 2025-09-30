@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::{
+use crate::proto::services;
+use crate::proto::services::{
     TokenFreezeStatus,
     TokenKycStatus,
     TokenPauseStatus,

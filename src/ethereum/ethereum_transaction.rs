@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::smart_contract_service_client::SmartContractServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::smart_contract_service_client::SmartContractServiceClient;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
@@ -11,10 +11,10 @@ use crate::transaction::{
     ChunkInfo,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
-    BoxGrpcFuture,
     Error,
     FileId,
     Hbar,
@@ -93,12 +93,13 @@ impl EthereumTransaction {
 
 impl TransactionData for EthereumTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for EthereumTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { SmartContractServiceClient::new(channel).call_ethereum(request).await })
     }
 }

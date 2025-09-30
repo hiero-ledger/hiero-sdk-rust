@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
-use hedera_proto::services::response::Response;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::BoxGrpcFuture;
+use crate::proto::services::response::Response;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -12,7 +14,6 @@ use crate::query::{
     ToQueryProtobuf,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     FromProtobuf,
     Query,
@@ -111,6 +112,7 @@ impl ToQueryProtobuf for TransactionRecordQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for TransactionRecordQueryData {
     type Response = TransactionRecord;
 
@@ -120,7 +122,7 @@ impl QueryExecute for TransactionRecordQueryData {
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
     ) -> BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { CryptoServiceClient::new(channel).get_tx_record_by_tx_id(request).await })

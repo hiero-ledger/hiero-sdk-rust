@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::file_service_client::FileServiceClient;
-use hedera_proto::services::smart_contract_service_client::SmartContractServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::file_service_client::FileServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::smart_contract_service_client::SmartContractServiceClient;
 
 use crate::protobuf::{
     FromProtobuf,
@@ -15,10 +16,10 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
-    BoxGrpcFuture,
     ContractId,
     Error,
     FileId,
@@ -68,13 +69,14 @@ impl SystemUndeleteTransaction {
 
 impl TransactionData for SystemUndeleteTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for SystemUndeleteTransactionData {
     #[allow(deprecated)]
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async move {
             if self.file_id.is_some() {
                 FileServiceClient::new(channel).system_undelete(request).await
@@ -155,7 +157,7 @@ impl ToProtobuf for SystemUndeleteTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use crate::proto::services;
 
     use crate::protobuf::{
         FromProtobuf,

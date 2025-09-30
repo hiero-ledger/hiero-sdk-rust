@@ -3,9 +3,9 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
-use hedera_proto::services::file_service_client::FileServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::file_service_client::FileServiceClient;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
@@ -20,11 +20,13 @@ use crate::transaction::{
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
+};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::{
     TransactionExecute,
     TransactionExecuteChunked,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     FileId,
     Transaction,
@@ -103,16 +105,18 @@ impl ChunkedTransactionData for FileAppendTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for FileAppendTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { FileServiceClient::new(channel).append_content(request).await })
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecuteChunked for FileAppendTransactionData {}
 
 impl ValidateChecksums for FileAppendTransactionData {

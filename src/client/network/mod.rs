@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub(super) mod managed;
+#[cfg(not(target_arch = "wasm32"))]
 pub(super) mod mirror;
 
 use std::collections::{

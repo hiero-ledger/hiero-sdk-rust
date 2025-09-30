@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::network_service_client::NetworkServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::network_service_client::NetworkServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::BoxGrpcFuture;
 
 use crate::entity_id::ValidateChecksums;
 use crate::query::{
@@ -11,7 +13,6 @@ use crate::query::{
     ToQueryProtobuf,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     NetworkVersionInfo,
     Query,
@@ -41,12 +42,13 @@ impl ToQueryProtobuf for NetworkVersionInfoQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for NetworkVersionInfoQueryData {
     type Response = NetworkVersionInfo;
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
     ) -> BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { NetworkServiceClient::new(channel).get_version_info(request).await })

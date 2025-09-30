@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -11,8 +11,7 @@ use crate::query::{
     QueryExecute,
     ToQueryProtobuf,
 };
-use crate::{
-    BoxGrpcFuture,
+use crate::{   
     Error,
     NftId,
     ToProtobuf,
@@ -63,14 +62,15 @@ impl ToQueryProtobuf for TokenNftInfoQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for TokenNftInfoQueryData {
     type Response = TokenNftInfo;
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { TokenServiceClient::new(channel).get_token_nft_info(request).await })
     }
 }

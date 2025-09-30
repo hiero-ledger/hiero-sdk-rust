@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+use crate::proto::services;
 
 use crate::{
     FromProtobuf,
@@ -51,7 +51,7 @@ impl ToProtobuf for TokenType {
 
 #[cfg(test)]
 mod tests {
-    use hedera_proto::services;
+    use crate::proto::services;
 
     use crate::token::token_type::TokenType;
     use crate::{

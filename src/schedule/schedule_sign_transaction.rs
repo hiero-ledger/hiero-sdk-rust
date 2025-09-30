@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::schedule_service_client::ScheduleServiceClient;
-use tonic::transport::Channel;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::schedule_service_client::ScheduleServiceClient;
 
 use crate::protobuf::{
     FromProtobuf,
@@ -13,10 +13,10 @@ use crate::transaction::{
     ChunkInfo,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
-    BoxGrpcFuture,
     Error,
     ScheduleId,
     Transaction,
@@ -47,12 +47,13 @@ impl ScheduleSignTransaction {
 
 impl TransactionData for ScheduleSignTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for ScheduleSignTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { ScheduleServiceClient::new(channel).delete_schedule(request).await })
     }
 }
@@ -93,7 +94,7 @@ impl FromProtobuf<services::ScheduleSignTransactionBody> for ScheduleSignTransac
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use crate::proto::services;
 
     use crate::protobuf::{
         FromProtobuf,
