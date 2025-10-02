@@ -65,7 +65,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        uses: step-security/setup-protoc@f6eb248a6510dbb851209febc1bd7981604a52e3 # v3.0.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -100,7 +100,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        uses: step-security/setup-protoc@f6eb248a6510dbb851209febc1bd7981604a52e3 # v3.0.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
