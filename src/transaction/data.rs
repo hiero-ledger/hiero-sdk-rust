@@ -4,18 +4,52 @@
 //! 
 //! This module contains the core transaction building logic that doesn't require networking.
 
-use crate::{Hbar};
+use crate::{Hbar, TransactionId, AccountId};
 
-// For WASM, we need a simplified version of AnyTransactionData
-#[cfg(target_arch = "wasm32")]
-pub struct AnyTransactionData;
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::any::AnyTransactionData;
+// AnyTransactionData is now available for both WASM and native
+// It's just a data enum, not network-dependent
+pub use crate::transaction::any::AnyTransactionData;
 
 // Re-export ChunkData from chunked module only for native builds
 #[cfg(not(target_arch = "wasm32"))]
 use super::ChunkData;
+
+/// WASM-compatible ChunkInfo that contains essential transaction metadata
+/// 
+/// Unlike the native ChunkInfo which handles complex chunked execution,
+/// this version only carries the basic metadata needed for transaction building.
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, Clone)]
+pub struct ChunkInfo {
+    pub current: usize,
+    pub total: usize,
+    pub initial_transaction_id: TransactionId,
+    pub current_transaction_id: TransactionId,
+    pub node_account_id: AccountId,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl ChunkInfo {
+    /// Create a new ChunkInfo for single (non-chunked) transactions
+    pub fn new_single(transaction_id: TransactionId, node_account_id: AccountId) -> Self {
+        Self {
+            current: 0,
+            total: 1,
+            initial_transaction_id: transaction_id,
+            current_transaction_id: transaction_id,
+            node_account_id,
+        }
+    }
+
+    /// Assert this is a single transaction (not chunked)
+    /// 
+    /// For WASM builds, we expect only single transactions since
+    /// chunked execution requires networking capabilities.
+    pub fn assert_single_transaction(&self) {
+        assert_eq!(self.total, 1, "WASM builds only support single transactions");
+        assert_eq!(self.current, 0, "WASM builds only support single transactions");
+    }
+}
 
 /// Core transaction data trait that defines transaction building behavior.
 /// 

@@ -26,6 +26,7 @@ mod token_nft_info;
 mod token_nft_info_query;
 mod token_nft_transfer;
 mod token_pause_transaction;
+#[cfg(not(target_arch = "wasm32"))] // Token reject flow requires client networking
 mod token_reject_flow;
 mod token_reject_transaction;
 mod token_revoke_kyc_transaction;
@@ -119,6 +120,7 @@ pub use token_pause_transaction::{
     TokenPauseTransaction,
     TokenPauseTransactionData,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub use token_reject_flow::TokenRejectFlow;
 pub use token_reject_transaction::{
     TokenRejectTransaction,

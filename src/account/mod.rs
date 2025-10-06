@@ -11,6 +11,7 @@ mod account_id;
 mod account_info;
 // note(sr): there's absolutely no way I'm going to write an enum or struct for namespacing here.
 /// Flow for verifying signatures via account info.
+#[cfg(not(target_arch = "wasm32"))] // Account info flow requires client networking
 pub mod account_info_flow;
 #[cfg(not(target_arch = "wasm32"))] // Info query requires networking
 mod account_info_query;

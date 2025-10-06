@@ -103,17 +103,16 @@ mod proto; // Conditional protobuf re-exports
 mod account;
 mod address_book;
 
+#[cfg(not(target_arch = "wasm32"))] // Batch transaction requires networking
 mod batch_transaction;
+#[cfg(not(target_arch = "wasm32"))]
 mod client;
 mod contract;
 mod custom_fee_limit;
 mod custom_fixed_fee;
 mod downcast;
 mod entity_id;
-#[cfg(not(target_arch = "wasm32"))] // Error has networking-specific types
 mod error;
-#[cfg(target_arch = "wasm32")] // Simple error for WASM
-mod error_minimal;
 mod ethereum;
 mod exchange_rates;
 #[cfg(not(target_arch = "wasm32"))] // Execute requires networking
@@ -167,20 +166,23 @@ mod transfer;
 mod transfer_transaction;
 
 pub use account::{
-    account_info_flow,
     AccountAllowanceApproveTransaction,
     AccountAllowanceDeleteTransaction,
     AccountBalance,
-    AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountId,
     AccountInfo,
-    AccountInfoQuery,
-    AccountRecordsQuery,
     AccountUpdateTransaction,
     AllProxyStakers,
     ProxyStaker,
+};
+#[cfg(not(target_arch = "wasm32"))]
+pub use account::{
+    account_info_flow,
+    AccountBalanceQuery,
+    AccountInfoQuery,
+    AccountRecordsQuery,
 };
 pub use address_book::{
     NodeCreateTransaction,
@@ -189,12 +191,11 @@ pub use address_book::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use batch_transaction::BatchTransaction;
+#[cfg(not(target_arch = "wasm32"))]
 pub use client::Client;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use client::Operator;
 pub use contract::{
-    ContractBytecodeQuery,
-    ContractCallQuery,
-    ContractCreateFlow,
     ContractCreateTransaction,
     ContractDeleteTransaction,
     ContractExecuteTransaction,
@@ -202,46 +203,40 @@ pub use contract::{
     ContractFunctionResult,
     ContractId,
     ContractInfo,
-    ContractInfoQuery,
     ContractLogInfo,
     ContractNonceInfo,
     ContractUpdateTransaction,
     DelegateContractId,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use contract::{
+    ContractBytecodeQuery,
+    ContractCallQuery,
+    ContractCreateFlow,
+    ContractInfoQuery,
+};
 pub use custom_fee_limit::CustomFeeLimit;
 pub use custom_fixed_fee::CustomFixedFee;
 pub use entity_id::EntityId;
 pub(crate) use entity_id::ValidateChecksums;
-#[cfg(not(target_arch = "wasm32"))]
 pub use error::{
     Error,
     Result,
 };
-
-#[cfg(target_arch = "wasm32")]
-pub use error_minimal::{
-    Error,
-    Result,
-};
-#[cfg(all(feature = "mnemonic", not(target_arch = "wasm32")))]
+#[cfg(feature = "mnemonic")]
 pub use error::{
-    MnemonicEntropyError,
-    MnemonicParseError,
-};
-
-#[cfg(all(feature = "mnemonic", target_arch = "wasm32"))]
-pub use error_minimal::{
     MnemonicEntropyError,
     MnemonicParseError,
 };
 pub use ethereum::{
     Eip1559EthereumData,
     EthereumData,
-    EthereumFlow,
     EthereumTransaction,
     EvmAddress,
     LegacyEthereumData,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use ethereum::EthereumFlow;
 pub use exchange_rates::{
     ExchangeRate,
     ExchangeRates,
@@ -257,15 +252,17 @@ pub use fee_schedules::{
 };
 pub use file::{
     FileAppendTransaction,
-    FileContentsQuery,
     FileContentsResponse,
     FileCreateTransaction,
     FileDeleteTransaction,
     FileId,
     FileInfo,
-    FileInfoQuery,
     FileUpdateTransaction,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use file::FileContentsQuery;
+#[cfg(not(target_arch = "wasm32"))]
+pub use file::FileInfoQuery;
 pub use hbar::{
     Hbar,
     HbarUnit,
@@ -319,9 +316,10 @@ pub use schedule::{
     ScheduleDeleteTransaction,
     ScheduleId,
     ScheduleInfo,
-    ScheduleInfoQuery,
     ScheduleSignTransaction,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use schedule::ScheduleInfoQuery;
 pub use semantic_version::SemanticVersion;
 pub use service_endpoint::ServiceEndpoint;
 pub use staking_info::StakingInfo;
@@ -358,14 +356,11 @@ pub use token::{
     TokenGrantKycTransaction,
     TokenId,
     TokenInfo,
-    TokenInfoQuery,
     TokenKeyValidation,
     TokenMintTransaction,
     TokenNftInfo,
-    TokenNftInfoQuery,
     TokenNftTransfer,
     TokenPauseTransaction,
-    TokenRejectFlow,
     TokenRejectTransaction,
     TokenRevokeKycTransaction,
     TokenSupplyType,
@@ -376,16 +371,25 @@ pub use token::{
     TokenUpdateTransaction,
     TokenWipeTransaction,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use token::{
+    TokenInfoQuery,
+    TokenNftInfoQuery,
+    TokenRejectFlow,
+};
 pub use topic::{
     TopicCreateTransaction,
     TopicDeleteTransaction,
     TopicId,
     TopicInfo,
-    TopicInfoQuery,
     TopicMessage,
-    TopicMessageQuery,
     TopicMessageSubmitTransaction,
     TopicUpdateTransaction,
+};
+#[cfg(not(target_arch = "wasm32"))]
+pub use topic::{
+    TopicInfoQuery,
+    TopicMessageQuery,
 };
 pub use transaction::{
     AnyTransaction,

@@ -4,6 +4,7 @@
 mod contract_bytecode_query;
 #[cfg(not(target_arch = "wasm32"))] // Call query requires networking
 mod contract_call_query;
+#[cfg(not(target_arch = "wasm32"))] // Contract create flow requires client networking
 mod contract_create_flow;
 mod contract_create_transaction;
 mod contract_delete_transaction;
@@ -28,6 +29,7 @@ pub(crate) use contract_bytecode_query::ContractBytecodeQueryData;
 pub use contract_call_query::ContractCallQuery;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use contract_call_query::ContractCallQueryData;
+#[cfg(not(target_arch = "wasm32"))]
 pub use contract_create_flow::ContractCreateFlow;
 pub use contract_create_transaction::ContractCreateTransaction;
 pub(crate) use contract_create_transaction::ContractCreateTransactionData;

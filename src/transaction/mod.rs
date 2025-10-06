@@ -16,14 +16,13 @@ use triomphe::Arc;
 
 use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::execute::execute;
 use crate::signer::AnySigner;
 use crate::{
     AccountId,
-    Client,
     Error,
     Hbar,
-    Operator,
     PrivateKey,
     PublicKey,
     ScheduleCreateTransaction,
@@ -34,9 +33,14 @@ use crate::{
 };
 
 #[cfg(not(target_arch = "wasm32"))]
+use crate::Operator;
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
+
+#[cfg(not(target_arch = "wasm32"))]
 pub use crate::transaction_response::TransactionResponse;
 
-#[cfg(not(target_arch = "wasm32"))] // Any transaction requires networking
 mod any;
 #[cfg(not(target_arch = "wasm32"))] // Chunked execution requires networking
 mod chunked;
@@ -50,14 +54,9 @@ mod source;
 #[cfg(test)]
 mod tests;
 
-#[cfg(not(target_arch = "wasm32"))]
 pub use any::AnyTransaction;
-// Native: Use full enum from any.rs
-#[cfg(not(target_arch = "wasm32"))]
+// AnyTransactionData is available for both WASM and native (it's just data)
 pub(crate) use any::AnyTransactionData;
-// WASM: Use stub from data.rs
-#[cfg(target_arch = "wasm32")]
-pub(crate) use data::AnyTransactionData;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use chunked::{
     ChunkData,
@@ -106,6 +105,7 @@ pub(crate) struct TransactionBody<D> {
 
     pub(crate) transaction_id: Option<TransactionId>,
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) operator: Option<Arc<Operator>>,
 
     pub(crate) is_frozen: bool,
@@ -134,6 +134,7 @@ where
                 max_transaction_fee: None,
                 transaction_memo: String::new(),
                 transaction_id: None,
+                #[cfg(not(target_arch = "wasm32"))]
                 operator: None,
                 is_frozen: false,
                 regenerate_transaction_id: None,
@@ -185,7 +186,7 @@ impl<D> Transaction<D> {
     pub(crate) fn sources(&self) -> Option<&TransactionSources> {
         self.sources.as_ref()
     }
-
+    #[cfg(not(target_arch = "wasm32"))]
     fn signed_sources(&self) -> Option<Cow<'_, TransactionSources>> {
         self.sources().map(|it| it.sign_with(&self.signers))
     }
@@ -420,8 +421,40 @@ impl<D: ValidateChecksums> Transaction<D> {
     ///
     /// # Panics
     /// - If `node_account_ids` is explicitly set to empty (IE: `tx.node_account_ids([]).freeze_with(None)`).
+    /// Freeze the transaction so that no further modifications can be made.
+    ///
+    /// # Errors
+    /// - If `node_account_ids` is explicitly set to empty.
+    /// 
+    /// # Panics
+    /// - If `node_account_ids` is explicitly set to empty (IE: `tx.node_account_ids([]).freeze_with(None)`).
     pub fn freeze(&mut self) -> crate::Result<&mut Self> {
-        self.freeze_with(None)
+        #[cfg(not(target_arch = "wasm32"))]
+        return self.freeze_with(None);
+        
+        #[cfg(target_arch = "wasm32")]
+        {
+            if self.is_frozen() {
+                return Ok(self);
+            }
+
+            // For WASM: Simple freeze without client dependency
+            // Require transaction ID to be set explicitly
+            if self.get_transaction_id().is_none() {
+                return Err(crate::Error::TransactionIdNotSet);
+            }
+
+            // Require node account IDs to be set explicitly  
+            if self.get_node_account_ids().is_none() {
+                return Err(crate::Error::FreezeUnsetNodeAccountIds);
+            }
+
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                self.body.frozen = true;
+            }
+            Ok(self)
+        }
     }
 
     /// Freeze the transaction so that no further modifications can be made.
@@ -431,6 +464,7 @@ impl<D: ValidateChecksums> Transaction<D> {
     ///
     /// # Panics
     /// - If `node_account_ids` is explicitly set to empty (IE: `tx.node_account_ids([]).freeze_with(None)`).
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn freeze_with<'a>(
         &mut self,
         client: impl Into<Option<&'a Client>>,
@@ -507,6 +541,7 @@ impl<D: ValidateChecksums> Transaction<D> {
     ///
     /// # Panics
     /// If `client` has no operator.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn sign_with_operator(&mut self, client: &Client) -> crate::Result<&mut Self> {
         let Some(op) = client.full_load_operator() else { panic!("Client had no operator") };
 
@@ -568,6 +603,7 @@ impl<D: TransactionExecute> Transaction<D> {
     /// # Errors
     ///
     /// Returns an error if the client has no operator configured.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn batchify(
         &mut self,
         client: &crate::Client,
@@ -1302,6 +1338,7 @@ where
             max_transaction_fee,
             transaction_memo,
             transaction_id,
+            #[cfg(not(target_arch = "wasm32"))]
             operator,
             is_frozen,
             regenerate_transaction_id,
@@ -1319,6 +1356,7 @@ where
                     max_transaction_fee,
                     transaction_memo,
                     transaction_id,
+                    #[cfg(not(target_arch = "wasm32"))]
                     operator,
                     is_frozen,
                     regenerate_transaction_id,
@@ -1337,6 +1375,7 @@ where
                     max_transaction_fee,
                     transaction_memo,
                     transaction_id,
+                    #[cfg(not(target_arch = "wasm32"))]
                     operator,
                     is_frozen,
                     regenerate_transaction_id,

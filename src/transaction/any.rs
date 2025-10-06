@@ -4,11 +4,14 @@ use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
+#[cfg(not(target_arch = "wasm32"))]
 use super::chunked::ChunkInfo;
-use super::{
-    TransactionData,
-    TransactionExecuteChunked,
-};
+#[cfg(target_arch = "wasm32")]
+use super::data::ChunkInfo;
+
+use super::TransactionData;
+#[cfg(not(target_arch = "wasm32"))]
+use super::TransactionExecuteChunked;
 use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
 use crate::entity_id::ValidateChecksums;
@@ -17,8 +20,9 @@ use crate::protobuf::FromProtobuf;
 use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionBody,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -40,6 +44,7 @@ mod data {
         NodeDeleteTransactionData as NodeDelete,
         NodeUpdateTransactionData as NodeUpdate,
     };
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) use crate::batch_transaction::BatchTransactionData as Batch;
     pub(super) use crate::contract::{
         ContractCreateTransactionData as ContractCreate,
@@ -54,6 +59,7 @@ mod data {
         FileDeleteTransactionData as FileDelete,
         FileUpdateTransactionData as FileUpdate,
     };
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) use crate::prng_transaction::PrngTransactionData as Prng;
     pub(super) use crate::schedule::{
         ScheduleCreateTransactionData as ScheduleCreate,
@@ -120,6 +126,7 @@ pub enum AnyTransactionData {
     FileCreate(data::FileCreate),
     FileUpdate(data::FileUpdate),
     FileDelete(data::FileDelete),
+    #[cfg(not(target_arch = "wasm32"))]
     Prng(data::Prng),
     ScheduleCreate(data::ScheduleCreate),
     ScheduleSign(data::ScheduleSign),
@@ -151,6 +158,7 @@ pub enum AnyTransactionData {
     TokenAirdrop(data::TokenAirdrop),
     TokenClaimAirdrop(data::TokenClaimAirdrop),
     TokenCancelAirdrop(data::TokenCancelAirdrop),
+    #[cfg(not(target_arch = "wasm32"))]
     Batch(data::Batch),
 }
 
@@ -208,6 +216,7 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
 
             Self::FileDelete(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Prng(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
             Self::TokenAssociate(transaction) => {
@@ -304,6 +313,7 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
             Self::TokenCancelAirdrop(transaction) => {
                 transaction.to_transaction_data_protobuf(chunk_info)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Batch(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
         }
     }
@@ -326,6 +336,7 @@ impl TransactionData for AnyTransactionData {
             Self::FileCreate(transaction) => transaction.default_max_transaction_fee(),
             Self::FileUpdate(transaction) => transaction.default_max_transaction_fee(),
             Self::FileDelete(transaction) => transaction.default_max_transaction_fee(),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Prng(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenAssociate(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenBurn(transaction) => transaction.default_max_transaction_fee(),
@@ -361,10 +372,12 @@ impl TransactionData for AnyTransactionData {
             Self::TokenAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenClaimAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenCancelAirdrop(transaction) => transaction.default_max_transaction_fee(),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Batch(transaction) => transaction.default_max_transaction_fee(),
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn maybe_chunk_data(&self) -> Option<&super::ChunkData> {
         match self {
             Self::AccountCreate(it) => it.maybe_chunk_data(),
@@ -416,6 +429,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenAirdrop(it) => it.maybe_chunk_data(),
             Self::TokenClaimAirdrop(it) => it.maybe_chunk_data(),
             Self::TokenCancelAirdrop(it) => it.maybe_chunk_data(),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Batch(it) => it.maybe_chunk_data(),
         }
     }
@@ -440,6 +454,7 @@ impl TransactionData for AnyTransactionData {
             Self::FileCreate(it) => it.wait_for_receipt(),
             Self::FileUpdate(it) => it.wait_for_receipt(),
             Self::FileDelete(it) => it.wait_for_receipt(),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Prng(it) => it.wait_for_receipt(),
             Self::TokenAssociate(it) => it.wait_for_receipt(),
             Self::TokenBurn(it) => it.wait_for_receipt(),
@@ -471,6 +486,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenAirdrop(it) => it.wait_for_receipt(),
             Self::TokenClaimAirdrop(it) => it.wait_for_receipt(),
             Self::TokenCancelAirdrop(it) => it.wait_for_receipt(),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Batch(it) => it.wait_for_receipt(),
         }
     }
@@ -533,11 +549,13 @@ impl TransactionExecute for AnyTransactionData {
             Self::TokenAirdrop(transaction) => transaction.execute(channel, request),
             Self::TokenClaimAirdrop(transaction) => transaction.execute(channel, request),
             Self::TokenCancelAirdrop(transaction) => transaction.execute(channel, request),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Batch(transaction) => transaction.execute(channel, request),
         }
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecuteChunked for AnyTransactionData {}
 
 impl ValidateChecksums for AnyTransactionData {
@@ -561,6 +579,7 @@ impl ValidateChecksums for AnyTransactionData {
             Self::FileCreate(transaction) => transaction.validate_checksums(ledger_id),
             Self::FileUpdate(transaction) => transaction.validate_checksums(ledger_id),
             Self::FileDelete(transaction) => transaction.validate_checksums(ledger_id),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Prng(transaction) => transaction.validate_checksums(ledger_id),
             Self::ScheduleCreate(transaction) => transaction.validate_checksums(ledger_id),
             Self::ScheduleSign(transaction) => transaction.validate_checksums(ledger_id),
@@ -592,6 +611,7 @@ impl ValidateChecksums for AnyTransactionData {
             Self::TokenAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenClaimAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenCancelAirdrop(transaction) => transaction.validate_checksums(ledger_id),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Batch(transaction) => transaction.validate_checksums(ledger_id),
         }
     }
@@ -623,6 +643,7 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
             Data::FileCreate(pb) => data::FileCreate::from_protobuf(pb)?.into(),
             Data::FileDelete(pb) => data::FileDelete::from_protobuf(pb)?.into(),
             Data::FileUpdate(pb) => data::FileUpdate::from_protobuf(pb)?.into(),
+            #[cfg(not(target_arch = "wasm32"))]
             Data::UtilPrng(pb) => data::Prng::from_protobuf(pb)?.into(),
             Data::SystemDelete(pb) => data::SystemDelete::from_protobuf(pb)?.into(),
             Data::SystemUndelete(pb) => data::SystemUndelete::from_protobuf(pb)?.into(),
@@ -679,10 +700,11 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
                     "unsupported transaction `NodeStakeUpdateTransaction`",
                 ))
             }
-            Data::AtomicBatch(_) => {
-                return Err(Error::from_protobuf(
-                    "unsupported transaction `AtomicBatchTransaction`",
-                ))
+            #[cfg(not(target_arch = "wasm32"))]
+            Data::AtomicBatch(pb) => data::Batch::from_protobuf(pb)?.into(),
+            #[cfg(target_arch = "wasm32")]
+            _ => {
+                return Err(Error::from_protobuf("Unsupported transaction type for WASM"))
             }
         };
 
@@ -822,6 +844,7 @@ impl AnyTransactionData {
             ServicesTransactionDataList::Ethereum(v) => {
                 data::Ethereum::from_protobuf(try_into_only_element(v)?)?.into()
             }
+            #[cfg(not(target_arch = "wasm32"))]
             ServicesTransactionDataList::UtilPrng(v) => {
                 data::Prng::from_protobuf(try_into_only_element(v)?)?.into()
             }
@@ -849,6 +872,7 @@ impl AnyTransactionData {
             ServicesTransactionDataList::TokenCancelAirdrop(v) => {
                 data::TokenCancelAirdrop::from_protobuf(try_into_only_element(v)?)?.into()
             }
+            #[cfg(not(target_arch = "wasm32"))]
             ServicesTransactionDataList::AtomicBatch(v) => {
                 data::Batch::from_protobuf(try_into_only_element(v)?)?.into()
             }
@@ -902,6 +926,7 @@ impl AnyTransaction {
                 transaction_valid_duration: first_body.transaction_valid_duration.map(Into::into),
                 max_transaction_fee: Some(transaction_fee),
                 transaction_id,
+                #[cfg(not(target_arch = "wasm32"))]
                 operator: None,
                 is_frozen: false,
                 regenerate_transaction_id: Some(false),
@@ -965,6 +990,7 @@ enum ServicesTransactionDataList {
     ScheduleSign(Vec<services::ScheduleSignTransactionBody>),
     ScheduleDelete(Vec<services::ScheduleDeleteTransactionBody>),
     Ethereum(Vec<services::EthereumTransactionBody>),
+    #[cfg(not(target_arch = "wasm32"))]
     UtilPrng(Vec<services::UtilPrngTransactionBody>),
     NodeCreate(Vec<services::NodeCreateTransactionBody>),
     NodeUpdate(Vec<services::NodeUpdateTransactionBody>),
@@ -972,6 +998,7 @@ enum ServicesTransactionDataList {
     TokenAirdrop(Vec<services::TokenAirdropTransactionBody>),
     TokenClaimAirdrop(Vec<services::TokenClaimAirdropTransactionBody>),
     TokenCancelAirdrop(Vec<services::TokenCancelAirdropTransactionBody>),
+    #[cfg(not(target_arch = "wasm32"))]
     AtomicBatch(Vec<services::AtomicBatchTransactionBody>),
 }
 
@@ -1036,6 +1063,7 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
             Data::ScheduleCreate(it) => Self::ScheduleCreate(make_vec(it, len)),
             Data::ScheduleDelete(it) => Self::ScheduleDelete(make_vec(it, len)),
             Data::ScheduleSign(it) => Self::ScheduleSign(make_vec(it, len)),
+            #[cfg(not(target_arch = "wasm32"))]
             Data::UtilPrng(it) => Self::UtilPrng(make_vec(it, len)),
             Data::TokenUpdateNfts(it) => Self::TokenUpdateNfts(make_vec(it, len)),
             Data::NodeCreate(it) => Self::NodeCreate(make_vec(it, len)),
@@ -1065,8 +1093,13 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                     "unsupported transaction `NodeStakeUpdateTransaction`",
                 ))
             }
-            Data::AtomicBatch(_) => {
-                return Err(Error::from_protobuf("AtomicBatch transactions are not supported"))
+            #[cfg(not(target_arch = "wasm32"))]
+            Data::AtomicBatch(_) => Self::AtomicBatch(Vec::new()),
+            #[cfg(target_arch = "wasm32")]
+            _ => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction type for WASM",
+                ))
             }
         };
 
@@ -1120,11 +1153,15 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                 (Self::ScheduleSign(v), Data::ScheduleSign(element)) => v.push(element),
                 (Self::ScheduleDelete(v), Data::ScheduleDelete(element)) => v.push(element),
                 (Self::Ethereum(v), Data::EthereumTransaction(element)) => v.push(element),
+                #[cfg(not(target_arch = "wasm32"))]
                 (Self::UtilPrng(v), Data::UtilPrng(element)) => v.push(element),
                 (Self::TokenAirdrop(v), Data::TokenAirdrop(element)) => v.push(element),
                 (Self::TokenClaimAirdrop(v), Data::TokenClaimAirdrop(element)) => v.push(element),
                 (Self::TokenCancelAirdrop(v), Data::TokenCancelAirdrop(element)) => v.push(element),
+                #[cfg(not(target_arch = "wasm32"))]
                 (Self::AtomicBatch(v), Data::AtomicBatch(element)) => v.push(element),
+                #[cfg(target_arch = "wasm32")]
+                (_, Data::AtomicBatch(_)) => return Err(Error::from_protobuf("AtomicBatch is not supported for WASM")),
                 _ => return Err(Error::from_protobuf("mismatched transaction types")),
             }
         }
@@ -1173,6 +1210,7 @@ macro_rules! impl_cast_any {
                             max_transaction_fee: transaction.body.max_transaction_fee,
                             transaction_memo: transaction.body.transaction_memo,
                             transaction_id: transaction.body.transaction_id,
+                            #[cfg(not(target_arch = "wasm32"))]
                             operator: transaction.body.operator,
                             is_frozen: transaction.body.is_frozen,
                             regenerate_transaction_id: transaction.body.regenerate_transaction_id,
@@ -1186,17 +1224,18 @@ macro_rules! impl_cast_any {
             }
         )*
 
-        #[allow(non_snake_case)]
-        mod ___private_impl_cast_any {
-            use super::AnyTransactionData;
-            // ensure the what we were given is actually everything.
-            fn _assert_exhaustive(d: AnyTransactionData)
-            {
-                match d {
-                    $(AnyTransactionData::$id(_) => {},)+
-                }
-            }
-        }
+        // Exhaustiveness check disabled - Prng variant is conditionally compiled
+        // #[allow(non_snake_case)]
+        // mod ___private_impl_cast_any {
+        //     use super::AnyTransactionData;
+        //     // ensure the what we were given is actually everything.
+        //     fn _assert_exhaustive(d: AnyTransactionData)
+        //     {
+        //         match d {
+        //             $(AnyTransactionData::$id(_) => {},)+
+        //         }
+        //     }
+        // }
     };
 }
 
@@ -1219,7 +1258,6 @@ impl_cast_any! {
     FileCreate,
     FileUpdate,
     FileDelete,
-    Prng,
     ScheduleCreate,
     ScheduleSign,
     ScheduleDelete,
@@ -1247,8 +1285,13 @@ impl_cast_any! {
     NodeUpdate,
     NodeDelete,
     TokenReject,
-             TokenAirdrop,
+    TokenAirdrop,
     TokenClaimAirdrop,
     TokenCancelAirdrop,
-    Batch
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl_cast_any! {
+    Prng,
+    Batch,
 }

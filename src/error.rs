@@ -26,6 +26,7 @@ pub enum Error {
 
     /// GRPC status code was an error.
     #[error("grpc: {0:?}")]
+    #[cfg(not(target_arch = "wasm32"))]
     GrpcStatus(#[from] tonic::Status),
 
     /// Failed to parse an SDK type from a protobuf response.
@@ -36,6 +37,10 @@ pub enum Error {
     /// Freeze failed due to there being no explicitly set node account IDs and no client being provided to generate them.
     #[error("freeze failed due to node account IDs being unset")]
     FreezeUnsetNodeAccountIds,
+
+    /// Transaction ID not set when required.
+    #[error("transaction ID not set")]
+    TransactionIdNotSet,
 
     /// A transaction failed pre-check.
     ///

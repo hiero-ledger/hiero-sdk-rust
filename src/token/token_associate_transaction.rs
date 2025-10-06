@@ -8,12 +8,13 @@ use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
 use crate::transaction::{
     AnyTransactionData,
+    ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
 };
 #[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::{ChunkInfo, TransactionExecute};
+use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,

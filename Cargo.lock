@@ -819,6 +819,7 @@ version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f158e3ff0a1b334408dc9fb811cd99b446986f4d8b741bb08f9df1604085ae7"
 dependencies = [
+ "lazy_static",
  "num",
 ]
 
@@ -1090,10 +1091,12 @@ name = "hedera-proto-wasm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "fraction",
  "getrandom 0.2.16",
  "js-sys",
  "prost 0.13.5",
  "prost-build",
+ "time",
  "walkdir",
  "wasm-bindgen",
  "web-sys",
@@ -1663,6 +1666,7 @@ version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35bd024e8b2ff75562e5f34e7f4905839deb4b22955ef5e73d2fea1b9813cb23"
 dependencies = [
+ "num-bigint",
  "num-complex",
  "num-integer",
  "num-iter",
@@ -1721,6 +1725,7 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
 dependencies = [
+ "num-bigint",
  "num-integer",
  "num-traits",
 ]

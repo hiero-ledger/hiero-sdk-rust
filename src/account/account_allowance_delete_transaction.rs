@@ -124,7 +124,6 @@ impl ToSchedulableTransactionDataProtobuf for AccountAllowanceDeleteTransactionD
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl From<AccountAllowanceDeleteTransactionData> for AnyTransactionData {
     fn from(transaction: AccountAllowanceDeleteTransactionData) -> Self {
         Self::AccountAllowanceDelete(transaction)

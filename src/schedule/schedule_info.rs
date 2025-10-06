@@ -87,6 +87,7 @@ impl ScheduleInfo {
                 max_transaction_fee: None,
                 transaction_memo: self.scheduled_transaction.transaction_memo.clone(),
                 transaction_id: Some(self.scheduled_transaction_id),
+                #[cfg(not(target_arch = "wasm32"))]
                 operator: None,
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),

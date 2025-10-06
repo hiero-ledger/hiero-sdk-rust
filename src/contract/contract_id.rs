@@ -18,12 +18,14 @@ use crate::entity_id::{
 use crate::ethereum::SolidityAddress;
 use crate::ledger_id::RefLedgerId;
 use crate::{
-    Client,
     EntityId,
     Error,
     FromProtobuf,
     ToProtobuf,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 
 /// A unique identifier for a smart contract on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
@@ -117,6 +119,7 @@ impl ContractId {
     ///
     /// # Errors
     /// - [`Error::CannotCreateChecksum`] if self has an `evm_address`.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn to_string_with_checksum(&self, client: &Client) -> Result<String, Error> {
         if self.evm_address.is_some() {
             Err(Error::CannotCreateChecksum)
@@ -129,6 +132,7 @@ impl ContractId {
     ///
     /// # Errors
     /// - [`Error::BadEntityId`] if there is a checksum, and the checksum is not valid for the client's `ledger_id`.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn validate_checksum(&self, client: &Client) -> Result<(), Error> {
         if self.evm_address.is_some() {
             Ok(())
@@ -139,6 +143,7 @@ impl ContractId {
 }
 
 impl ValidateChecksums for ContractId {
+    #[cfg(not(target_arch = "wasm32"))]
     fn validate_checksums(&self, ledger_id: &RefLedgerId) -> Result<(), Error> {
         if self.evm_address.is_some() {
             Ok(())
@@ -151,6 +156,12 @@ impl ValidateChecksums for ContractId {
                 ledger_id,
             )
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn validate_checksums(&self, _ledger_id: &RefLedgerId) -> Result<(), Error> {
+        // Checksum validation requires networking context, not available in WASM
+        Ok(())
     }
 }
 

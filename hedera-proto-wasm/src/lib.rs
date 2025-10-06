@@ -23,6 +23,10 @@ pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/hedera_protos.rs"));
 }
 
+// Time conversions for WASM builds
+mod time_0_3;
+mod fraction;
+
 // Re-export commonly used types for convenience
 // Re-export nested modules
 pub use proto::proto::transaction_body;

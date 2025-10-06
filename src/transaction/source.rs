@@ -207,6 +207,7 @@ impl TransactionSources {
         })
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn sign_with(&self, signers: &[AnySigner]) -> Cow<'_, Self> {
         if signers.is_empty() {
             return Cow::Borrowed(self);

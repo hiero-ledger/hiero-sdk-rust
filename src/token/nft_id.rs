@@ -13,12 +13,14 @@ use crate::proto::services;
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
 use crate::{
-    Client,
     Error,
     FromProtobuf,
     ToProtobuf,
     TokenId,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 
 /// The unique identifier for a token on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
@@ -47,6 +49,7 @@ impl NftId {
     }
 
     /// Convert `self` to a string with a valid checksum.
+    #[cfg(not(target_arch = "wasm32"))]
     #[must_use]
     pub fn to_string_with_checksum(&self, client: &Client) -> String {
         format!("{}/{}", self.token_id.to_string_with_checksum(client), self.serial)

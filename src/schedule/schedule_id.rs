@@ -16,12 +16,14 @@ use crate::entity_id::{
 };
 use crate::ledger_id::RefLedgerId;
 use crate::{
-    Client,
     EntityId,
     Error,
     FromProtobuf,
     ToProtobuf,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 
 /// The unique identifier for a scheduled transaction on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
@@ -81,6 +83,7 @@ impl ScheduleId {
     }
 
     /// Convert `self` to a string with a valid checksum.
+    #[cfg(not(target_arch = "wasm32"))]
     #[must_use]
     pub fn to_string_with_checksum(&self, client: &Client) -> String {
         EntityId::to_string_with_checksum(self.to_string(), client)
@@ -90,12 +93,14 @@ impl ScheduleId {
     ///
     /// # Errors
     /// - [`Error::BadEntityId`] if there is a checksum, and the checksum is not valid for the client's `ledger_id`.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn validate_checksum(&self, client: &Client) -> Result<(), Error> {
         EntityId::validate_checksum(self.shard, self.realm, self.num, self.checksum, client)
     }
 }
 
 impl ValidateChecksums for ScheduleId {
+    #[cfg(not(target_arch = "wasm32"))]
     fn validate_checksums(&self, ledger_id: &RefLedgerId) -> Result<(), Error> {
         EntityId::validate_checksum_for_ledger_id(
             self.shard,
@@ -104,6 +109,12 @@ impl ValidateChecksums for ScheduleId {
             self.checksum,
             ledger_id,
         )
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn validate_checksums(&self, _ledger_id: &RefLedgerId) -> Result<(), Error> {
+        // Checksum validation requires networking context, not available in WASM
+        Ok(())
     }
 }
 
