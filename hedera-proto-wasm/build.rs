@@ -50,7 +50,8 @@ fn main() -> Result<()> {
     // Set output file
     config.include_file("hedera_protos.rs");
 
-    // Configure prost for clean protobuf generation
+    // Disable doc comments to avoid doc test failures from protobuf pseudo-code
+    config.disable_comments(&["."]);
 
     // Compile all proto files
     config.compile_protos(&proto_files, &[proto_root])?;
