@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::file_service_client::FileServiceClient;
-
-use crate::ledger_id::RefLedgerId;
 use crate::query::{
     AnyQueryData,
     Query,

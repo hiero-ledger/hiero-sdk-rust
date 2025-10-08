@@ -10,15 +10,14 @@ use super::{
     TokenRejectTransaction,
 };
 use crate::signer::AnySigner;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionResponse;
 use crate::{
     AccountId,
     Client,
     PrivateKey,
     PublicKey,
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionResponse;
 
 ///  Reject undesired token(s) and dissociate in a single flow.
 ///

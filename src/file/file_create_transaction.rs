@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::proto::services::file_service_client::FileServiceClient;
 use time::{
     Duration,
     OffsetDateTime,
@@ -10,10 +7,15 @@ use time::{
 
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::file_service_client::FileServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -21,8 +23,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Key,
@@ -243,11 +243,11 @@ impl ToProtobuf for FileCreateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
     use hex_literal::hex;
     use time::OffsetDateTime;
 
     use crate::file::FileCreateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

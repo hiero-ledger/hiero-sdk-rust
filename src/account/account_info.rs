@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
 use prost::Message;
 use time::{
     Duration,
     OffsetDateTime,
 };
 
+use crate::proto::services;
 use crate::protobuf::ToProtobuf;
 use crate::{
     AccountId,

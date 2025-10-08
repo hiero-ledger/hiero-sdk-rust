@@ -8,7 +8,6 @@ use std::fmt::{
 };
 
 use crate::proto::services;
-
 use crate::{
     FromProtobuf,
     ToProtobuf,

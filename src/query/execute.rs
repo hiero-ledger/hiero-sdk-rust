@@ -2,10 +2,9 @@
 
 use std::fmt::Debug;
 
-use crate::proto::services;
-
 use crate::entity_id::ValidateChecksums;
 use crate::execute::Execute;
+use crate::proto::services;
 use crate::query::{
     AnyQueryData,
     ToQueryProtobuf,

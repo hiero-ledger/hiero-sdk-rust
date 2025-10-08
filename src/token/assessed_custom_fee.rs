@@ -1,5 +1,4 @@
 use crate::proto::services;
-
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
@@ -72,8 +71,8 @@ impl ToProtobuf for AssessedCustomFee {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

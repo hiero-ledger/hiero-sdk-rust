@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#[cfg(not(target_arch = "wasm32"))]
+use tonic::transport::Channel;
+
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::token_service_client::TokenServiceClient;
-
-use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -14,7 +18,7 @@ use crate::transaction::{
     TransactionData,
 };
 #[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
+use crate::BoxGrpcFuture;
 use crate::{
     AccountId,
     Error,
@@ -23,10 +27,6 @@ use crate::{
     Transaction,
     ValidateChecksums,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::BoxGrpcFuture;
-#[cfg(not(target_arch = "wasm32"))]
-use tonic::transport::Channel;
 
 /// Associates the provided account with the provided tokens. Must be signed by the provided Account's key.
 ///
@@ -101,8 +101,6 @@ impl ValidateChecksums for TokenAssociateTransactionData {
     }
 }
 
-
-
 impl ToTransactionDataProtobuf for TokenAssociateTransactionData {
     fn to_transaction_data_protobuf(
         &self,
@@ -149,8 +147,8 @@ impl ToProtobuf for TokenAssociateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use crate::proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

@@ -3,13 +3,12 @@
 use std::fmt;
 use std::str::FromStr;
 
-use crate::proto::services;
-
 use crate::entity_id::{
     Checksum,
     PartialEntityId,
 };
 use crate::ethereum::SolidityAddress;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,

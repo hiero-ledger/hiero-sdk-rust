@@ -4,6 +4,8 @@ use time::Duration;
 
 use crate::signer::AnySigner;
 use crate::staked_id::StakedId;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionResponse;
 use crate::{
     AccountId,
     Client,
@@ -18,9 +20,6 @@ use crate::{
     PrivateKey,
     PublicKey,
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionResponse;
 
 /// Create a new smart contract
 ///

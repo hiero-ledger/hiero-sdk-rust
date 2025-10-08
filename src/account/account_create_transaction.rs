@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::proto::services::crypto_service_client::CryptoServiceClient;
 use time::Duration;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
 use crate::staked_id::StakedId;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -18,8 +20,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -399,11 +399,11 @@ impl ToProtobuf for AccountCreateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
     use hex_literal::hex;
     use time::Duration;
 
     use crate::account::AccountCreateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

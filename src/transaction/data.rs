@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Transaction data trait and related types that are WASM-compatible
-//! 
+//!
 //! This module contains the core transaction building logic that doesn't require networking.
-
-use crate::{Hbar, TransactionId, AccountId};
-
-// AnyTransactionData is now available for both WASM and native
-// It's just a data enum, not network-dependent
-pub use crate::transaction::any::AnyTransactionData;
 
 // Re-export ChunkData from chunked module only for native builds
 #[cfg(not(target_arch = "wasm32"))]
 use super::ChunkData;
+// AnyTransactionData is now available for both WASM and native
+// It's just a data enum, not network-dependent
+pub use crate::transaction::any::AnyTransactionData;
+use crate::{
+    AccountId,
+    Hbar,
+    TransactionId,
+};
 
 /// WASM-compatible ChunkInfo that contains essential transaction metadata
-/// 
+///
 /// Unlike the native ChunkInfo which handles complex chunked execution,
 /// this version only carries the basic metadata needed for transaction building.
 #[cfg(target_arch = "wasm32")]
@@ -42,7 +44,7 @@ impl ChunkInfo {
     }
 
     /// Assert this is a single transaction (not chunked)
-    /// 
+    ///
     /// For WASM builds, we expect only single transactions since
     /// chunked execution requires networking capabilities.
     pub fn assert_single_transaction(&self) {
@@ -52,7 +54,7 @@ impl ChunkInfo {
 }
 
 /// Core transaction data trait that defines transaction building behavior.
-/// 
+///
 /// This trait is available for both native and WASM builds as it contains
 /// only transaction construction logic, no networking.
 
@@ -75,7 +77,7 @@ pub trait TransactionData: Clone + Into<AnyTransactionData> {
     }
 
     /// Returns the chunk data for this transaction if this is a chunked transaction.
-    /// 
+    ///
     /// Note: For WASM builds, this will always return None since chunked execution
     /// requires networking capabilities.
     fn maybe_chunk_data(&self) -> Option<&ChunkData> {
@@ -83,7 +85,7 @@ pub trait TransactionData: Clone + Into<AnyTransactionData> {
     }
 
     /// Returns `true` if `self` is a chunked transaction *and* it should wait for receipts between each chunk.
-    /// 
+    ///
     /// For WASM builds, this always returns false since chunked execution requires networking.
     fn wait_for_receipt(&self) -> bool {
         false
@@ -114,9 +116,9 @@ pub trait TransactionData: Clone {
     }
 
     /// Returns `true` if `self` is a chunked transaction *and* it should wait for receipts between each chunk.
-    /// 
+    ///
     /// For WASM builds, this always returns false since chunked execution requires networking.
     fn wait_for_receipt(&self) -> bool {
         false
     }
-} 
+}

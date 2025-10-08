@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::crypto_service_client::CryptoServiceClient;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::BoxGrpcFuture;
 use crate::proto::services::response::Response;
-
-use crate::ledger_id::RefLedgerId;
 use crate::query::{
     AnyQueryData,
     QueryExecute,
     ToQueryProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::BoxGrpcFuture;
 use crate::{
     Error,
     Query,

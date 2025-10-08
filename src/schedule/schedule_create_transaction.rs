@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::proto::services::schedule_service_client::ScheduleServiceClient;
-
 use time::OffsetDateTime;
 
 use super::schedulable_transaction_body::SchedulableTransactionBody;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::schedule_service_client::ScheduleServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -18,8 +19,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -229,10 +228,10 @@ impl FromProtobuf<services::ScheduleCreateTransactionBody> for ScheduleCreateTra
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
     use time::OffsetDateTime;
 
     use super::ScheduleCreateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-
 use crate::entity_id::ValidateChecksums;
 use crate::execute::{
     execute,
     Execute,
 };
+use crate::proto::services;
 use crate::query::execute::response_header;
 use crate::query::QueryExecute;
 use crate::{

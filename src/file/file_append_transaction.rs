@@ -3,11 +3,10 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::file_service_client::FileServiceClient;
-
-use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
@@ -21,10 +20,10 @@ use crate::transaction::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 use crate::transaction::{
+    ChunkData,
+    ChunkedTransactionData,
     TransactionExecute,
     TransactionExecuteChunked,
-    ChunkData,  
-    ChunkedTransactionData,
 };
 use crate::{
     Error,

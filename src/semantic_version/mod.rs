@@ -4,7 +4,6 @@ use std::fmt;
 use std::str::FromStr;
 
 use crate::proto::services;
-
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,

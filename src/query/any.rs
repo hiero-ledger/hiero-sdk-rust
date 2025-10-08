@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-
 use super::ToQueryProtobuf;
 use crate::account::{
     AccountBalanceQueryData,
@@ -19,6 +17,7 @@ use crate::file::{
     FileInfoQueryData,
 };
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::query::QueryExecute;
 use crate::schedule::ScheduleInfoQueryData;
 use crate::token::{

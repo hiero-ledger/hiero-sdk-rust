@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::proto::services;
-
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
@@ -61,8 +60,8 @@ impl ToProtobuf for ContractNonceInfo {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

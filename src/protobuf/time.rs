@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
 use time::{
     Duration,
     OffsetDateTime,
 };
 
+use crate::proto::services;
 use crate::ToProtobuf;
 
 impl ToProtobuf for Duration {

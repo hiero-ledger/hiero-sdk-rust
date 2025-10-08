@@ -41,4 +41,3 @@ impl From<OffsetDateTime> for super::proto::proto::Timestamp {
         Self { seconds: dt.unix_timestamp(), nanos: dt.nanosecond() as i32 }
     }
 }
-

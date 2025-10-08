@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::proto::services;
-
 use crate::{
     FromProtobuf,
     ToProtobuf,
@@ -43,7 +42,6 @@ impl ToProtobuf for TokenSupplyType {
 #[cfg(test)]
 mod tests {
     use crate::proto::services;
-
     use crate::token::token_supply_type::TokenSupplyType;
     use crate::{
         FromProtobuf,

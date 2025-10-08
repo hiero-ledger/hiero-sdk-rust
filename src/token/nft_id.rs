@@ -8,19 +8,17 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use crate::proto::services;
-
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 use crate::{
     Error,
     FromProtobuf,
     ToProtobuf,
     TokenId,
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::Client;
 
 /// The unique identifier for a token on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
@@ -119,9 +117,8 @@ impl ValidateChecksums for NftId {
 mod tests {
     use std::str::FromStr;
 
-    use crate::proto::services;
-
     use crate::ledger_id::RefLedgerId;
+    use crate::proto::services;
     use crate::token::nft_id::NftId;
     use crate::{
         FromProtobuf,

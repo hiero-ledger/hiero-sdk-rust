@@ -50,9 +50,8 @@ impl From<u64> for StakedId {
 }
 
 mod proto {
-    use crate::proto::services;
-
     use super::StakedId;
+    use crate::proto::services;
     use crate::FromProtobuf;
 
     macro_rules! impl_from_pb {

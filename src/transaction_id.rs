@@ -8,7 +8,6 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use crate::proto::services;
 use rand::{
     thread_rng,
     Rng,
@@ -19,6 +18,7 @@ use time::{
 };
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::{
     AccountId,
     Error,

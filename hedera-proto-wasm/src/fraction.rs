@@ -18,4 +18,3 @@ impl From<Fraction> for super::proto::proto::Fraction {
         }
     }
 }
-

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::token_service_client::TokenServiceClient;
 use time::{
@@ -11,11 +10,14 @@ use time::{
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
 use crate::token::token_key_validation_type::TokenKeyValidation;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -23,8 +25,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -478,13 +478,13 @@ mod tests {
     use std::str::FromStr;
 
     use expect_test::expect_file;
-    use crate::proto::services;
     use time::{
         Duration,
         OffsetDateTime,
     };
 
     use super::TokenUpdateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

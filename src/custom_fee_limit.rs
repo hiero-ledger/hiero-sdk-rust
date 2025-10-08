@@ -1,8 +1,7 @@
+use crate::custom_fixed_fee::CustomFixedFee;
 use crate::proto::services::{
     self,
 };
-
-use crate::custom_fixed_fee::CustomFixedFee;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,

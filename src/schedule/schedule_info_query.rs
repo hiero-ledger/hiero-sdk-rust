@@ -3,7 +3,6 @@
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::schedule_service_client::ScheduleServiceClient;
-
 use crate::query::{
     AnyQueryData,
     QueryExecute,

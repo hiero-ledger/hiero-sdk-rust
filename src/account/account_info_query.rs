@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::account::AccountInfo;
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::crypto_service_client::CryptoServiceClient;
-
-use crate::account::AccountInfo;
-use crate::ledger_id::RefLedgerId;
 use crate::query::{
     AnyQueryData,
     QueryExecute,
@@ -72,7 +71,7 @@ impl QueryExecute for AccountInfoQueryData {
         &self,
         channel: services::Channel,
         request: services::Query,
-        ) -> services::BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { CryptoServiceClient::new(channel).get_account_info(request).await })
     }
 }

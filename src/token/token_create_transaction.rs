@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::proto::services::token_service_client::TokenServiceClient;
-
 use time::{
     Duration,
     OffsetDateTime,
 };
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
@@ -17,6 +16,8 @@ use crate::protobuf::{
 use crate::token::custom_fees::AnyCustomFee;
 use crate::token::token_supply_type::TokenSupplyType;
 use crate::token::token_type::TokenType;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -24,8 +25,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -612,9 +611,9 @@ mod tests {
     use std::str::FromStr;
 
     use expect_test::expect_file;
-    use crate::proto::services;
     use time::OffsetDateTime;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

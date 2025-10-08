@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-
 use crate::contract::DelegateContractId;
+use crate::proto::services;
 use crate::{
     ContractId,
     Error,
@@ -112,9 +111,9 @@ impl FromProtobuf<services::Key> for Key {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use crate::proto::services;
     use hex_literal::hex;
 
+    use crate::proto::services;
     use crate::protobuf::FromProtobuf;
     use crate::{
         Key,

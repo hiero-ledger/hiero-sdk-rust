@@ -8,20 +8,19 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use crate::proto::services;
-
 use crate::entity_id::{
     Checksum,
     ValidateChecksums,
 };
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 use crate::{
     EntityId,
     Error,
     FromProtobuf,
     ToProtobuf,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::Client;
 
 /// The unique identifier for a topic on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]

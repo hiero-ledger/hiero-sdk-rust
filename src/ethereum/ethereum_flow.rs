@@ -3,6 +3,8 @@
 use std::mem;
 
 use super::ethereum_data::EthereumData;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionResponse;
 use crate::{
     Client,
     EthereumTransaction,
@@ -11,9 +13,6 @@ use crate::{
     FileId,
     Hbar,
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionResponse;
 
 /// Flow for executing ethereum transactions.
 #[derive(Default, Debug)]

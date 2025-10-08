@@ -1,7 +1,6 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
@@ -12,6 +11,7 @@ use super::{
 use crate::entity_id::ValidateChecksums;
 use crate::execute::Execute;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::{
     AccountId,
     BoxGrpcFuture,

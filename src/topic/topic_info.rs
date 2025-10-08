@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
 use time::{
     Duration,
     OffsetDateTime,
 };
 
 use crate::custom_fixed_fee::CustomFixedFee;
+use crate::proto::services;
 use crate::protobuf::ToProtobuf;
 use crate::{
     AccountId,
@@ -159,9 +159,9 @@ impl ToProtobuf for TopicInfo {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
     use prost::Message;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

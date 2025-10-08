@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use time::OffsetDateTime;
+
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::freeze_service_client::FreezeServiceClient;
-
-use time::OffsetDateTime;
-
 use crate::protobuf::FromProtobuf;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -14,8 +15,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     Error,
     FileId,
@@ -162,10 +161,10 @@ impl ToProtobuf for FreezeTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
     use hex_literal::hex;
     use time::OffsetDateTime;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

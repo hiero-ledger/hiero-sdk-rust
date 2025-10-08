@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::address_book_service_client::AddressBookServiceClient;
-
-use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -13,8 +14,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     Error,
     ToProtobuf,
@@ -122,10 +121,10 @@ impl ToProtobuf for NodeDeleteTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use crate::proto::services;
 
     use super::NodeDeleteTransaction;
     use crate::address_book::NodeDeleteTransactionData;
+    use crate::proto::services;
     use crate::protobuf::FromProtobuf;
     use crate::transaction::test_helpers::{
         check_body,

@@ -3,7 +3,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use crate::proto::services;
 use prost::Message;
 #[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
@@ -16,6 +15,7 @@ use super::{
 };
 use crate::execute::Execute;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::transaction::any::AnyTransactionData;
 use crate::transaction::protobuf::ToTransactionDataProtobuf;
 use crate::transaction::DEFAULT_TRANSACTION_VALID_DURATION;

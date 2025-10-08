@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
-
 // ChunkInfo available for both native and WASM (contains essential metadata)
 #[cfg(not(target_arch = "wasm32"))]
 use super::chunked::ChunkInfo;
-#[cfg(target_arch = "wasm32")]  
+#[cfg(target_arch = "wasm32")]
 use super::data::ChunkInfo;
+use crate::proto::services;
 
 // Unified trait - ChunkInfo contains essential metadata for both native and WASM
 pub trait ToTransactionDataProtobuf: Send + Sync {

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
 use time::Duration;
@@ -9,10 +8,13 @@ use tonic::transport::Channel;
 
 use crate::custom_fixed_fee::CustomFixedFee;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -20,8 +22,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -321,11 +321,11 @@ impl ToProtobuf for TopicCreateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
     use time::Duration;
 
     use super::TopicCreateTransactionData;
     use crate::custom_fixed_fee::CustomFixedFee;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

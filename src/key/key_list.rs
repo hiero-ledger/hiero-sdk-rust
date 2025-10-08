@@ -1,5 +1,4 @@
 use crate::proto::services;
-
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
@@ -117,8 +116,8 @@ impl FromProtobuf<services::ThresholdKey> for KeyList {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use crate::proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::entity_id::ValidateChecksums;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::network_service_client::NetworkServiceClient;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::BoxGrpcFuture;
-
-use crate::entity_id::ValidateChecksums;
 use crate::query::{
     AnyQueryData,
     QueryExecute,
     ToQueryProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::BoxGrpcFuture;
 use crate::{
     Error,
     NetworkVersionInfo,

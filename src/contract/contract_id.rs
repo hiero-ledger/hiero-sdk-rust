@@ -8,8 +8,6 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use crate::proto::services;
-
 use crate::entity_id::{
     Checksum,
     PartialEntityId,
@@ -17,15 +15,15 @@ use crate::entity_id::{
 };
 use crate::ethereum::SolidityAddress;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 use crate::{
     EntityId,
     Error,
     FromProtobuf,
     ToProtobuf,
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::Client;
 
 /// A unique identifier for a smart contract on Hiero.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]

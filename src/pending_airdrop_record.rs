@@ -2,9 +2,8 @@
 
 use core::fmt;
 
-use crate::proto::services;
-
 use crate::pending_airdrop_id::PendingAirdropId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,

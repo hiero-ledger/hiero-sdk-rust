@@ -24,14 +24,14 @@ pub mod proto {
 }
 
 // Time conversions for WASM builds
-mod time_0_3;
 mod fraction;
+mod time_0_3;
 
 // Re-export commonly used types for convenience
 // Re-export nested modules
-pub use proto::proto::transaction_body;
 pub use proto::proto::{
     signature_pair,
+    transaction_body,
     AccountAmount,
     AccountId,
     CryptoTransferTransactionBody,

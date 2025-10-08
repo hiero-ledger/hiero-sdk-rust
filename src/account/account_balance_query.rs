@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
-use crate::proto::services::crypto_service_client::CryptoServiceClient;
-#[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::crypto_get_account_balance_query::BalanceSource;
-
-use crate::ledger_id::RefLedgerId;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
 use crate::query::{
     AnyQueryData,
     Query,

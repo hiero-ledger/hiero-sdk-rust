@@ -2,9 +2,8 @@
 
 use std::fmt;
 
-use crate::proto::services;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::{
     AccountId,
     Error,

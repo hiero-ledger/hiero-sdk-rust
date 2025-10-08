@@ -3,17 +3,25 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
 #[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::ChunkData;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::ChunkedTransactionData;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecuteChunked;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -21,14 +29,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::ChunkedTransactionData;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::ChunkData;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecuteChunked;
 use crate::{
     Error,
     TopicId,
@@ -97,7 +97,6 @@ impl TransactionData for TopicMessageSubmitTransactionData {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ChunkedTransactionData for TopicMessageSubmitTransactionData {
-
     fn chunk_data(&self) -> &ChunkData {
         &self.chunk_data
     }

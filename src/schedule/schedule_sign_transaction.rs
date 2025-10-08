@@ -3,19 +3,18 @@
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::schedule_service_client::ScheduleServiceClient;
-
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     Error,
     ScheduleId,
@@ -94,8 +93,8 @@ impl FromProtobuf<services::ScheduleSignTransactionBody> for ScheduleSignTransac
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use crate::proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

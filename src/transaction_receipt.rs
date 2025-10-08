@@ -2,10 +2,10 @@
 
 use std::ops::Not;
 
-use crate::proto::services;
 #[cfg(test)]
 pub(super) use tests::make_receipt;
 
+use crate::proto::services;
 use crate::protobuf::ToProtobuf;
 use crate::{
     AccountId,

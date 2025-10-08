@@ -165,6 +165,13 @@ mod transaction_response;
 mod transfer;
 mod transfer_transaction;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use account::{
+    account_info_flow,
+    AccountBalanceQuery,
+    AccountInfoQuery,
+    AccountRecordsQuery,
+};
 pub use account::{
     AccountAllowanceApproveTransaction,
     AccountAllowanceDeleteTransaction,
@@ -177,13 +184,6 @@ pub use account::{
     AllProxyStakers,
     ProxyStaker,
 };
-#[cfg(not(target_arch = "wasm32"))]
-pub use account::{
-    account_info_flow,
-    AccountBalanceQuery,
-    AccountInfoQuery,
-    AccountRecordsQuery,
-};
 pub use address_book::{
     NodeCreateTransaction,
     NodeDeleteTransaction,
@@ -195,6 +195,13 @@ pub use batch_transaction::BatchTransaction;
 pub use client::Client;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use client::Operator;
+#[cfg(not(target_arch = "wasm32"))]
+pub use contract::{
+    ContractBytecodeQuery,
+    ContractCallQuery,
+    ContractCreateFlow,
+    ContractInfoQuery,
+};
 pub use contract::{
     ContractCreateTransaction,
     ContractDeleteTransaction,
@@ -207,13 +214,6 @@ pub use contract::{
     ContractNonceInfo,
     ContractUpdateTransaction,
     DelegateContractId,
-};
-#[cfg(not(target_arch = "wasm32"))]
-pub use contract::{
-    ContractBytecodeQuery,
-    ContractCallQuery,
-    ContractCreateFlow,
-    ContractInfoQuery,
 };
 pub use custom_fee_limit::CustomFeeLimit;
 pub use custom_fixed_fee::CustomFixedFee;
@@ -228,6 +228,8 @@ pub use error::{
     MnemonicEntropyError,
     MnemonicParseError,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use ethereum::EthereumFlow;
 pub use ethereum::{
     Eip1559EthereumData,
     EthereumData,
@@ -235,8 +237,6 @@ pub use ethereum::{
     EvmAddress,
     LegacyEthereumData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-pub use ethereum::EthereumFlow;
 pub use exchange_rates::{
     ExchangeRate,
     ExchangeRates,
@@ -250,6 +250,10 @@ pub use fee_schedules::{
     RequestType,
     TransactionFeeSchedule,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use file::FileContentsQuery;
+#[cfg(not(target_arch = "wasm32"))]
+pub use file::FileInfoQuery;
 pub use file::{
     FileAppendTransaction,
     FileContentsResponse,
@@ -259,16 +263,11 @@ pub use file::{
     FileInfo,
     FileUpdateTransaction,
 };
-#[cfg(not(target_arch = "wasm32"))]
-pub use file::FileContentsQuery;
-#[cfg(not(target_arch = "wasm32"))]
-pub use file::FileInfoQuery;
 pub use hbar::{
     Hbar,
     HbarUnit,
     Tinybar,
 };
-pub use crate::proto::services::ResponseCodeEnum as Status;
 pub use key::{
     Key,
     KeyList,
@@ -311,6 +310,8 @@ pub use query::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use retry::retry;
+#[cfg(not(target_arch = "wasm32"))]
+pub use schedule::ScheduleInfoQuery;
 pub use schedule::{
     ScheduleCreateTransaction,
     ScheduleDeleteTransaction,
@@ -318,8 +319,6 @@ pub use schedule::{
     ScheduleInfo,
     ScheduleSignTransaction,
 };
-#[cfg(not(target_arch = "wasm32"))]
-pub use schedule::ScheduleInfoQuery;
 pub use semantic_version::SemanticVersion;
 pub use service_endpoint::ServiceEndpoint;
 pub use staking_info::StakingInfo;
@@ -409,6 +408,8 @@ pub(crate) use transaction_record_query::TransactionRecordQueryData;
 pub use transaction_response::TransactionResponse;
 pub use transfer::Transfer;
 pub use transfer_transaction::TransferTransaction;
+
+pub use crate::proto::services::ResponseCodeEnum as Status;
 
 /// Like [`arc_swap::ArcSwapOption`] but with a [`triomphe::Arc`].
 pub(crate) type ArcSwapOption<T> = arc_swap::ArcSwapAny<Option<triomphe::Arc<T>>>;

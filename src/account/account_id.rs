@@ -8,14 +8,15 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use crate::proto::services;
-
 use crate::entity_id::{
     Checksum,
     PartialEntityId,
     ValidateChecksums,
 };
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 use crate::{
     EntityId,
     Error,
@@ -24,9 +25,6 @@ use crate::{
     PublicKey,
     ToProtobuf,
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::Client;
 
 /// A unique identifier for a cryptocurrency account on Hiero.
 #[derive(Copy, Hash, PartialEq, Eq, Clone)]

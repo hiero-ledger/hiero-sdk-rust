@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::entity_id::ValidateChecksums;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::util_service_client::UtilServiceClient;
-
-use crate::entity_id::ValidateChecksums;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -16,8 +17,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::Transaction;
 
 /// Random Number Generator Transaction.

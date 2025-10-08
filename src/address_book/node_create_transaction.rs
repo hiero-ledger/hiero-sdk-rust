@@ -2,13 +2,14 @@
 
 use std::net::Ipv4Addr;
 
+use crate::ledger_id::RefLedgerId;
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::address_book_service_client::AddressBookServiceClient;
-
-use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
 use crate::service_endpoint::ServiceEndpoint;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -16,8 +17,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -324,10 +323,10 @@ mod tests {
     use std::net::Ipv4Addr;
 
     use expect_test::expect_file;
-    use crate::proto::services;
 
     use super::NodeCreateTransaction;
     use crate::address_book::NodeCreateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

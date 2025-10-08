@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use time::{
+    Duration,
+    OffsetDateTime,
+};
+
 use crate::proto::services;
 use crate::proto::services::{
     TokenFreezeStatus,
     TokenKycStatus,
     TokenPauseStatus,
 };
-use time::{
-    Duration,
-    OffsetDateTime,
-};
-
 use crate::protobuf::ToProtobuf;
 use crate::token::custom_fees::AnyCustomFee;
 use crate::{

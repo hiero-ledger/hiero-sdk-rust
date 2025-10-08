@@ -12,12 +12,9 @@ use tinystr::TinyAsciiStr;
 
 use crate::ethereum::SolidityAddress;
 use crate::ledger_id::RefLedgerId;
-use crate::{
-    Error,
-};
-
 #[cfg(not(target_arch = "wasm32"))]
-use crate::Client;  
+use crate::Client;
+use crate::Error;
 
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Checksum(TinyAsciiStr<5>);

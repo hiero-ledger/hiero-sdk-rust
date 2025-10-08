@@ -9,7 +9,6 @@ use std::fmt::{
 };
 use std::num::NonZeroUsize;
 
-use crate::proto::services;
 use prost::Message;
 use time::Duration;
 use triomphe::Arc;
@@ -18,7 +17,14 @@ use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::execute::execute;
+use crate::proto::services;
 use crate::signer::AnySigner;
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::transaction_response::TransactionResponse;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Operator;
 use crate::{
     AccountId,
     Error,
@@ -31,15 +37,6 @@ use crate::{
     TransactionId,
     ValidateChecksums,
 };
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::Operator;
-
-#[cfg(not(target_arch = "wasm32"))]
-use crate::Client;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub use crate::transaction_response::TransactionResponse;
 
 mod any;
 #[cfg(not(target_arch = "wasm32"))] // Chunked execution requires networking
@@ -65,9 +62,9 @@ pub(crate) use chunked::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use cost::CostTransaction;
-pub(crate) use data::TransactionData;
 #[cfg(target_arch = "wasm32")]
 pub(crate) use data::ChunkInfo;
+pub(crate) use data::TransactionData;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use execute::{
     TransactionExecute,
@@ -425,13 +422,13 @@ impl<D: ValidateChecksums> Transaction<D> {
     ///
     /// # Errors
     /// - If `node_account_ids` is explicitly set to empty.
-    /// 
+    ///
     /// # Panics
     /// - If `node_account_ids` is explicitly set to empty (IE: `tx.node_account_ids([]).freeze_with(None)`).
     pub fn freeze(&mut self) -> crate::Result<&mut Self> {
         #[cfg(not(target_arch = "wasm32"))]
         return self.freeze_with(None);
-        
+
         #[cfg(target_arch = "wasm32")]
         {
             if self.is_frozen() {
@@ -444,7 +441,7 @@ impl<D: ValidateChecksums> Transaction<D> {
                 return Err(crate::Error::TransactionIdNotSet);
             }
 
-            // Require node account IDs to be set explicitly  
+            // Require node account IDs to be set explicitly
             if self.get_node_account_ids().is_none() {
                 return Err(crate::Error::FreezeUnsetNodeAccountIds);
             }
@@ -1391,7 +1388,6 @@ where
 
 #[cfg(test)]
 pub(crate) mod test_helpers {
-    use crate::proto::services;
     use prost::Message;
     use time::{
         Duration,
@@ -1399,6 +1395,7 @@ pub(crate) mod test_helpers {
     };
 
     use super::TransactionExecute;
+    use crate::proto::services;
     use crate::protobuf::ToProtobuf;
     use crate::{
         AccountId,

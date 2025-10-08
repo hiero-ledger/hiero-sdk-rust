@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
@@ -8,7 +7,6 @@ use tonic::transport::Channel;
 use super::chunked::ChunkInfo;
 #[cfg(target_arch = "wasm32")]
 use super::data::ChunkInfo;
-
 use super::TransactionData;
 #[cfg(not(target_arch = "wasm32"))]
 use super::TransactionExecuteChunked;
@@ -16,13 +14,14 @@ use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::FromProtobuf;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionBody,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     AccountId,
     Error,
@@ -703,9 +702,7 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
             #[cfg(not(target_arch = "wasm32"))]
             Data::AtomicBatch(pb) => data::Batch::from_protobuf(pb)?.into(),
             #[cfg(target_arch = "wasm32")]
-            _ => {
-                return Err(Error::from_protobuf("Unsupported transaction type for WASM"))
-            }
+            _ => return Err(Error::from_protobuf("Unsupported transaction type for WASM")),
         };
 
         Ok(data)
@@ -1096,11 +1093,7 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
             #[cfg(not(target_arch = "wasm32"))]
             Data::AtomicBatch(_) => Self::AtomicBatch(Vec::new()),
             #[cfg(target_arch = "wasm32")]
-            _ => {
-                return Err(Error::from_protobuf(
-                    "unsupported transaction type for WASM",
-                ))
-            }
+            _ => return Err(Error::from_protobuf("unsupported transaction type for WASM")),
         };
 
         for transaction in iter {
@@ -1161,7 +1154,9 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                 #[cfg(not(target_arch = "wasm32"))]
                 (Self::AtomicBatch(v), Data::AtomicBatch(element)) => v.push(element),
                 #[cfg(target_arch = "wasm32")]
-                (_, Data::AtomicBatch(_)) => return Err(Error::from_protobuf("AtomicBatch is not supported for WASM")),
+                (_, Data::AtomicBatch(_)) => {
+                    return Err(Error::from_protobuf("AtomicBatch is not supported for WASM"))
+                }
                 _ => return Err(Error::from_protobuf("mismatched transaction types")),
             }
         }

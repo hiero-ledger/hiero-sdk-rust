@@ -3,11 +3,12 @@
 use crate::proto::services;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proto::services::token_service_client::TokenServiceClient;
-
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
@@ -15,8 +16,6 @@ use crate::transaction::{
     ToTransactionDataProtobuf,
     TransactionData,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use crate::transaction::TransactionExecute;
 use crate::{
     Error,
     TokenId,
@@ -168,9 +167,9 @@ impl ToProtobuf for TokenBurnTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use crate::proto::services;
 
     use super::TokenBurnTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

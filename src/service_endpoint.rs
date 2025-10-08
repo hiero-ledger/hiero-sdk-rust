@@ -6,7 +6,6 @@ use std::net::{
 };
 
 use crate::proto::services;
-
 use crate::protobuf::ToProtobuf;
 use crate::{
     Error,
