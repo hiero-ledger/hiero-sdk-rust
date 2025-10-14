@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::schedule_service_client::ScheduleServiceClient;
 use time::OffsetDateTime;
-use tonic::transport::Channel;
 
 use super::schedulable_transaction_body::SchedulableTransactionBody;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::schedule_service_client::ScheduleServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Key,
     Transaction,
@@ -52,6 +52,7 @@ pub struct ScheduleCreateTransactionData {
     wait_for_expiry: bool,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl ScheduleCreateTransaction {
     // note(sr): not sure what the right way to go about this is?
     // pub fn get_scheduled_transaction(&self) -> Option<&SchedulableTransactionBody> {
@@ -149,12 +150,13 @@ impl ScheduleCreateTransaction {
 
 impl TransactionData for ScheduleCreateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for ScheduleCreateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { ScheduleServiceClient::new(channel).create_schedule(request).await })
     }
 }
@@ -226,10 +228,10 @@ impl FromProtobuf<services::ScheduleCreateTransactionBody> for ScheduleCreateTra
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
     use time::OffsetDateTime;
 
     use super::ScheduleCreateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

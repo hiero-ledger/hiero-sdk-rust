@@ -2,24 +2,23 @@
 
 use std::net::Ipv4Addr;
 
-use hedera_proto::services;
-use hedera_proto::services::address_book_service_client::AddressBookServiceClient;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::address_book_service_client::AddressBookServiceClient;
 use crate::protobuf::FromProtobuf;
 use crate::service_endpoint::ServiceEndpoint;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Key,
     ToProtobuf,
@@ -237,12 +236,13 @@ impl NodeUpdateTransaction {
 
 impl TransactionData for NodeUpdateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for NodeUpdateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { AddressBookServiceClient::new(channel).update_node(request).await })
     }
 }
@@ -361,10 +361,10 @@ mod tests {
     use std::net::Ipv4Addr;
 
     use expect_test::expect_file;
-    use hedera_proto::services;
 
     use super::NodeUpdateTransaction;
     use crate::address_book::NodeUpdateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

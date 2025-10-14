@@ -1,5 +1,4 @@
-use hedera_proto::services;
-
+use crate::proto::services;
 use crate::protobuf::FromProtobuf;
 use crate::transaction::{
     AnyTransactionData,
@@ -33,6 +32,7 @@ mod data {
         FileDeleteTransactionData as FileDelete,
         FileUpdateTransactionData as FileUpdate,
     };
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) use crate::prng_transaction::PrngTransactionData as Prng;
     pub(super) use crate::schedule::ScheduleDeleteTransactionData as ScheduleDelete;
     pub(super) use crate::system::{
@@ -127,6 +127,7 @@ pub(super) enum AnySchedulableTransactionData {
     FileCreate(data::FileCreate),
     FileUpdate(data::FileUpdate),
     FileDelete(data::FileDelete),
+    #[cfg(not(target_arch = "wasm32"))]
     Prng(data::Prng),
     TokenAssociate(data::TokenAssociate),
     TokenBurn(data::TokenBurn),
@@ -207,6 +208,7 @@ impl AnySchedulableTransactionData {
             AnySchedulableTransactionData::SystemUndelete(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::Freeze(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::ScheduleDelete(it) => it.default_max_transaction_fee(),
+            #[cfg(not(target_arch = "wasm32"))]
             AnySchedulableTransactionData::Prng(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::NodeCreate(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::NodeUpdate(it) => it.default_max_transaction_fee(),
@@ -312,7 +314,12 @@ impl FromProtobuf<services::schedulable_transaction_body::Data> for AnySchedulab
             Data::ScheduleDelete(it) => {
                 Ok(Self::ScheduleDelete(data::ScheduleDelete::from_protobuf(it)?))
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Data::UtilPrng(it) => Ok(Self::Prng(data::Prng::from_protobuf(it)?)),
+            #[cfg(target_arch = "wasm32")]
+            Data::UtilPrng(_) => {
+                Err(crate::Error::from_protobuf("UtilPrng is not supported for WASM"))
+            }
             Data::TokenUpdateNfts(it) => {
                 Ok(Self::TokenUpdateNfts(data::TokenUpdateNfts::from_protobuf(it)?))
             }
@@ -449,6 +456,7 @@ impl ToSchedulableTransactionDataProtobuf for AnySchedulableTransactionData {
             AnySchedulableTransactionData::ScheduleDelete(it) => {
                 it.to_schedulable_transaction_data_protobuf()
             }
+            #[cfg(not(target_arch = "wasm32"))]
             AnySchedulableTransactionData::Prng(it) => {
                 it.to_schedulable_transaction_data_protobuf()
             }
@@ -525,6 +533,7 @@ impl TryFrom<AnyTransactionData> for AnySchedulableTransactionData {
             AnyTransactionData::SystemUndelete(it) => Ok(Self::SystemUndelete(it)),
             AnyTransactionData::Freeze(it) => Ok(Self::Freeze(it)),
             AnyTransactionData::ScheduleDelete(it) => Ok(Self::ScheduleDelete(it)),
+            #[cfg(not(target_arch = "wasm32"))]
             AnyTransactionData::Prng(it) => Ok(Self::Prng(it)),
             AnyTransactionData::TokenUpdateNfts(it) => Ok(Self::TokenUpdateNfts(it)),
             AnyTransactionData::NodeCreate(it) => Ok(Self::NodeCreate(it)),
@@ -544,6 +553,7 @@ impl TryFrom<AnyTransactionData> for AnySchedulableTransactionData {
             AnyTransactionData::Ethereum(_) => {
                 Err(crate::Error::basic_parse("Cannot schedule `EthereumTransaction`"))
             }
+            #[cfg(not(target_arch = "wasm32"))]
             AnyTransactionData::Batch(_) => {
                 Err(crate::Error::basic_parse("Cannot schedule `BatchTransaction`"))
             }
@@ -597,6 +607,7 @@ impl From<AnySchedulableTransactionData> for AnyTransactionData {
             AnySchedulableTransactionData::SystemUndelete(it) => Self::SystemUndelete(it),
             AnySchedulableTransactionData::Freeze(it) => Self::Freeze(it),
             AnySchedulableTransactionData::ScheduleDelete(it) => Self::ScheduleDelete(it),
+            #[cfg(not(target_arch = "wasm32"))]
             AnySchedulableTransactionData::Prng(it) => Self::Prng(it),
             AnySchedulableTransactionData::TokenUpdateNfts(it) => Self::TokenUpdateNfts(it),
             AnySchedulableTransactionData::NodeCreate(it) => Self::NodeCreate(it),

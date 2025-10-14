@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
-use tonic::transport::Channel;
-
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     Hbar,
     ToProtobuf,
@@ -50,13 +49,14 @@ impl PaymentTransaction {
 
 impl TransactionData for PaymentTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for PaymentTransactionData {
     // noinspection DuplicatedCode
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { CryptoServiceClient::new(channel).crypto_transfer(request).await })
     }
 }

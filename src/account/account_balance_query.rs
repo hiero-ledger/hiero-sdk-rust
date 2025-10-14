@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
-use services::crypto_get_account_balance_query::BalanceSource;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_get_account_balance_query::BalanceSource;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
 use crate::query::{
     AnyQueryData,
     Query,
@@ -15,7 +15,6 @@ use crate::query::{
 use crate::{
     AccountBalance,
     AccountId,
-    BoxGrpcFuture,
     ContractId,
     Error,
     ToProtobuf,
@@ -107,6 +106,7 @@ impl ToQueryProtobuf for AccountBalanceQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for AccountBalanceQueryData {
     type Response = AccountBalance;
 
@@ -116,9 +116,9 @@ impl QueryExecute for AccountBalanceQueryData {
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { CryptoServiceClient::new(channel).crypto_get_balance(request).await })
     }
 }

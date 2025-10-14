@@ -12,10 +12,9 @@ use tinystr::TinyAsciiStr;
 
 use crate::ethereum::SolidityAddress;
 use crate::ledger_id::RefLedgerId;
-use crate::{
-    Client,
-    Error,
-};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
+use crate::Error;
 
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Checksum(TinyAsciiStr<5>);
@@ -219,6 +218,7 @@ impl EntityId {
     /// # Errors
     /// - [`Error::CannotPerformTaskWithoutLedgerId`] if the client has no `ledger_id`.
     /// - [`Error::BadEntityId`] if there is a checksum, and the checksum is not valid for the client's `ledger_id`.
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn validate_checksum(
         shard: u64,
         realm: u64,
@@ -244,6 +244,7 @@ impl EntityId {
         )
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn validate_checksum_for_ledger_id(
         shard: u64,
         realm: u64,
@@ -274,6 +275,7 @@ impl EntityId {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn to_string_with_checksum(mut entity_id_string: String, client: &Client) -> String {
         let ledger_id = client.ledger_id_internal();
         let ledger_id = ledger_id

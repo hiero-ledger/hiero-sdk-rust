@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
 use time::OffsetDateTime;
 
 use super::schedulable_transaction_body::SchedulableTransactionBody;
+use crate::proto::services;
 use crate::protobuf::ToProtobuf;
 use crate::transaction::TransactionBody;
 use crate::{
@@ -87,6 +87,7 @@ impl ScheduleInfo {
                 max_transaction_fee: None,
                 transaction_memo: self.scheduled_transaction.transaction_memo.clone(),
                 transaction_id: Some(self.scheduled_transaction_id),
+                #[cfg(not(target_arch = "wasm32"))]
                 operator: None,
                 is_frozen: true,
                 regenerate_transaction_id: Some(false),

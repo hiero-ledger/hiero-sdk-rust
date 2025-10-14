@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
 use crate::pending_airdrop_id::PendingAirdropId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     Transaction,
     ValidateChecksums,
@@ -79,12 +78,13 @@ impl TokenClaimAirdropTransaction {
 
 impl TransactionData for TokenClaimAirdropTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TokenClaimAirdropTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { TokenServiceClient::new(channel).claim_airdrop(request).await })
     }
 }
@@ -150,9 +150,9 @@ impl FromProtobuf<services::TokenClaimAirdropTransactionBody> for TokenClaimAird
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use hedera_proto::services;
 
     use crate::pending_airdrop_id::PendingAirdropId;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

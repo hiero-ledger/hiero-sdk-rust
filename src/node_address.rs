@@ -2,8 +2,7 @@
 
 use std::net::SocketAddrV4;
 
-use hedera_proto::services;
-
+use crate::proto::services;
 use crate::protobuf::ToProtobuf;
 use crate::{
     AccountId,

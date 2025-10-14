@@ -3,12 +3,12 @@
 use std::borrow::Cow;
 use std::str;
 
-use hedera_proto::services;
 use num_bigint::{
     BigInt,
     BigUint,
 };
 
+use crate::proto::services;
 use crate::protobuf::ToProtobuf;
 use crate::{
     AccountId,
@@ -298,13 +298,13 @@ impl ToProtobuf for ContractFunctionResult {
 
 #[cfg(test)]
 mod tests {
-    use hedera_proto::services;
     use hex_literal::hex;
     use num_bigint::{
         BigInt,
         BigUint,
     };
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

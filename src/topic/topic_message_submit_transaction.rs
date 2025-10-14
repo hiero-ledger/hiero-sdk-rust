@@ -3,28 +3,33 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::ChunkData;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::ChunkedTransactionData;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecuteChunked;
 use crate::transaction::{
     AnyTransactionData,
-    ChunkData,
     ChunkInfo,
-    ChunkedTransactionData,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
-    TransactionExecuteChunked,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     TopicId,
     Transaction,
@@ -48,6 +53,7 @@ pub struct TopicMessageSubmitTransactionData {
     /// The topic ID to submit this message to.
     topic_id: Option<TopicId>,
 
+    #[cfg(not(target_arch = "wasm32"))]
     chunk_data: ChunkData,
 }
 
@@ -65,11 +71,13 @@ impl TopicMessageSubmitTransaction {
     }
 
     /// Returns the message to be submitted.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_message(&self) -> Option<&[u8]> {
         Some(self.data().chunk_data.data.as_slice())
     }
 
     /// Sets the message to be submitted.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn message(&mut self, bytes: impl Into<Vec<u8>>) -> &mut Self {
         self.data_mut().chunk_data_mut().data = bytes.into();
         self
@@ -77,6 +85,7 @@ impl TopicMessageSubmitTransaction {
 }
 
 impl TransactionData for TopicMessageSubmitTransactionData {
+    #[cfg(not(target_arch = "wasm32"))]
     fn maybe_chunk_data(&self) -> Option<&ChunkData> {
         Some(self.chunk_data())
     }
@@ -86,6 +95,7 @@ impl TransactionData for TopicMessageSubmitTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl ChunkedTransactionData for TopicMessageSubmitTransactionData {
     fn chunk_data(&self) -> &ChunkData {
         &self.chunk_data
@@ -96,16 +106,18 @@ impl ChunkedTransactionData for TopicMessageSubmitTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TopicMessageSubmitTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { ConsensusServiceClient::new(channel).submit_message(request).await })
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecuteChunked for TopicMessageSubmitTransactionData {}
 
 impl ValidateChecksums for TopicMessageSubmitTransactionData {
@@ -122,7 +134,10 @@ impl ToTransactionDataProtobuf for TopicMessageSubmitTransactionData {
         services::transaction_body::Data::ConsensusSubmitMessage(
             services::ConsensusSubmitMessageTransactionBody {
                 topic_id: self.topic_id.to_protobuf(),
+                #[cfg(not(target_arch = "wasm32"))]
                 message: self.chunk_data.message_chunk(chunk_info).to_vec(),
+                #[cfg(target_arch = "wasm32")]
+                message: Vec::new(), // WASM doesn't support chunked transactions
                 chunk_info: (chunk_info.total > 1).then(|| services::ConsensusMessageChunkInfo {
                     initial_transaction_id: Some(chunk_info.initial_transaction_id.to_protobuf()),
                     number: (chunk_info.current + 1) as i32,
@@ -137,6 +152,7 @@ impl ToSchedulableTransactionDataProtobuf for TopicMessageSubmitTransactionData 
     fn to_schedulable_transaction_data_protobuf(
         &self,
     ) -> services::schedulable_transaction_body::Data {
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(
             self.chunk_data.used_chunks() == 1,
             "Cannot schedule a `TopicMessageSubmitTransaction` with multiple chunks"
@@ -144,7 +160,10 @@ impl ToSchedulableTransactionDataProtobuf for TopicMessageSubmitTransactionData 
 
         let data = services::ConsensusSubmitMessageTransactionBody {
             topic_id: self.topic_id.to_protobuf(),
+            #[cfg(not(target_arch = "wasm32"))]
             message: self.chunk_data.data.clone(),
+            #[cfg(target_arch = "wasm32")]
+            message: Vec::new(), // WASM doesn't support chunked transactions
             chunk_info: None,
         };
 
@@ -191,6 +210,7 @@ impl FromProtobuf<Vec<services::ConsensusSubmitMessageTransactionBody>>
 
         Ok(Self {
             topic_id,
+            #[cfg(not(target_arch = "wasm32"))]
             chunk_data: ChunkData {
                 max_chunks: total_chunks,
                 chunk_size: NonZeroUsize::new(largest_chunk_size)

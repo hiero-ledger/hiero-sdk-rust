@@ -9,34 +9,42 @@ use std::fmt::{
 };
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
 use prost::Message;
 use time::Duration;
 use triomphe::Arc;
 
 use crate::custom_fee_limit::CustomFeeLimit;
 use crate::downcast::DowncastOwned;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::execute::execute;
+use crate::proto::services;
 use crate::signer::AnySigner;
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::transaction_response::TransactionResponse;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Operator;
 use crate::{
     AccountId,
-    Client,
     Error,
     Hbar,
-    Operator,
     PrivateKey,
     PublicKey,
     ScheduleCreateTransaction,
     ToProtobuf,
     TransactionHash,
     TransactionId,
-    TransactionResponse,
     ValidateChecksums,
 };
 
 mod any;
+#[cfg(not(target_arch = "wasm32"))] // Chunked execution requires networking
 mod chunked;
+#[cfg(not(target_arch = "wasm32"))] // Cost queries require networking
 mod cost;
+mod data; // Transaction data traits - WASM compatible
+#[cfg(not(target_arch = "wasm32"))] // Execute requires networking
 mod execute;
 mod protobuf;
 mod source;
@@ -44,15 +52,21 @@ mod source;
 mod tests;
 
 pub use any::AnyTransaction;
+// AnyTransactionData is available for both WASM and native (it's just data)
 pub(crate) use any::AnyTransactionData;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use chunked::{
     ChunkData,
     ChunkInfo,
     ChunkedTransactionData,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use cost::CostTransaction;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use data::ChunkInfo;
+pub(crate) use data::TransactionData;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use execute::{
-    TransactionData,
     TransactionExecute,
     TransactionExecuteChunked,
 };
@@ -88,6 +102,7 @@ pub(crate) struct TransactionBody<D> {
 
     pub(crate) transaction_id: Option<TransactionId>,
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) operator: Option<Arc<Operator>>,
 
     pub(crate) is_frozen: bool,
@@ -116,6 +131,7 @@ where
                 max_transaction_fee: None,
                 transaction_memo: String::new(),
                 transaction_id: None,
+                #[cfg(not(target_arch = "wasm32"))]
                 operator: None,
                 is_frozen: false,
                 regenerate_transaction_id: None,
@@ -167,7 +183,7 @@ impl<D> Transaction<D> {
     pub(crate) fn sources(&self) -> Option<&TransactionSources> {
         self.sources.as_ref()
     }
-
+    #[cfg(not(target_arch = "wasm32"))]
     fn signed_sources(&self) -> Option<Cow<'_, TransactionSources>> {
         self.sources().map(|it| it.sign_with(&self.signers))
     }
@@ -341,6 +357,7 @@ impl<D> Transaction<D> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D: ChunkedTransactionData> Transaction<D> {
     /// Returns the maximum number of chunks this transaction will be split into.
     #[must_use]
@@ -401,8 +418,40 @@ impl<D: ValidateChecksums> Transaction<D> {
     ///
     /// # Panics
     /// - If `node_account_ids` is explicitly set to empty (IE: `tx.node_account_ids([]).freeze_with(None)`).
+    /// Freeze the transaction so that no further modifications can be made.
+    ///
+    /// # Errors
+    /// - If `node_account_ids` is explicitly set to empty.
+    ///
+    /// # Panics
+    /// - If `node_account_ids` is explicitly set to empty (IE: `tx.node_account_ids([]).freeze_with(None)`).
     pub fn freeze(&mut self) -> crate::Result<&mut Self> {
-        self.freeze_with(None)
+        #[cfg(not(target_arch = "wasm32"))]
+        return self.freeze_with(None);
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            if self.is_frozen() {
+                return Ok(self);
+            }
+
+            // For WASM: Simple freeze without client dependency
+            // Require transaction ID to be set explicitly
+            if self.get_transaction_id().is_none() {
+                return Err(crate::Error::TransactionIdNotSet);
+            }
+
+            // Require node account IDs to be set explicitly
+            if self.get_node_account_ids().is_none() {
+                return Err(crate::Error::FreezeUnsetNodeAccountIds);
+            }
+
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                self.body.frozen = true;
+            }
+            Ok(self)
+        }
     }
 
     /// Freeze the transaction so that no further modifications can be made.
@@ -412,6 +461,7 @@ impl<D: ValidateChecksums> Transaction<D> {
     ///
     /// # Panics
     /// - If `node_account_ids` is explicitly set to empty (IE: `tx.node_account_ids([]).freeze_with(None)`).
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn freeze_with<'a>(
         &mut self,
         client: impl Into<Option<&'a Client>>,
@@ -488,6 +538,7 @@ impl<D: ValidateChecksums> Transaction<D> {
     ///
     /// # Panics
     /// If `client` has no operator.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn sign_with_operator(&mut self, client: &Client) -> crate::Result<&mut Self> {
         let Some(op) = client.full_load_operator() else { panic!("Client had no operator") };
 
@@ -515,6 +566,7 @@ impl<D: ValidateChecksums> Transaction<D> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D: TransactionExecute> Transaction<D> {
     /// Convert this transaction to signed transaction bytes.
     ///
@@ -548,6 +600,7 @@ impl<D: TransactionExecute> Transaction<D> {
     /// # Errors
     ///
     /// Returns an error if the client has no operator configured.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn batchify(
         &mut self,
         client: &crate::Client,
@@ -591,7 +644,7 @@ impl<D: TransactionExecute> Transaction<D> {
         let transaction_list = self
             .signed_sources()
             .map_or_else(|| self.make_transaction_list(), |it| Ok(it.transactions().to_vec()))?;
-        Ok(hedera_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
+        Ok(crate::proto::sdk::TransactionList { transaction_list }.encode_to_vec())
     }
 
     pub(crate) fn add_signature_signer(&mut self, signer: &AnySigner) -> Vec<u8> {
@@ -726,6 +779,7 @@ impl<D: TransactionExecute> Transaction<D> {
     #[allow(deprecated)]
     fn make_transaction_list_chunked(&self) -> crate::Result<Vec<services::Transaction>> {
         // todo: fix this with chunked transactions.
+        #[cfg(not(target_arch = "wasm32"))]
         let used_chunks = self.data().maybe_chunk_data().map_or(1, ChunkData::used_chunks);
         let node_account_ids = self.body.node_account_ids.as_deref().unwrap();
 
@@ -773,6 +827,7 @@ impl<D: TransactionExecute> Transaction<D> {
             transaction_id: self.get_transaction_id().map(|id| id.to_protobuf()),
             generate_record: false,
             memo: self.body.transaction_memo.clone(),
+            #[cfg(not(target_arch = "wasm32"))]
             data: Some(self.body.data.to_transaction_data_protobuf(&ChunkInfo {
                 current: 0,
                 total: 1,
@@ -862,12 +917,14 @@ where
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D> Transaction<D>
 where
     D: TransactionExecute,
 {
     /// Get the estimated transaction cost for this transaction.
     pub async fn get_cost(&self, client: &Client) -> crate::Result<Hbar> {
+        #[cfg(not(target_arch = "wasm32"))]
         let result = CostTransaction::from_transaction(self).execute(client).await;
 
         match result {
@@ -958,6 +1015,7 @@ where
         let initial_transaction_id = {
             let resp = execute(
                 client,
+                #[cfg(not(target_arch = "wasm32"))]
                 &chunked::FirstChunkView { transaction: self, total_chunks: used_chunks },
                 timeout_per_chunk,
             )
@@ -978,6 +1036,7 @@ where
         for chunk in 1..used_chunks {
             let resp = execute(
                 client,
+                #[cfg(not(target_arch = "wasm32"))]
                 &chunked::ChunkView {
                     transaction: self,
                     initial_transaction_id,
@@ -1013,6 +1072,7 @@ where
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D> Transaction<D>
 where
     D: TransactionExecuteChunked,
@@ -1064,6 +1124,7 @@ where
 }
 
 // these impls are on `AnyTransaction`, but they're here instead of in `any` because actually implementing them is only possible here.
+#[cfg(not(target_arch = "wasm32"))]
 impl AnyTransaction {
     /// # Examples
     /// ```
@@ -1086,8 +1147,8 @@ impl AnyTransaction {
     /// - [`Error::FromProtobuf`] if a valid transaction cannot be parsed from the bytes.
     #[allow(deprecated)]
     pub fn from_bytes(bytes: &[u8]) -> crate::Result<Self> {
-        let list: hedera_proto::sdk::TransactionList =
-            hedera_proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
+        let list: crate::proto::sdk::TransactionList =
+            crate::proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
 
         let list = if list.transaction_list.is_empty() {
             Vec::from([services::Transaction::decode(bytes).map_err(Error::from_protobuf)?])
@@ -1274,6 +1335,7 @@ where
             max_transaction_fee,
             transaction_memo,
             transaction_id,
+            #[cfg(not(target_arch = "wasm32"))]
             operator,
             is_frozen,
             regenerate_transaction_id,
@@ -1291,6 +1353,7 @@ where
                     max_transaction_fee,
                     transaction_memo,
                     transaction_id,
+                    #[cfg(not(target_arch = "wasm32"))]
                     operator,
                     is_frozen,
                     regenerate_transaction_id,
@@ -1309,6 +1372,7 @@ where
                     max_transaction_fee,
                     transaction_memo,
                     transaction_id,
+                    #[cfg(not(target_arch = "wasm32"))]
                     operator,
                     is_frozen,
                     regenerate_transaction_id,
@@ -1324,7 +1388,6 @@ where
 
 #[cfg(test)]
 pub(crate) mod test_helpers {
-    use hedera_proto::services;
     use prost::Message;
     use time::{
         Duration,
@@ -1332,6 +1395,7 @@ pub(crate) mod test_helpers {
     };
 
     use super::TransactionExecute;
+    use crate::proto::services;
     use crate::protobuf::ToProtobuf;
     use crate::{
         AccountId,

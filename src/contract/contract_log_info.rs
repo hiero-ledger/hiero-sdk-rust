@@ -1,5 +1,4 @@
-use hedera_proto::services;
-
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
@@ -70,9 +69,9 @@ impl ToProtobuf for ContractLogInfo {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
     use prost::Message;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

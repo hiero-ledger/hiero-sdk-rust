@@ -3,28 +3,29 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
-use hedera_proto::services::file_service_client::FileServiceClient;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::file_service_client::FileServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
 use crate::transaction::{
     AnyTransactionData,
-    ChunkData,
     ChunkInfo,
-    ChunkedTransactionData,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
+};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::{
+    ChunkData,
+    ChunkedTransactionData,
     TransactionExecute,
     TransactionExecuteChunked,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     FileId,
     Transaction,
@@ -40,6 +41,7 @@ pub struct FileAppendTransactionData {
     /// The file to which the bytes will be appended.
     file_id: Option<FileId>,
 
+    #[cfg(not(target_arch = "wasm32"))]
     chunk_data: ChunkData,
 }
 
@@ -47,6 +49,7 @@ impl Default for FileAppendTransactionData {
     fn default() -> Self {
         Self {
             file_id: None,
+            #[cfg(not(target_arch = "wasm32"))]
             chunk_data: ChunkData {
                 chunk_size: NonZeroUsize::new(4096).unwrap(),
                 ..Default::default()
@@ -67,11 +70,13 @@ impl FileAppendTransaction {
         self
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Retuns the bytes that will be appended to the end of the specified file.
     pub fn get_contents(&self) -> Option<&[u8]> {
         Some(self.data().chunk_data.data.as_slice())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Sets the bytes that will be appended to the end of the specified file.
     pub fn contents(&mut self, contents: impl Into<Vec<u8>>) -> &mut Self {
         self.data_mut().chunk_data.data = contents.into();
@@ -84,6 +89,7 @@ impl TransactionData for FileAppendTransactionData {
         crate::Hbar::new(5)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn maybe_chunk_data(&self) -> Option<&ChunkData> {
         Some(self.chunk_data())
     }
@@ -93,6 +99,7 @@ impl TransactionData for FileAppendTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl ChunkedTransactionData for FileAppendTransactionData {
     fn chunk_data(&self) -> &ChunkData {
         &self.chunk_data
@@ -103,16 +110,18 @@ impl ChunkedTransactionData for FileAppendTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for FileAppendTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { FileServiceClient::new(channel).append_content(request).await })
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecuteChunked for FileAppendTransactionData {}
 
 impl ValidateChecksums for FileAppendTransactionData {
@@ -128,7 +137,10 @@ impl ToTransactionDataProtobuf for FileAppendTransactionData {
     ) -> services::transaction_body::Data {
         services::transaction_body::Data::FileAppend(services::FileAppendTransactionBody {
             file_id: self.file_id.to_protobuf(),
+            #[cfg(not(target_arch = "wasm32"))]
             contents: self.chunk_data.message_chunk(chunk_info).to_vec(),
+            #[cfg(target_arch = "wasm32")]
+            contents: Vec::new(), // WASM doesn't support chunked transactions
         })
     }
 }
@@ -137,12 +149,16 @@ impl ToSchedulableTransactionDataProtobuf for FileAppendTransactionData {
     fn to_schedulable_transaction_data_protobuf(
         &self,
     ) -> services::schedulable_transaction_body::Data {
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(self.chunk_data.used_chunks() == 1);
 
         services::schedulable_transaction_body::Data::FileAppend(
             services::FileAppendTransactionBody {
                 file_id: self.file_id.to_protobuf(),
+                #[cfg(not(target_arch = "wasm32"))]
                 contents: self.chunk_data.data.clone(),
+                #[cfg(target_arch = "wasm32")]
+                contents: Vec::new(), // WASM doesn't support chunked transactions
             },
         )
     }
@@ -181,6 +197,7 @@ impl FromProtobuf<Vec<services::FileAppendTransactionBody>> for FileAppendTransa
 
         Ok(Self {
             file_id,
+            #[cfg(not(target_arch = "wasm32"))]
             chunk_data: ChunkData {
                 max_chunks: total_chunks,
                 chunk_size: NonZeroUsize::new(largest_chunk_size)

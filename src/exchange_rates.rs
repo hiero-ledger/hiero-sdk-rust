@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
 use time::OffsetDateTime;
 
+use crate::proto::services;
 use crate::protobuf::FromProtobuf;
 use crate::ToProtobuf;
 

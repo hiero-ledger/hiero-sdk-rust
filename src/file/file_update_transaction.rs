@@ -1,29 +1,29 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::file_service_client::FileServiceClient;
 use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::file_service_client::FileServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     FileId,
     Key,
@@ -169,12 +169,13 @@ impl FileUpdateTransaction {
 
 impl TransactionData for FileUpdateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for FileUpdateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { FileServiceClient::new(channel).update_file(request).await })
     }
 }
@@ -241,10 +242,10 @@ impl ToProtobuf for FileUpdateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
     use time::OffsetDateTime;
 
     use crate::file::FileUpdateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

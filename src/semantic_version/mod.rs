@@ -3,8 +3,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use hedera_proto::services;
-
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,

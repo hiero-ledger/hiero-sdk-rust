@@ -1,22 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 use crate::protobuf::FromProtobuf;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::BoxGrpcFuture;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     ToProtobuf,
     TokenId,
@@ -76,10 +80,11 @@ impl TokenAssociateTransaction {
 
 impl TransactionData for TokenAssociateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TokenAssociateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
     ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { TokenServiceClient::new(channel).associate_tokens(request).await })
@@ -99,10 +104,8 @@ impl ValidateChecksums for TokenAssociateTransactionData {
 impl ToTransactionDataProtobuf for TokenAssociateTransactionData {
     fn to_transaction_data_protobuf(
         &self,
-        chunk_info: &ChunkInfo,
+        _chunk_info: &ChunkInfo,
     ) -> services::transaction_body::Data {
-        let _ = chunk_info.assert_single_transaction();
-
         services::transaction_body::Data::TokenAssociate(self.to_protobuf())
     }
 }
@@ -144,8 +147,8 @@ impl ToProtobuf for TokenAssociateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use hedera_proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

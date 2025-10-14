@@ -1,0 +1,29 @@
+[package]
+name = "hedera-proto-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "Complete Hedera protobuf definitions for WASM compiled with prost-build"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+prost = { version = "0.13.5", default-features = false, features = ["std", "prost-derive"] }
+getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+time = { version = "0.3", default-features = false }
+fraction = { version = "0.15", default-features = false, features = ["with-bigint"] }
+
+[dependencies.web-sys]
+version = "0.3"
+features = ["console"]
+
+[build-dependencies]
+anyhow = "1.0.99"
+prost-build = "0.13.5"
+walkdir = "2.5.0"
+
+[features]
+default = ["wasm"]
+wasm = []

@@ -3,23 +3,27 @@
 use std::collections::HashMap;
 use std::ops::Not;
 
-use hedera_proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::crypto_service_client::CryptoServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::FromProtobuf;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::BoxGrpcFuture;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Hbar,
     NftId,
@@ -275,11 +279,12 @@ impl TransferTransaction {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TransferTransactionData {
     // noinspection DuplicatedCode
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
     ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { CryptoServiceClient::new(channel).crypto_transfer(request).await })

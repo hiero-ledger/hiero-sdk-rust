@@ -8,16 +8,16 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use hedera_proto::services;
-
 use crate::entity_id::{
     Checksum,
     PartialEntityId,
     ValidateChecksums,
 };
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 use crate::{
-    Client,
     EntityId,
     Error,
     EvmAddress,
@@ -100,6 +100,7 @@ impl AccountId {
     ///
     /// # Errors
     /// - [`Error::CannotCreateChecksum`] if self has an `alias` or `evm_address`.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn to_string_with_checksum(&self, client: &Client) -> Result<String, Error> {
         if self.alias.is_some() || self.evm_address.is_some() {
             Err(Error::CannotCreateChecksum)
@@ -112,6 +113,7 @@ impl AccountId {
     ///
     /// # Errors
     /// - [`Error::BadEntityId`] if there is a checksum, and the checksum is not valid for the client's `ledger_id`.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn validate_checksum(&self, client: &Client) -> crate::Result<()> {
         if self.alias.is_some() || self.evm_address.is_some() {
             Ok(())
@@ -122,6 +124,7 @@ impl AccountId {
 }
 
 impl ValidateChecksums for AccountId {
+    #[cfg(not(target_arch = "wasm32"))]
     fn validate_checksums(&self, ledger_id: &RefLedgerId) -> Result<(), Error> {
         if self.alias.is_some() || self.evm_address.is_some() {
             Ok(())
@@ -134,6 +137,12 @@ impl ValidateChecksums for AccountId {
                 ledger_id,
             )
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn validate_checksums(&self, _ledger_id: &RefLedgerId) -> Result<(), Error> {
+        // Checksum validation requires networking context, not available in WASM
+        Ok(())
     }
 }
 

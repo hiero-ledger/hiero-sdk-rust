@@ -1,25 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::token_service_client::TokenServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     TokenId,
     Transaction,
@@ -125,12 +127,13 @@ impl TokenWipeTransaction {
 
 impl TransactionData for TokenWipeTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TokenWipeTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { TokenServiceClient::new(channel).wipe_token_account(request).await })
     }
 }
@@ -193,8 +196,8 @@ impl ToProtobuf for TokenWipeTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

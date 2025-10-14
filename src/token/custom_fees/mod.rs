@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use fraction::Fraction;
-use hedera_proto::services;
 
+use crate::proto::services;
 use crate::{
     AccountId,
     FromProtobuf,

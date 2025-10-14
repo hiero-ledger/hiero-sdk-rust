@@ -1,6 +1,6 @@
 use fraction::Fraction;
-use hedera_proto::services;
 
+use crate::proto::services;
 use crate::token::custom_fees::{
     AnyCustomFee,
     CustomFee,

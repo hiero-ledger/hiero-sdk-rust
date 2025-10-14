@@ -13,7 +13,6 @@ use std::hash::{
 use std::str::FromStr;
 
 use ed25519_dalek::Verifier as _;
-use hedera_proto::services;
 use hmac::digest::generic_array::sequence::Split;
 use hmac::digest::generic_array::GenericArray;
 use k256::ecdsa;
@@ -31,6 +30,7 @@ use crate::key::private_key::{
     ED25519_OID,
     K256_OID,
 };
+use crate::proto::services;
 use crate::protobuf::ToProtobuf;
 use crate::signer::AnySigner;
 use crate::transaction::TransactionSources;
@@ -391,6 +391,7 @@ impl PublicKey {
     /// # Errors
     /// - [`Error::SignatureVerify`] if the private key associated with this public key did _not_ sign this transaction,
     ///   or the signature associated was invalid.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn verify_transaction<D: crate::transaction::TransactionExecute>(
         &self,
         transaction: &mut Transaction<D>,

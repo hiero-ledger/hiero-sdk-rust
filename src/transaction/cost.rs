@@ -1,4 +1,4 @@
-use hedera_proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use super::{
@@ -7,10 +7,11 @@ use super::{
     ToTransactionDataProtobuf,
     TransactionBody,
     TransactionData,
-    TransactionExecute,
 };
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::{
-    BoxGrpcFuture,
     Transaction,
     ValidateChecksums,
 };
@@ -60,12 +61,13 @@ impl<D: TransactionData> TransactionData for CostTransactionData<D> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<D: TransactionExecute> TransactionExecute for CostTransactionData<D> {
     fn execute(
         &self,
         channel: Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         self.inner.execute(channel, request)
     }
 }

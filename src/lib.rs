@@ -98,11 +98,14 @@
 #![allow(clippy::enum_glob_use, clippy::enum_variant_names)]
 #[macro_use]
 mod protobuf;
+mod proto; // Conditional protobuf re-exports
 
 mod account;
 mod address_book;
 
+#[cfg(not(target_arch = "wasm32"))] // Batch transaction requires networking
 mod batch_transaction;
+#[cfg(not(target_arch = "wasm32"))]
 mod client;
 mod contract;
 mod custom_fee_limit;
@@ -112,25 +115,32 @@ mod entity_id;
 mod error;
 mod ethereum;
 mod exchange_rates;
+#[cfg(not(target_arch = "wasm32"))] // Execute requires networking
 mod execute;
 mod fee_schedules;
 mod file;
 mod hbar;
 mod key;
 mod ledger_id;
+#[cfg(not(target_arch = "wasm32"))] // Mirror queries require networking
 mod mirror_query;
-#[cfg(feature = "mnemonic")]
 mod mnemonic;
 mod network_version_info;
+#[cfg(not(target_arch = "wasm32"))] // Network version query requires networking
 mod network_version_info_query;
 mod node_address;
 mod node_address_book;
+#[cfg(not(target_arch = "wasm32"))] // Node address book query requires networking
 mod node_address_book_query;
 mod pending_airdrop_id;
 mod pending_airdrop_record;
+#[cfg(not(target_arch = "wasm32"))] // Ping query requires networking
 mod ping_query;
+#[cfg(not(target_arch = "wasm32"))] // PRNG transaction requires networking
 mod prng_transaction;
+#[cfg(not(target_arch = "wasm32"))] // Query trait requires networking
 mod query;
+#[cfg(not(target_arch = "wasm32"))] // Retry logic for networking
 mod retry;
 mod schedule;
 mod semantic_version;
@@ -145,25 +155,31 @@ mod transaction;
 mod transaction_hash;
 mod transaction_id;
 mod transaction_receipt;
+#[cfg(not(target_arch = "wasm32"))] // Receipt query requires networking
 mod transaction_receipt_query;
 mod transaction_record;
+#[cfg(not(target_arch = "wasm32"))] // Record query requires networking
 mod transaction_record_query;
+#[cfg(not(target_arch = "wasm32"))] // Transaction response from networking
 mod transaction_response;
 mod transfer;
 mod transfer_transaction;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub use account::{
     account_info_flow,
+    AccountBalanceQuery,
+    AccountInfoQuery,
+    AccountRecordsQuery,
+};
+pub use account::{
     AccountAllowanceApproveTransaction,
     AccountAllowanceDeleteTransaction,
     AccountBalance,
-    AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountId,
     AccountInfo,
-    AccountInfoQuery,
-    AccountRecordsQuery,
     AccountUpdateTransaction,
     AllProxyStakers,
     ProxyStaker,
@@ -173,13 +189,20 @@ pub use address_book::{
     NodeDeleteTransaction,
     NodeUpdateTransaction,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub use batch_transaction::BatchTransaction;
+#[cfg(not(target_arch = "wasm32"))]
 pub use client::Client;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use client::Operator;
+#[cfg(not(target_arch = "wasm32"))]
 pub use contract::{
     ContractBytecodeQuery,
     ContractCallQuery,
     ContractCreateFlow,
+    ContractInfoQuery,
+};
+pub use contract::{
     ContractCreateTransaction,
     ContractDeleteTransaction,
     ContractExecuteTransaction,
@@ -187,7 +210,6 @@ pub use contract::{
     ContractFunctionResult,
     ContractId,
     ContractInfo,
-    ContractInfoQuery,
     ContractLogInfo,
     ContractNonceInfo,
     ContractUpdateTransaction,
@@ -206,10 +228,11 @@ pub use error::{
     MnemonicEntropyError,
     MnemonicParseError,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use ethereum::EthereumFlow;
 pub use ethereum::{
     Eip1559EthereumData,
     EthereumData,
-    EthereumFlow,
     EthereumTransaction,
     EvmAddress,
     LegacyEthereumData,
@@ -227,15 +250,17 @@ pub use fee_schedules::{
     RequestType,
     TransactionFeeSchedule,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use file::FileContentsQuery;
+#[cfg(not(target_arch = "wasm32"))]
+pub use file::FileInfoQuery;
 pub use file::{
     FileAppendTransaction,
-    FileContentsQuery,
     FileContentsResponse,
     FileCreateTransaction,
     FileDeleteTransaction,
     FileId,
     FileInfo,
-    FileInfoQuery,
     FileUpdateTransaction,
 };
 pub use hbar::{
@@ -243,7 +268,6 @@ pub use hbar::{
     HbarUnit,
     Tinybar,
 };
-pub use hedera_proto::services::ResponseCodeEnum as Status;
 pub use key::{
     Key,
     KeyList,
@@ -251,6 +275,7 @@ pub use key::{
     PublicKey,
 };
 pub use ledger_id::LedgerId;
+#[cfg(not(target_arch = "wasm32"))]
 pub use mirror_query::{
     AnyMirrorQuery,
     AnyMirrorQueryResponse,
@@ -259,31 +284,39 @@ pub use mirror_query::{
 #[cfg(feature = "mnemonic")]
 pub use mnemonic::Mnemonic;
 pub use network_version_info::NetworkVersionInfo;
+#[cfg(not(target_arch = "wasm32"))]
 pub use network_version_info_query::NetworkVersionInfoQuery;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use network_version_info_query::NetworkVersionInfoQueryData;
 pub use node_address::NodeAddress;
 pub use node_address_book::NodeAddressBook;
+#[cfg(not(target_arch = "wasm32"))]
 pub use node_address_book_query::NodeAddressBookQuery;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use node_address_book_query::NodeAddressBookQueryData;
 pub use pending_airdrop_id::PendingAirdropId;
 pub use pending_airdrop_record::PendingAirdropRecord;
+#[cfg(not(target_arch = "wasm32"))]
 pub use prng_transaction::PrngTransaction;
 pub(crate) use protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub use query::{
     AnyQuery,
     AnyQueryResponse,
     Query,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use retry::retry;
+#[cfg(not(target_arch = "wasm32"))]
+pub use schedule::ScheduleInfoQuery;
 pub use schedule::{
     ScheduleCreateTransaction,
     ScheduleDeleteTransaction,
     ScheduleId,
     ScheduleInfo,
-    ScheduleInfoQuery,
     ScheduleSignTransaction,
 };
 pub use semantic_version::SemanticVersion;
@@ -322,14 +355,11 @@ pub use token::{
     TokenGrantKycTransaction,
     TokenId,
     TokenInfo,
-    TokenInfoQuery,
     TokenKeyValidation,
     TokenMintTransaction,
     TokenNftInfo,
-    TokenNftInfoQuery,
     TokenNftTransfer,
     TokenPauseTransaction,
-    TokenRejectFlow,
     TokenRejectTransaction,
     TokenRevokeKycTransaction,
     TokenSupplyType,
@@ -340,16 +370,25 @@ pub use token::{
     TokenUpdateTransaction,
     TokenWipeTransaction,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use token::{
+    TokenInfoQuery,
+    TokenNftInfoQuery,
+    TokenRejectFlow,
+};
 pub use topic::{
     TopicCreateTransaction,
     TopicDeleteTransaction,
     TopicId,
     TopicInfo,
-    TopicInfoQuery,
     TopicMessage,
-    TopicMessageQuery,
     TopicMessageSubmitTransaction,
     TopicUpdateTransaction,
+};
+#[cfg(not(target_arch = "wasm32"))]
+pub use topic::{
+    TopicInfoQuery,
+    TopicMessageQuery,
 };
 pub use transaction::{
     AnyTransaction,
@@ -358,13 +397,19 @@ pub use transaction::{
 pub use transaction_hash::TransactionHash;
 pub use transaction_id::TransactionId;
 pub use transaction_receipt::TransactionReceipt;
+#[cfg(not(target_arch = "wasm32"))]
 pub use transaction_receipt_query::TransactionReceiptQuery;
 pub use transaction_record::TransactionRecord;
+#[cfg(not(target_arch = "wasm32"))]
 pub use transaction_record_query::TransactionRecordQuery;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use transaction_record_query::TransactionRecordQueryData;
+#[cfg(not(target_arch = "wasm32"))]
 pub use transaction_response::TransactionResponse;
 pub use transfer::Transfer;
 pub use transfer_transaction::TransferTransaction;
+
+pub use crate::proto::services::ResponseCodeEnum as Status;
 
 /// Like [`arc_swap::ArcSwapOption`] but with a [`triomphe::Arc`].
 pub(crate) type ArcSwapOption<T> = arc_swap::ArcSwapAny<Option<triomphe::Arc<T>>>;
@@ -373,5 +418,6 @@ pub(crate) type ArcSwapOption<T> = arc_swap::ArcSwapAny<Option<triomphe::Arc<T>>
 pub(crate) type ArcSwap<T> = arc_swap::ArcSwapAny<triomphe::Arc<T>>;
 
 /// Boxed future for GRPC calls.
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type BoxGrpcFuture<'a, T> =
     futures_core::future::BoxFuture<'a, tonic::Result<tonic::Response<T>>>;

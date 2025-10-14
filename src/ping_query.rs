@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
-
 use crate::entity_id::ValidateChecksums;
 use crate::execute::{
     execute,
     Execute,
 };
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::crypto_service_client::CryptoServiceClient;
 use crate::protobuf::ToProtobuf;
 use crate::query::response_header;
 use crate::{
@@ -122,7 +122,7 @@ impl Execute for PingQuery {
 
     fn make_error_pre_check(
         &self,
-        status: hedera_proto::services::ResponseCodeEnum,
+        status: crate::proto::services::ResponseCodeEnum,
         _transaction_id: Option<&crate::TransactionId>,
         _response: Self::GrpcResponse,
     ) -> crate::Error {

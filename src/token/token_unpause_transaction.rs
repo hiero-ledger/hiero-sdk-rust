@@ -1,24 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::token_service_client::TokenServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
-    BoxGrpcFuture,
     TokenId,
     Transaction,
     ValidateChecksums,
@@ -57,12 +56,13 @@ impl TokenUnpauseTransaction {
 
 impl TransactionData for TokenUnpauseTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TokenUnpauseTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { TokenServiceClient::new(channel).unpause_token(request).await })
     }
 }
@@ -115,8 +115,8 @@ impl ToProtobuf for TokenUnpauseTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
 
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

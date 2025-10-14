@@ -4,6 +4,8 @@ use time::Duration;
 
 use crate::signer::AnySigner;
 use crate::staked_id::StakedId;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionResponse;
 use crate::{
     AccountId,
     Client,
@@ -17,7 +19,6 @@ use crate::{
     Key,
     PrivateKey,
     PublicKey,
-    TransactionResponse,
 };
 
 /// Create a new smart contract
@@ -281,11 +282,13 @@ impl ContractCreateFlow {
         self
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Generates the required transactions and executes them all.
     pub async fn execute(&self, client: &Client) -> crate::Result<TransactionResponse> {
         self.execute_with_optional_timeout(client, None).await
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Generates the required transactions and executes them all.
     pub async fn execute_with_timeout(
         &self,
@@ -295,6 +298,7 @@ impl ContractCreateFlow {
         self.execute_with_optional_timeout(client, Some(timeout_per_transaction)).await
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn execute_with_optional_timeout(
         &self,
         client: &Client,

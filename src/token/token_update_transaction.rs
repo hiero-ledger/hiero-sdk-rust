@@ -1,30 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::token_service_client::TokenServiceClient;
 use time::{
     Duration,
     OffsetDateTime,
 };
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
 use crate::token::token_key_validation_type::TokenKeyValidation;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Error,
     Key,
     TokenId,
@@ -371,12 +373,13 @@ impl TokenUpdateTransaction {
 
 impl TransactionData for TokenUpdateTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TokenUpdateTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { TokenServiceClient::new(channel).update_token(request).await })
     }
 }
@@ -475,13 +478,13 @@ mod tests {
     use std::str::FromStr;
 
     use expect_test::expect_file;
-    use hedera_proto::services;
     use time::{
         Duration,
         OffsetDateTime,
     };
 
     use super::TokenUpdateTransactionData;
+    use crate::proto::services;
     use crate::protobuf::{
         FromProtobuf,
         ToProtobuf,

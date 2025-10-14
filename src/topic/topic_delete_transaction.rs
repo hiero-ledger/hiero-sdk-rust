@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+#[cfg(not(target_arch = "wasm32"))]
 use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     TopicId,
     Transaction,
@@ -56,12 +58,13 @@ impl TopicDeleteTransaction {
 
 impl TransactionData for TopicDeleteTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for TopicDeleteTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { ConsensusServiceClient::new(channel).delete_topic(request).await })
     }
 }

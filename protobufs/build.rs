@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::env;
-use std::fs::{
-    self,
-    create_dir_all,
-    read_dir,
-};
-use std::path::Path;
-
-use anyhow::Ok;
-use regex::RegexBuilder;
-
-const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
-const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
 
 fn main() -> anyhow::Result<()> {
+    use std::fs::{
+        self,
+        create_dir_all,
+        read_dir,
+    };
+    use std::path::Path;
+
+    use regex::RegexBuilder;
+
+    const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
+    const SERVICES_FOLDER: &str =
+        "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
+
     // services is the "base" module for the hedera protobufs
     // in the beginning, there was only services and it was named "protos"
 
@@ -243,7 +244,8 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
+fn remove_useless_comments(path: &std::path::Path) -> anyhow::Result<()> {
+    use std::fs;
     let mut contents = fs::read_to_string(path)?;
 
     contents = contents.replace("///*\n", "");

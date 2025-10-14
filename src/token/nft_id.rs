@@ -8,12 +8,12 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use hedera_proto::services;
-
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Client;
 use crate::{
-    Client,
     Error,
     FromProtobuf,
     ToProtobuf,
@@ -47,6 +47,7 @@ impl NftId {
     }
 
     /// Convert `self` to a string with a valid checksum.
+    #[cfg(not(target_arch = "wasm32"))]
     #[must_use]
     pub fn to_string_with_checksum(&self, client: &Client) -> String {
         format!("{}/{}", self.token_id.to_string_with_checksum(client), self.serial)
@@ -116,9 +117,8 @@ impl ValidateChecksums for NftId {
 mod tests {
     use std::str::FromStr;
 
-    use hedera_proto::services;
-
     use crate::ledger_id::RefLedgerId;
+    use crate::proto::services;
     use crate::token::nft_id::NftId;
     use crate::{
         FromProtobuf,

@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::consensus_service_client::ConsensusServiceClient;
 use crate::query::{
     AnyQueryData,
     QueryExecute,
     ToQueryProtobuf,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     Query,
     ToProtobuf,
@@ -61,14 +59,15 @@ impl ToQueryProtobuf for TopicInfoQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for TopicInfoQueryData {
     type Response = TopicInfo;
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { ConsensusServiceClient::new(channel).get_topic_info(request).await })
     }
 }

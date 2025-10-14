@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use tonic::transport::Channel;
-
 use crate::entity_id::ValidateChecksums;
 use crate::execute::{
     execute,
     Execute,
 };
+use crate::proto::services;
 use crate::query::execute::response_header;
 use crate::query::QueryExecute;
 use crate::{
     AccountId,
-    BoxGrpcFuture,
     Client,
     Hbar,
     Query,
@@ -78,9 +75,9 @@ where
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: Self::GrpcRequest,
-    ) -> BoxGrpcFuture<'_, Self::GrpcResponse> {
+    ) -> services::BoxGrpcFuture<'_, Self::GrpcResponse> {
         <D as QueryExecute>::execute(&self.0.data, channel, request)
     }
 

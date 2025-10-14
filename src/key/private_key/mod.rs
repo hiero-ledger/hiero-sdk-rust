@@ -594,6 +594,7 @@ impl PrivateKey {
     /// # Errors
     /// This function will freeze the transaction if it is not frozen.
     /// As such, any error that can be occur during [`Transaction::freeze`] can also occur here.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn sign_transaction<D: crate::transaction::TransactionExecute>(
         &self,
         transaction: &mut Transaction<D>,

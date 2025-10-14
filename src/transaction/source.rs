@@ -3,13 +3,13 @@
 use std::borrow::Cow;
 use std::ops::Range;
 
-use hedera_proto::services::{
-    self,
-    SignedTransaction,
-};
 use once_cell::sync::OnceCell;
 use prost::Message;
 
+use crate::proto::services::{
+    self,
+    SignedTransaction,
+};
 use crate::protobuf::FromProtobuf;
 use crate::signer::AnySigner;
 use crate::{
@@ -207,6 +207,7 @@ impl TransactionSources {
         })
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn sign_with(&self, signers: &[AnySigner]) -> Cow<'_, Self> {
         if signers.is_empty() {
             return Cow::Borrowed(self);

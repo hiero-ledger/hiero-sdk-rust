@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::address_book_service_client::AddressBookServiceClient;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::address_book_service_client::AddressBookServiceClient;
 use crate::protobuf::FromProtobuf;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     ToProtobuf,
     Transaction,
@@ -63,12 +62,13 @@ impl NodeDeleteTransaction {
 
 impl TransactionData for NodeDeleteTransactionData {}
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for NodeDeleteTransactionData {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
-    ) -> BoxGrpcFuture<'_, services::TransactionResponse> {
+    ) -> services::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { AddressBookServiceClient::new(channel).delete_node(request).await })
     }
 }
@@ -121,10 +121,10 @@ impl ToProtobuf for NodeDeleteTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use hedera_proto::services;
 
     use super::NodeDeleteTransaction;
     use crate::address_book::NodeDeleteTransactionData;
+    use crate::proto::services;
     use crate::protobuf::FromProtobuf;
     use crate::transaction::test_helpers::{
         check_body,

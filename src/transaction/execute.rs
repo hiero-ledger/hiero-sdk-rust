@@ -3,8 +3,8 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use hedera_proto::services;
 use prost::Message;
+#[cfg(not(target_arch = "wasm32"))]
 use tonic::transport::Channel;
 
 use super::chunked::ChunkInfo;
@@ -15,6 +15,7 @@ use super::{
 };
 use crate::execute::Execute;
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::transaction::any::AnyTransactionData;
 use crate::transaction::protobuf::ToTransactionDataProtobuf;
 use crate::transaction::DEFAULT_TRANSACTION_VALID_DURATION;
@@ -108,39 +109,15 @@ where
 }
 
 /// Pre-execute associated fields for transaction data.
-pub trait TransactionData: Clone + Into<AnyTransactionData> {
-    /// Whether this transaction is intended to be executed to return a cost estimate.
-    #[doc(hidden)]
-    fn for_cost_estimate(&self) -> bool {
-        false
-    }
-
-    /// Returns the maximum allowed transaction fee if none is specified.
-    ///
-    /// Specifically, this default will be used in the following case:
-    /// - The transaction itself (direct user input) has no `max_transaction_fee` specified, AND
-    /// - The [`Client`](crate::Client) has no `max_transaction_fee` specified.
-    fn default_max_transaction_fee(&self) -> Hbar {
-        Hbar::new(2)
-    }
-
-    /// Returns the chunk data for this transaction if this is a chunked transaction.
-    fn maybe_chunk_data(&self) -> Option<&ChunkData> {
-        None
-    }
-
-    /// Returns `true` if `self` is a chunked transaction *and* it should wait for receipts between each chunk.
-    fn wait_for_receipt(&self) -> bool {
-        false
-    }
-}
+// TransactionData trait moved to data.rs for WASM compatibility
+pub use super::data::TransactionData;
 
 pub trait TransactionExecute:
     ToTransactionDataProtobuf + TransactionData + ValidateChecksums
 {
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Transaction,
     ) -> BoxGrpcFuture<'_, services::TransactionResponse>;
 }
@@ -192,7 +169,7 @@ where
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: Self::GrpcRequest,
     ) -> BoxGrpcFuture<'_, Self::GrpcResponse> {
         self.body.data.execute(channel, request)
@@ -405,7 +382,7 @@ impl<'a, D: TransactionExecute> Execute for SourceTransactionExecuteView<'a, D> 
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: Self::GrpcRequest,
     ) -> BoxGrpcFuture<Self::GrpcResponse> {
         self.transaction.execute(channel, request)

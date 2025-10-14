@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use tonic::transport::Channel;
-
 use super::ToQueryProtobuf;
 use crate::account::{
     AccountBalanceQueryData,
@@ -20,6 +17,7 @@ use crate::file::{
     FileInfoQueryData,
 };
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
 use crate::query::QueryExecute;
 use crate::schedule::ScheduleInfoQueryData;
 use crate::token::{
@@ -32,7 +30,6 @@ use crate::{
     AccountBalance,
     AccountInfo,
     AllProxyStakers,
-    BoxGrpcFuture,
     ContractFunctionResult,
     ContractInfo,
     Error,
@@ -149,6 +146,7 @@ impl ToQueryProtobuf for AnyQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for AnyQueryData {
     type Response = AnyQueryResponse;
 
@@ -194,9 +192,9 @@ impl QueryExecute for AnyQueryData {
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         match self {
             Self::AccountInfo(query) => query.execute(channel, request),
             Self::AccountBalance(query) => query.execute(channel, request),

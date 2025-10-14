@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::file_service_client::FileServiceClient;
-use tonic::transport::Channel;
-
 use crate::ledger_id::RefLedgerId;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::file_service_client::FileServiceClient;
 use crate::query::{
     AnyQueryData,
     QueryExecute,
     ToQueryProtobuf,
 };
 use crate::{
-    BoxGrpcFuture,
     Error,
     FileId,
     FileInfo,
@@ -62,14 +60,15 @@ impl ToQueryProtobuf for FileInfoQueryData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl QueryExecute for FileInfoQueryData {
     type Response = FileInfo;
 
     fn execute(
         &self,
-        channel: Channel,
+        channel: services::Channel,
         request: services::Query,
-    ) -> BoxGrpcFuture<'_, services::Response> {
+    ) -> services::BoxGrpcFuture<'_, services::Response> {
         Box::pin(async { FileServiceClient::new(channel).get_file_info(request).await })
     }
 }

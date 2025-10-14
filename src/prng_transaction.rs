@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::util_service_client::UtilServiceClient;
-
 use crate::entity_id::ValidateChecksums;
+use crate::proto::services;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::proto::services::util_service_client::UtilServiceClient;
 use crate::protobuf::{
     FromProtobuf,
     ToProtobuf,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transaction::TransactionExecute;
 use crate::transaction::{
     AnyTransactionData,
     ChunkInfo,
     ToSchedulableTransactionDataProtobuf,
     ToTransactionDataProtobuf,
     TransactionData,
-    TransactionExecute,
 };
 use crate::Transaction;
 
@@ -89,6 +90,7 @@ impl ToTransactionDataProtobuf for PrngTransactionData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TransactionExecute for PrngTransactionData {
     fn execute(
         &self,
