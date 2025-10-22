@@ -81,7 +81,7 @@ jobs:
           echo "::endgroup::"
             
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
         with:
           toolchain: 1.88.0
 
@@ -249,7 +249,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
         with:
           toolchain: 1.88.0
 
@@ -318,7 +318,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
         with:
           toolchain: 1.88.0
 
