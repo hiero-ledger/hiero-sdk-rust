@@ -23,7 +23,7 @@ serde_json = {version = "1.0.145", features = ["raw_value"] }
 serde = { version = "1.0.224", features = ["derive"] }
 time = "0.3.43"
 hex = "0.4.3"
-hex-literal = "1.0.0"
+hex-literal = "1.1.0"
 
 [dependencies.jsonrpsee]
 version = "0.24.9"

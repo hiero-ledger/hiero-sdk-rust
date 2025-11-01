@@ -98,7 +98,7 @@ assert_matches = "1.5.0"
 clap = { version = "4.5.45", features = ["derive", "env"] }
 dotenvy = "0.15.5"
 expect-test = "1.5.1"
-hex-literal = "1.0.0"
+hex-literal = "1.1.0"
 miniserde = "0.1.42"
 parking_lot = "0.12.5"
 
