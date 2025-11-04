@@ -48,7 +48,7 @@ impl FromProtobuf<services::EvmHookCall> for EvmHookCall {
     fn from_protobuf(pb: services::EvmHookCall) -> crate::Result<Self> {
         Ok(Self {
             call_data: if pb.data.is_empty() { None } else { Some(pb.data) },
-            gas_limit: if pb.gas_limit == 0 { None } else { Some(pb.gas_limit) },
+            gas_limit: Some(pb.gas_limit),
         })
     }
 }
