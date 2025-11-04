@@ -1,27 +1,22 @@
 use assert_matches::assert_matches;
 use hedera::{
-    AccountId,
     ContractCreateTransaction,
     ContractDeleteTransaction,
     ContractFunctionParameters,
     ContractId,
     ContractInfoQuery,
     EvmHookSpec,
-    FileCreateTransaction,
     FileDeleteTransaction,
-    FileId,
-    Hbar,
     HookCreationDetails,
     HookExtensionPoint,
     LambdaEvmHook,
     LambdaStorageSlot,
     LambdaStorageUpdate,
     PrivateKey,
-    PublicKey,
     Status,
 };
 
-use super::SMART_CONTRACT_BYTECODE;
+use super::bytecode_file_id;
 use crate::common::{
     setup_nonfree,
     TestEnvironment,
@@ -43,40 +38,23 @@ async fn create_hook_contract(client: &hedera::Client) -> anyhow::Result<Contrac
     Ok(receipt.contract_id.unwrap())
 }
 
-async fn create_bytecode_file(
-    client: &hedera::Client,
-    operator_key: PublicKey,
-) -> anyhow::Result<FileId> {
-    let bytecode = hex::decode(SMART_CONTRACT_BYTECODE)?;
-
-    let receipt = FileCreateTransaction::new()
-        .keys([operator_key])
-        .contents(bytecode)
-        .execute(client)
-        .await?
-        .get_receipt(client)
-        .await?;
-
-    Ok(receipt.file_id.unwrap())
-}
-
 #[tokio::test]
 async fn basic_contract_create() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
 
     let operator_key = op.private_key.public_key();
-    let file_id = create_bytecode_file(&client, operator_key).await?;
+    let file_id = bytecode_file_id(&client, operator_key).await?;
 
     let contract_id = ContractCreateTransaction::new()
         .admin_key(operator_key)
-        .gas(300_000)
+        .gas(2000000)
         .constructor_parameters(
             ContractFunctionParameters::new().add_string("Hello from Hedera.").to_bytes(None),
         )
@@ -89,15 +67,10 @@ async fn basic_contract_create() -> anyhow::Result<()> {
         .contract_id
         .unwrap();
 
-    let info = ContractInfoQuery::new()
-        .contract_id(contract_id)
-        .query_payment(Hbar::new(1))
-        .execute(&client)
-        .await?;
+    let info = ContractInfoQuery::new().contract_id(contract_id).execute(&client).await?;
 
     assert_eq!(info.contract_id, contract_id);
-    assert!(info.account_id.is_some());
-    assert_eq!(info.contract_id.to_string(), contract_id.to_string());
+    assert_eq!(info.account_id.to_string(), info.contract_id.to_string());
     assert!(info.admin_key.is_some());
     assert_eq!(info.storage, 128);
     assert_eq!(info.contract_memo, "[e2e::ContractCreateTransaction]");
@@ -122,11 +95,11 @@ async fn basic_contract_create() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_create_with_lambda_hook() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -154,11 +127,11 @@ async fn contract_create_with_lambda_hook() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_create_with_hook_and_storage_updates() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -208,9 +181,11 @@ async fn contract_create_fails_when_lambda_hook_missing_contract_id() -> anyhow:
         .gas(300_000)
         .add_hook(hook_details)
         .execute(&client)
+        .await?
+        .get_receipt(&client)
         .await;
 
-    assert_matches!(result, Err(hedera::Error::TransactionPreCheckStatus { status, .. }) if status == Status::InvalidHookCreationSpec);
+    assert_matches!(result, Err(hedera::Error::ReceiptStatus { status, .. }) if status == Status::InvalidHookCreationSpec);
 
     Ok(())
 }
@@ -250,11 +225,11 @@ async fn contract_create_fails_with_duplicate_hook_id() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_create_with_hook_admin_key() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };

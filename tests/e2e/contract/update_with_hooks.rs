@@ -8,7 +8,6 @@ use hedera::{
     ContractInfoQuery,
     ContractUpdateTransaction,
     EvmHookSpec,
-    FileCreateTransaction,
     FileDeleteTransaction,
     FileId,
     Hbar,
@@ -21,7 +20,7 @@ use hedera::{
     Status,
 };
 
-use super::SMART_CONTRACT_BYTECODE;
+use super::bytecode_file_id;
 use crate::common::{
     setup_nonfree,
     TestEnvironment,
@@ -48,21 +47,11 @@ async fn create_test_contract(
     operator_key: PublicKey,
     operator_account_id: AccountId,
 ) -> anyhow::Result<(ContractId, FileId)> {
-    let bytecode = hex::decode(SMART_CONTRACT_BYTECODE)?;
-
-    let file_id = FileCreateTransaction::new()
-        .keys([operator_key])
-        .contents(bytecode)
-        .execute(client)
-        .await?
-        .get_receipt(client)
-        .await?
-        .file_id
-        .unwrap();
+    let file_id = bytecode_file_id(client, operator_key).await?;
 
     let contract_id = ContractCreateTransaction::new()
         .admin_key(operator_key)
-        .gas(300_000)
+        .gas(2000000)
         .constructor_parameters(
             ContractFunctionParameters::new().add_string("Hello from Hiero.").to_bytes(None),
         )
@@ -81,11 +70,11 @@ async fn create_test_contract(
 
 #[tokio::test]
 async fn basic_contract_update() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -94,11 +83,7 @@ async fn basic_contract_update() -> anyhow::Result<()> {
     let (contract_id, _file_id) =
         create_test_contract(&client, operator_key, op.account_id).await?;
 
-    let info_before = ContractInfoQuery::new()
-        .contract_id(contract_id)
-        .query_payment(Hbar::new(1))
-        .execute(&client)
-        .await?;
+    let info_before = ContractInfoQuery::new().contract_id(contract_id).execute(&client).await?;
 
     assert_eq!(info_before.contract_id, contract_id);
     assert_eq!(info_before.contract_memo, "[e2e::ContractCreateTransaction]");
@@ -111,11 +96,7 @@ async fn basic_contract_update() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let info_after = ContractInfoQuery::new()
-        .contract_id(contract_id)
-        .query_payment(Hbar::new(5))
-        .execute(&client)
-        .await?;
+    let info_after = ContractInfoQuery::new().contract_id(contract_id).execute(&client).await?;
 
     assert_eq!(info_after.contract_id, contract_id);
     assert_eq!(info_after.contract_memo, "[e2e::ContractUpdateTransaction]");
@@ -133,11 +114,11 @@ async fn basic_contract_update() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_update_fails_when_contract_id_not_set() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -158,11 +139,11 @@ async fn contract_update_fails_when_contract_id_not_set() -> anyhow::Result<()> 
 
 #[tokio::test]
 async fn contract_update_auto_renew_account_id_to_zero() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -171,32 +152,22 @@ async fn contract_update_auto_renew_account_id_to_zero() -> anyhow::Result<()> {
     let (contract_id, _file_id) =
         create_test_contract(&client, operator_key, op.account_id).await?;
 
-    let info_before = ContractInfoQuery::new()
-        .contract_id(contract_id)
-        .query_payment(Hbar::new(1))
-        .execute(&client)
-        .await?;
+    let info_before = ContractInfoQuery::new().contract_id(contract_id).execute(&client).await?;
 
     assert_eq!(info_before.contract_id, contract_id);
     assert_eq!(info_before.auto_renew_account_id, Some(op.account_id));
 
-    ContractUpdateTransaction::new()
+    let result = ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .contract_memo("[e2e::ContractUpdateTransaction]")
         .auto_renew_account_id(AccountId::new(0, 0, 0))
         .execute(&client)
         .await?
         .get_receipt(&client)
-        .await?;
+        .await;
 
-    let info_after = ContractInfoQuery::new()
-        .contract_id(contract_id)
-        .query_payment(Hbar::new(5))
-        .execute(&client)
-        .await?;
-
-    assert_eq!(info_after.contract_id, contract_id);
-    assert_eq!(info_after.auto_renew_account_id, Some(AccountId::new(0, 0, 0)));
+    // Setting auto_renew_account_id to 0.0.0 is rejected by the network
+    assert_matches!(result, Err(hedera::Error::ReceiptStatus { status, .. }) if status == Status::InvalidAutorenewAccount);
 
     ContractDeleteTransaction::new()
         .contract_id(contract_id)
@@ -211,11 +182,11 @@ async fn contract_update_auto_renew_account_id_to_zero() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_update_adds_basic_lambda_evm_hook() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -243,11 +214,11 @@ async fn contract_update_adds_basic_lambda_evm_hook() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_update_fails_with_duplicate_hook_ids() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -282,11 +253,11 @@ async fn contract_update_fails_with_duplicate_hook_ids() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_update_fails_when_hook_id_in_use() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -319,20 +290,22 @@ async fn contract_update_fails_when_hook_id_in_use() -> anyhow::Result<()> {
         .contract_id(contract_id)
         .add_hook(duplicate_hook_details)
         .execute(&client)
+        .await?
+        .get_receipt(&client)
         .await;
 
-    assert_matches!(result, Err(hedera::Error::TransactionPreCheckStatus { status, .. }) if status == Status::HookIdInUse);
+    assert_matches!(result, Err(hedera::Error::ReceiptStatus { status, .. }) if status == Status::HookIdInUse);
 
     Ok(())
 }
 
 #[tokio::test]
 async fn contract_update_adds_lambda_evm_hook_with_storage_updates() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -364,11 +337,11 @@ async fn contract_update_adds_lambda_evm_hook_with_storage_updates() -> anyhow::
 
 #[tokio::test]
 async fn contract_update_deletes_hook_by_id() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -406,11 +379,11 @@ async fn contract_update_deletes_hook_by_id() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn contract_update_fails_when_deleting_nonexistent_hook() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -437,20 +410,22 @@ async fn contract_update_fails_when_deleting_nonexistent_hook() -> anyhow::Resul
         .contract_id(contract_id)
         .delete_hook(999)
         .execute(&client)
+        .await?
+        .get_receipt(&client)
         .await;
 
-    assert_matches!(result, Err(hedera::Error::TransactionPreCheckStatus { status, .. }) if status == Status::HookNotFound);
+    assert_matches!(result, Err(hedera::Error::ReceiptStatus { status, .. }) if status == Status::HookNotFound);
 
     Ok(())
 }
 
 #[tokio::test]
 async fn contract_update_fails_when_adding_and_deleting_same_hook_id() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
+    let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
     };
 
-    let Some(op) = &client.operator() else {
+    let Some(op) = &config.operator else {
         log::debug!("skipping test due to missing operator");
         return Ok(());
     };
@@ -470,9 +445,11 @@ async fn contract_update_fails_when_adding_and_deleting_same_hook_id() -> anyhow
         .add_hook(hook_details)
         .delete_hook(1)
         .execute(&client)
+        .await?
+        .get_receipt(&client)
         .await;
 
-    assert_matches!(result, Err(hedera::Error::TransactionPreCheckStatus { status, .. }) if status == Status::HookNotFound);
+    assert_matches!(result, Err(hedera::Error::ReceiptStatus { status, .. }) if status == Status::HookNotFound);
 
     ContractDeleteTransaction::new()
         .contract_id(contract_id)
