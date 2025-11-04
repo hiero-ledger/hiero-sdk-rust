@@ -5,6 +5,7 @@ use hedera_proto::services::smart_contract_service_client::SmartContractServiceC
 use time::Duration;
 use tonic::transport::Channel;
 
+use crate::hooks::HookCreationDetails;
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
 use crate::staked_id::StakedId;
@@ -57,6 +58,9 @@ pub struct ContractCreateTransactionData {
     staked_id: Option<StakedId>,
 
     decline_staking_reward: bool,
+
+    /// Hooks to add immediately after creating this contract.
+    hooks: Vec<HookCreationDetails>,
 }
 
 impl Default for ContractCreateTransactionData {
@@ -74,6 +78,7 @@ impl Default for ContractCreateTransactionData {
             auto_renew_account_id: None,
             staked_id: None,
             decline_staking_reward: false,
+            hooks: Vec::new(),
         }
     }
 }
@@ -240,6 +245,24 @@ impl ContractCreateTransaction {
         self.data_mut().decline_staking_reward = decline;
         self
     }
+
+    /// Returns the hooks to be created.
+    #[must_use]
+    pub fn get_hooks_to_create(&self) -> &[HookCreationDetails] {
+        &self.data().hooks
+    }
+
+    /// Adds a hook to be created.
+    pub fn add_hook(&mut self, hook: HookCreationDetails) -> &mut Self {
+        self.data_mut().hooks.push(hook);
+        self
+    }
+
+    /// Sets the hooks to be created.
+    pub fn set_hooks(&mut self, hooks: Vec<HookCreationDetails>) -> &mut Self {
+        self.data_mut().hooks = hooks;
+        self
+    }
 }
 
 impl TransactionData for ContractCreateTransactionData {
@@ -313,6 +336,11 @@ impl FromProtobuf<services::ContractCreateTransactionBody> for ContractCreateTra
             auto_renew_account_id: Option::from_protobuf(pb.auto_renew_account_id)?,
             staked_id: Option::from_protobuf(pb.staked_id)?,
             decline_staking_reward: pb.decline_reward,
+            hooks: pb
+                .hook_creation_details
+                .into_iter()
+                .map(HookCreationDetails::from_protobuf)
+                .collect::<Result<Vec<_>, _>>()?,
         })
     }
 }
@@ -372,6 +400,7 @@ impl ToProtobuf for ContractCreateTransactionData {
             decline_reward: self.decline_staking_reward,
             initcode_source,
             staked_id,
+            hook_creation_details: self.hooks.iter().map(|hook| hook.to_protobuf()).collect(),
         }
     }
 }
@@ -397,8 +426,13 @@ mod tests {
         AccountId,
         AnyTransaction,
         ContractCreateTransaction,
+        ContractId,
+        EvmHookSpec,
         FileId,
         Hbar,
+        HookCreationDetails,
+        HookExtensionPoint,
+        LambdaEvmHook,
         PublicKey,
     };
 
@@ -539,6 +573,7 @@ mod tests {
                         },
                     ),
                     decline_reward: false,
+                    hook_creation_details: [],
                     initcode_source: Some(
                         FileId(
                             FileId {
@@ -665,6 +700,7 @@ mod tests {
                         },
                     ),
                     decline_reward: false,
+                    hook_creation_details: [],
                     initcode_source: Some(
                         Initcode(
                             [
@@ -702,6 +738,13 @@ mod tests {
     #[test]
     fn from_proto_body() {
         #[allow(deprecated)]
+        let contract_id = ContractId::new(0, 0, 1);
+        let hooks = vec![HookCreationDetails::new(
+            HookExtensionPoint::AccountAllowanceHook,
+            0,
+            Some(LambdaEvmHook::new(EvmHookSpec::new(Some(contract_id)), vec![])),
+        )];
+
         let tx = services::ContractCreateTransactionBody {
             admin_key: Some(admin_key().to_protobuf()),
             initial_balance: INITIAL_BALANCE.to_tinybars(),
@@ -724,6 +767,7 @@ mod tests {
                     BYTECODE_FILE_ID.to_protobuf(),
                 ),
             ),
+            hook_creation_details: hooks.iter().map(|h| h.to_protobuf()).collect(),
         };
         let tx = ContractCreateTransactionData::from_protobuf(tx).unwrap();
 
