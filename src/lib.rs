@@ -256,7 +256,6 @@ pub use hooks::{
     HookExtensionPoint,
     HookId,
     LambdaEvmHook,
-    // LambdaSStoreTransaction,
     LambdaStorageSlot,
     LambdaStorageUpdate,
     // NftHookCall,

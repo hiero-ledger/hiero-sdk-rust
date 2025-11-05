@@ -1,2 +1,1 @@
-mod lambda_sstore;
-
+// mod lambda_sstore;
