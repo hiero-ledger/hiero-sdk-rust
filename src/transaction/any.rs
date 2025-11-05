@@ -54,6 +54,7 @@ mod data {
         FileDeleteTransactionData as FileDelete,
         FileUpdateTransactionData as FileUpdate,
     };
+    pub(super) use crate::hooks::LambdaSStoreTransactionData as LambdaSStore;
     pub(super) use crate::prng_transaction::PrngTransactionData as Prng;
     pub(super) use crate::schedule::{
         ScheduleCreateTransactionData as ScheduleCreate,
@@ -152,6 +153,7 @@ pub enum AnyTransactionData {
     TokenClaimAirdrop(data::TokenClaimAirdrop),
     TokenCancelAirdrop(data::TokenCancelAirdrop),
     Batch(data::Batch),
+    LambdaSStore(data::LambdaSStore),
 }
 
 impl ToTransactionDataProtobuf for AnyTransactionData {
@@ -305,6 +307,7 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
                 transaction.to_transaction_data_protobuf(chunk_info)
             }
             Self::Batch(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
+            Self::LambdaSStore(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
         }
     }
 }
@@ -362,6 +365,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenClaimAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenCancelAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::Batch(transaction) => transaction.default_max_transaction_fee(),
+            Self::LambdaSStore(transaction) => transaction.default_max_transaction_fee(),
         }
     }
 
@@ -417,6 +421,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenClaimAirdrop(it) => it.maybe_chunk_data(),
             Self::TokenCancelAirdrop(it) => it.maybe_chunk_data(),
             Self::Batch(it) => it.maybe_chunk_data(),
+            Self::LambdaSStore(it) => it.maybe_chunk_data(),
         }
     }
 
@@ -472,6 +477,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenClaimAirdrop(it) => it.wait_for_receipt(),
             Self::TokenCancelAirdrop(it) => it.wait_for_receipt(),
             Self::Batch(it) => it.wait_for_receipt(),
+            Self::LambdaSStore(it) => it.wait_for_receipt(),
         }
     }
 }
@@ -533,6 +539,7 @@ impl TransactionExecute for AnyTransactionData {
             Self::TokenClaimAirdrop(transaction) => transaction.execute(channel, request),
             Self::TokenCancelAirdrop(transaction) => transaction.execute(channel, request),
             Self::Batch(transaction) => transaction.execute(channel, request),
+            Self::LambdaSStore(transaction) => transaction.execute(channel, request),
         }
     }
 }
@@ -592,6 +599,7 @@ impl ValidateChecksums for AnyTransactionData {
             Self::TokenClaimAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenCancelAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::Batch(transaction) => transaction.validate_checksums(ledger_id),
+            Self::LambdaSStore(transaction) => transaction.validate_checksums(ledger_id),
         }
     }
 }
@@ -676,6 +684,12 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
             Data::NodeStakeUpdate(_) => {
                 return Err(Error::from_protobuf(
                     "unsupported transaction `NodeStakeUpdateTransaction`",
+                ))
+            }
+            Data::LambdaSstore(pb) => data::LambdaSStore::from_protobuf(pb)?.into(),
+            Data::HookDispatch(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `HookDispatchTransaction`",
                 ))
             }
             Data::AtomicBatch(_) => {
@@ -1064,6 +1078,12 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                     "unsupported transaction `NodeStakeUpdateTransaction`",
                 ))
             }
+            Data::LambdaSstore(_) => {
+                return Err(Error::from_protobuf("LambdaSstore transactions cannot be chunked"))
+            }
+            Data::HookDispatch(_) => {
+                return Err(Error::from_protobuf("HookDispatch transactions are not supported"))
+            }
             Data::AtomicBatch(_) => {
                 return Err(Error::from_protobuf("AtomicBatch transactions are not supported"))
             }
@@ -1249,5 +1269,6 @@ impl_cast_any! {
              TokenAirdrop,
     TokenClaimAirdrop,
     TokenCancelAirdrop,
-    Batch
+    Batch,
+    LambdaSStore
 }
