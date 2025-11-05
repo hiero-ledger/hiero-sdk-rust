@@ -325,6 +325,7 @@ impl ToProtobuf for Transfer {
             amount: self.amount,
             account_id: Some(self.account_id.to_protobuf()),
             is_approval: self.is_approval,
+            hook_call: None,
         }
     }
 }
@@ -371,6 +372,8 @@ impl ToProtobuf for TokenNftTransfer {
             receiver_account_id: Some(self.receiver.to_protobuf()),
             serial_number: self.serial as i64,
             is_approval: self.is_approved,
+            receiver_allowance_hook_call: None,
+            sender_allowance_hook_call: None,
         }
     }
 }
