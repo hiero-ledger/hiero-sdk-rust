@@ -94,6 +94,7 @@ where
         let signed_transaction = services::SignedTransaction {
             body_bytes,
             sig_map: Some(services::SignatureMap { sig_pair: signatures }),
+            use_serialized_tx_message_hash_algorithm: false,
         };
 
         let signed_transaction_bytes = signed_transaction.encode_to_vec();

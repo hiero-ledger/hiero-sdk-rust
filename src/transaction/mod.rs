@@ -835,6 +835,7 @@ impl<D: TransactionExecute> Transaction<D> {
         let signed_transaction = services::SignedTransaction {
             body_bytes,
             sig_map: Some(services::SignatureMap { sig_pair: signatures.clone() }),
+            use_serialized_tx_message_hash_algorithm: false,
         };
         services::Transaction {
             signed_transaction_bytes: signed_transaction.encode_to_vec(),
