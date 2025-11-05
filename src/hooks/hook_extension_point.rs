@@ -45,7 +45,8 @@ impl TryFrom<i32> for HookExtensionPoint {
         if value < 0 {
             return Err(crate::Error::basic_parse("HookExtensionPoint value cannot be negative"));
         }
-        Self::from_value(value as u32).ok_or_else(|| crate::Error::basic_parse("Invalid HookExtensionPoint value"))
+        Self::from_value(value as u32)
+            .ok_or_else(|| crate::Error::basic_parse("Invalid HookExtensionPoint value"))
     }
 }
 

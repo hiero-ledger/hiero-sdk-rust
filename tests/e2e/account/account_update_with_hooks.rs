@@ -61,11 +61,8 @@ async fn can_update_account_to_add_lambda_hook() -> anyhow::Result<()> {
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
 
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let update_receipt = AccountUpdateTransaction::new()
         .account_id(account_id)
@@ -108,17 +105,11 @@ async fn can_update_account_with_multiple_hooks() -> anyhow::Result<()> {
     let lambda_hook1 = LambdaEvmHook::new(spec.clone(), vec![]);
     let lambda_hook2 = LambdaEvmHook::new(spec, vec![]);
 
-    let hook_details1 = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook1),
-    );
+    let hook_details1 =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook1));
 
-    let hook_details2 = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        2,
-        Some(lambda_hook2),
-    );
+    let hook_details2 =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 2, Some(lambda_hook2));
 
     let update_receipt = AccountUpdateTransaction::new()
         .account_id(account_id)
@@ -165,11 +156,8 @@ async fn can_update_account_hook_with_storage_updates() -> anyhow::Result<()> {
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![storage_update]);
 
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let update_receipt = AccountUpdateTransaction::new()
         .account_id(account_id)
@@ -212,11 +200,8 @@ async fn cannot_update_account_with_duplicate_hook_ids() -> anyhow::Result<()> {
     let lambda_hook1 = LambdaEvmHook::new(spec.clone(), vec![]);
     let lambda_hook2 = LambdaEvmHook::new(spec, vec![]);
 
-    let hook_details1 = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook1),
-    );
+    let hook_details1 =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook1));
 
     let hook_details2 = HookCreationDetails::new(
         HookExtensionPoint::AccountAllowanceHook,
@@ -273,11 +258,8 @@ async fn can_update_account_hook_with_admin_key() -> anyhow::Result<()> {
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
 
-    let mut hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let mut hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
     hook_details.admin_key = Some(hook_admin_key.public_key().into());
 
     let update_receipt = AccountUpdateTransaction::new()

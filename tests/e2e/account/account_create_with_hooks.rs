@@ -48,11 +48,8 @@ async fn can_create_account_with_basic_lambda_hook() -> anyhow::Result<()> {
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
 
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let receipt = AccountCreateTransaction::new()
         .key(key.public_key())
@@ -88,11 +85,8 @@ async fn can_create_account_with_lambda_hook_and_storage() -> anyhow::Result<()>
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![storage_update]);
 
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let receipt = AccountCreateTransaction::new()
         .key(key.public_key())
@@ -176,11 +170,8 @@ async fn cannot_create_account_with_lambda_hook_without_contract_id() -> anyhow:
     let spec = EvmHookSpec::new(None); // No contract ID
     let lambda_hook = LambdaEvmHook::new(spec, vec![storage_update]);
 
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let result = AccountCreateTransaction::new()
         .key(key.public_key())
@@ -221,11 +212,8 @@ async fn can_create_account_with_hook_admin_key() -> anyhow::Result<()> {
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
 
-    let mut hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let mut hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
     hook_details.admin_key = Some(admin_key.public_key().into());
 
     let receipt = AccountCreateTransaction::new()
