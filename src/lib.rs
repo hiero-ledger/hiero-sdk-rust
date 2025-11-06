@@ -116,6 +116,7 @@ mod execute;
 mod fee_schedules;
 mod file;
 mod hbar;
+mod hooks;
 mod key;
 mod ledger_id;
 mod mirror_query;
@@ -246,6 +247,22 @@ pub use hbar::{
     Tinybar,
 };
 pub use hiero_sdk_proto::services::ResponseCodeEnum as Status;
+pub use hooks::{
+    EvmHookCall,
+    EvmHookSpec,
+    // FungibleHookCall,
+    // FungibleHookType,
+    // HookCall,
+    HookCreationDetails,
+    HookEntityId,
+    HookExtensionPoint,
+    HookId,
+    LambdaEvmHook,
+    LambdaStorageSlot,
+    LambdaStorageUpdate,
+    // NftHookCall,
+    // NftHookType,
+};
 pub use key::{
     Key,
     KeyList,

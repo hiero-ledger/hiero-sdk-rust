@@ -227,9 +227,12 @@ async fn can_update_multiple_storage_slots() -> anyhow::Result<()> {
     let (_account_id, account_key, hook_id) = create_account_with_hook(&client, contract_id).await?;
 
     // Create multiple storage updates
-    let storage_slot1 = LambdaStorageSlot::new(vec![0x11, 0x12, 0x13, 0x14], vec![0x15, 0x16, 0x17, 0x18]);
-    let storage_slot2 = LambdaStorageSlot::new(vec![0x21, 0x22, 0x23, 0x24], vec![0x25, 0x26, 0x27, 0x28]);
-    let storage_slot3 = LambdaStorageSlot::new(vec![0x31, 0x32, 0x33, 0x34], vec![0x35, 0x36, 0x37, 0x38]);
+    let storage_slot1 =
+        LambdaStorageSlot::new(vec![0x11, 0x12, 0x13, 0x14], vec![0x15, 0x16, 0x17, 0x18]);
+    let storage_slot2 =
+        LambdaStorageSlot::new(vec![0x21, 0x22, 0x23, 0x24], vec![0x25, 0x26, 0x27, 0x28]);
+    let storage_slot3 =
+        LambdaStorageSlot::new(vec![0x31, 0x32, 0x33, 0x34], vec![0x35, 0x36, 0x37, 0x38]);
 
     let storage_updates = vec![
         LambdaStorageUpdate::StorageSlot(storage_slot1),
@@ -252,4 +255,3 @@ async fn can_update_multiple_storage_slots() -> anyhow::Result<()> {
 
     Ok(())
 }
-

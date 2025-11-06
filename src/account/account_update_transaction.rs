@@ -8,6 +8,7 @@ use time::{
 };
 use tonic::transport::Channel;
 
+use crate::hooks::HookCreationDetails;
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
     FromProtobuf,
@@ -89,6 +90,10 @@ pub struct AccountUpdateTransactionData {
 
     /// If true, the account declines receiving a staking reward. The default value is false.
     decline_staking_reward: Option<bool>,
+
+    /// Hooks to add immediately after updating this account.
+    hooks: Vec<HookCreationDetails>,
+    hook_ids_to_delete: Vec<i64>,
 }
 
 impl AccountUpdateTransaction {
@@ -271,6 +276,42 @@ impl AccountUpdateTransaction {
         self.data_mut().decline_staking_reward = Some(decline);
         self
     }
+
+    /// Returns the hooks to be created.
+    #[must_use]
+    pub fn get_hooks_to_create(&self) -> &[HookCreationDetails] {
+        &self.data().hooks
+    }
+
+    /// Adds a hook to be created.
+    pub fn add_hook(&mut self, hook: HookCreationDetails) -> &mut Self {
+        self.data_mut().hooks.push(hook);
+        self
+    }
+
+    /// Sets the hooks to be created.
+    pub fn set_hooks(&mut self, hooks: Vec<HookCreationDetails>) -> &mut Self {
+        self.data_mut().hooks = hooks;
+        self
+    }
+
+    /// Returns the hook IDs to be deleted.
+    #[must_use]
+    pub fn get_hooks_to_delete(&self) -> &[i64] {
+        &self.data().hook_ids_to_delete
+    }
+
+    /// Adds a hook ID to be deleted.
+    pub fn delete_hook(&mut self, hook_id: i64) -> &mut Self {
+        self.data_mut().hook_ids_to_delete.push(hook_id);
+        self
+    }
+
+    /// Sets the hook IDs to be deleted.
+    pub fn delete_hooks(&mut self, hook_ids: Vec<i64>) -> &mut Self {
+        self.data_mut().hook_ids_to_delete = hook_ids;
+        self
+    }
 }
 
 impl TransactionData for AccountUpdateTransactionData {}
@@ -339,6 +380,12 @@ impl FromProtobuf<services::CryptoUpdateTransactionBody> for AccountUpdateTransa
             max_automatic_token_associations: pb.max_automatic_token_associations,
             staked_id: Option::from_protobuf(pb.staked_id)?,
             decline_staking_reward: pb.decline_reward,
+            hooks: pb
+                .hook_creation_details
+                .into_iter()
+                .map(HookCreationDetails::from_protobuf)
+                .collect::<Result<Vec<_>, _>>()?,
+            hook_ids_to_delete: pb.hook_ids_to_delete,
         })
     }
 }
@@ -382,6 +429,8 @@ impl ToProtobuf for AccountUpdateTransactionData {
             receive_record_threshold_field: None,
             receiver_sig_required_field: receiver_signature_required,
             staked_id,
+            hook_creation_details: self.hooks.iter().map(|hook| hook.to_protobuf()).collect(),
+            hook_ids_to_delete: self.hook_ids_to_delete.clone(),
         }
     }
 }
@@ -410,6 +459,11 @@ mod tests {
         AccountId,
         AccountUpdateTransaction,
         AnyTransaction,
+        ContractId,
+        EvmHookSpec,
+        HookCreationDetails,
+        HookExtensionPoint,
+        LambdaEvmHook,
         PublicKey,
     };
 
@@ -563,6 +617,8 @@ mod tests {
                         100,
                     ),
                     decline_reward: None,
+                    hook_ids_to_delete: [],
+                    hook_creation_details: [],
                     send_record_threshold_field: None,
                     receive_record_threshold_field: None,
                     receiver_sig_required_field: Some(
@@ -696,6 +752,8 @@ mod tests {
                         100,
                     ),
                     decline_reward: None,
+                    hook_ids_to_delete: [],
+                    hook_creation_details: [],
                     send_record_threshold_field: None,
                     receive_record_threshold_field: None,
                     receiver_sig_required_field: Some(
@@ -730,6 +788,14 @@ mod tests {
     #[test]
     fn from_proto_body() {
         #[allow(deprecated)]
+        let contract_id = ContractId::new(0, 0, 1);
+        let hooks = vec![HookCreationDetails::new(
+            HookExtensionPoint::AccountAllowanceHook,
+            0,
+            Some(LambdaEvmHook::new(EvmHookSpec::new(Some(contract_id)), vec![])),
+        )];
+        let hook_ids_to_delete = vec![1, 2, 3];
+
         let tx = services::CryptoUpdateTransactionBody {
             account_id_to_update: Some(ACCOUNT_ID.to_protobuf()),
             key: Some(key().to_protobuf()),
@@ -746,6 +812,8 @@ mod tests {
             )),
             proxy_fraction: 0,
             expiration_time: Some(EXPIRATION_TIME.to_protobuf()),
+            hook_creation_details: hooks.iter().map(|h| h.to_protobuf()).collect(),
+            hook_ids_to_delete,
         };
 
         let tx = AccountUpdateTransactionData::from_protobuf(tx).unwrap();

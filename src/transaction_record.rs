@@ -274,6 +274,7 @@ impl ToProtobuf for TransactionRecord {
                         account_id: Some(it.0.to_protobuf()),
                         amount: *it.1,
                         is_approval: false,
+                        hook_call: None,
                     })
                     .collect(),
                 nft_transfers: Vec::new(),
