@@ -14,6 +14,37 @@ use regex::RegexBuilder;
 const DERIVE_EQ_HASH: &str = "#[derive(Eq, Hash)]";
 const SERVICES_FOLDER: &str = "./services/hapi/hedera-protobuf-java-api/src/main/proto/services";
 
+// Recursively find all .proto files, excluding state/ and auxiliary/ subdirectories
+fn find_proto_files(dir: &Path) -> anyhow::Result<Vec<std::path::PathBuf>> {
+    let mut files = Vec::new();
+    for entry in read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        // Skip state/ directory (internal node state, not for SDK)
+        // Include auxiliary/tss/ but skip other auxiliary/ subdirectories
+        if path.is_dir() {
+            let dir_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+            if dir_name == "state" {
+                continue; // Skip state directory entirely
+            } else if dir_name == "auxiliary" {
+                // Only include auxiliary/tss files
+                let tss_path = path.join("tss");
+                if tss_path.is_dir() {
+                    files.extend(find_proto_files(&tss_path)?);
+                }
+                continue;
+            }
+
+            files.extend(find_proto_files(&path)?);
+        } else if path.extension().and_then(|s| s.to_str()) == Some("proto") {
+            files.push(path);
+        }
+    }
+    Ok(files)
+}
+
 fn main() -> anyhow::Result<()> {
     // services is the "base" module for the hedera protobufs
     // in the beginning, there was only services and it was named "protos"
@@ -46,14 +77,7 @@ fn main() -> anyhow::Result<()> {
     )?;
     fs::rename(out_path.join("services"), &services_tmp_path)?;
 
-    let services: Vec<_> = read_dir(&services_tmp_path)?
-        .chain(read_dir(&services_tmp_path.join("auxiliary").join("tss"))?)
-        .filter_map(|entry| {
-            let entry = entry.ok()?;
-
-            entry.file_type().ok()?.is_file().then(|| entry.path())
-        })
-        .collect();
+    let services = find_proto_files(&services_tmp_path)?;
 
     // iterate through each file
     let re_package = RegexBuilder::new(r"^package (.*);$").multi_line(true).build()?;
@@ -67,6 +91,7 @@ fn main() -> anyhow::Result<()> {
         let contents = contents.replace("com.hedera.hapi.services.auxiliary.history.", "");
         let contents = contents.replace("com.hedera.hapi.services.auxiliary.tss.", "");
         let contents = contents.replace("com.hedera.hapi.platform.event.", "");
+        let contents = contents.replace("com.hedera.hapi.node.hooks.", "");
 
         let contents = remove_unused_types(&contents);
 
@@ -93,7 +118,6 @@ fn main() -> anyhow::Result<()> {
         .type_attribute("proto.ContractID.contract", DERIVE_EQ_HASH)
         .type_attribute("proto.TransactionID", DERIVE_EQ_HASH)
         .type_attribute("proto.Timestamp", DERIVE_EQ_HASH)
-        .type_attribute("proto.NftTransfer", DERIVE_EQ_HASH)
         .type_attribute("proto.Fraction", DERIVE_EQ_HASH)
         .type_attribute("proto.TopicID", DERIVE_EQ_HASH)
         .type_attribute("proto.TokenID", DERIVE_EQ_HASH)
@@ -112,7 +136,14 @@ fn main() -> anyhow::Result<()> {
         .type_attribute("proto.TokenAllowance", DERIVE_EQ_HASH)
         .type_attribute("proto.GrantedCryptoAllowance", DERIVE_EQ_HASH)
         .type_attribute("proto.GrantedTokenAllowance", DERIVE_EQ_HASH)
-        .type_attribute("proto.Duration", DERIVE_EQ_HASH);
+        .type_attribute("proto.Duration", DERIVE_EQ_HASH)
+        .type_attribute("proto.HookCall", DERIVE_EQ_HASH)
+        .type_attribute("proto.HookCall.call_spec", DERIVE_EQ_HASH)
+        .type_attribute("proto.HookCall.id", DERIVE_EQ_HASH)
+        .type_attribute("proto.HookId", DERIVE_EQ_HASH)
+        .type_attribute("proto.HookEntityId", DERIVE_EQ_HASH)
+        .type_attribute("proto.HookEntityId.entity_id", DERIVE_EQ_HASH)
+        .type_attribute("proto.EvmHookCall", DERIVE_EQ_HASH);
 
     // the ResponseCodeEnum should be marked as #[non_exhaustive] so
     // adding variants does not trigger a breaking change

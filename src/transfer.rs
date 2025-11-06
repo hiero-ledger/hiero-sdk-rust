@@ -43,6 +43,7 @@ impl ToProtobuf for Transfer {
             account_id: Some(self.account_id.to_protobuf()),
             amount: self.amount.to_tinybars(),
             is_approval: false,
+            hook_call: None,
         }
     }
 }
