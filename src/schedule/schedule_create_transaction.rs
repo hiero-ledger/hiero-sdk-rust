@@ -315,6 +315,7 @@ mod tests {
                                                         ),
                                                         amount: -1000000000,
                                                         is_approval: false,
+                                                        hook_call: None,
                                                     },
                                                     AccountAmount {
                                                         account_id: Some(
@@ -330,6 +331,7 @@ mod tests {
                                                         ),
                                                         amount: 1000000000,
                                                         is_approval: false,
+                                                        hook_call: None,
                                                     },
                                                 ],
                                             },
@@ -449,11 +451,13 @@ mod tests {
                                 account_id: "0.0.555",
                                 amount: -1000000000,
                                 is_approval: false,
+                                hook_call: None,
                             },
                             Transfer {
                                 account_id: "0.0.666",
                                 amount: 1000000000,
                                 is_approval: false,
+                                hook_call: None,
                             },
                         ],
                         token_transfers: [],

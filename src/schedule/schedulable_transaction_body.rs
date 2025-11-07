@@ -547,6 +547,9 @@ impl TryFrom<AnyTransactionData> for AnySchedulableTransactionData {
             AnyTransactionData::Batch(_) => {
                 Err(crate::Error::basic_parse("Cannot schedule `BatchTransaction`"))
             }
+            AnyTransactionData::LambdaSStore(_) => {
+                Err(crate::Error::basic_parse("Cannot schedule `LambdaSStoreTransaction`"))
+            }
         }
     }
 }
