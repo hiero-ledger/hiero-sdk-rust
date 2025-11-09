@@ -58,11 +58,8 @@ async fn can_transfer_hbar_with_pre_tx_allowance_hook() -> anyhow::Result<()> {
     // Create sender account with hook
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
@@ -126,11 +123,8 @@ async fn can_transfer_hbar_with_pre_post_tx_allowance_hook() -> anyhow::Result<(
     // Create sender account with hook
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
@@ -195,11 +189,8 @@ async fn can_transfer_fungible_token_with_hook() -> anyhow::Result<()> {
     // Create sender account with hook
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
@@ -285,11 +276,8 @@ async fn can_transfer_nft_with_sender_hook() -> anyhow::Result<()> {
     // Create sender account with hook
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
@@ -400,11 +388,8 @@ async fn can_transfer_nft_with_receiver_hook() -> anyhow::Result<()> {
     // Create receiver account with hook
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     let receiver_receipt = AccountCreateTransaction::new()
         .key(receiver_key.public_key())
@@ -492,11 +477,8 @@ async fn can_transfer_nft_with_both_sender_and_receiver_hooks() -> anyhow::Resul
 
     let spec = EvmHookSpec::new(Some(contract_id));
     let lambda_hook = LambdaEvmHook::new(spec, vec![]);
-    let hook_details = HookCreationDetails::new(
-        HookExtensionPoint::AccountAllowanceHook,
-        1,
-        Some(lambda_hook),
-    );
+    let hook_details =
+        HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
 
     // Create sender account with hook
     let sender_receipt = AccountCreateTransaction::new()

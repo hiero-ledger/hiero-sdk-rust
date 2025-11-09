@@ -162,53 +162,41 @@ async fn main() -> anyhow::Result<()> {
 
     // HBAR transfer with pre-tx allowance hook
     let hbar_hook = FungibleHookCall {
-        hook_call: HookCall::new(
-            Some(hook_id),
-            {
-                let mut evm_call = EvmHookCall::new(Some(vec![0x01, 0x02]));
-                evm_call.set_gas_limit(20_000);
-                Some(evm_call)
-            },
-        ),
+        hook_call: HookCall::new(Some(hook_id), {
+            let mut evm_call = EvmHookCall::new(Some(vec![0x01, 0x02]));
+            evm_call.set_gas_limit(20_000);
+            Some(evm_call)
+        }),
         hook_type: FungibleHookType::PreTxAllowanceHook,
     };
 
     // NFT sender hook (pre-hook)
     let nft_sender_hook = NftHookCall {
-        hook_call: HookCall::new(
-            Some(hook_id),
-            {
-                let mut evm_call = EvmHookCall::new(Some(vec![0x03, 0x04]));
-                evm_call.set_gas_limit(20_000);
-                Some(evm_call)
-            },
-        ),
+        hook_call: HookCall::new(Some(hook_id), {
+            let mut evm_call = EvmHookCall::new(Some(vec![0x03, 0x04]));
+            evm_call.set_gas_limit(20_000);
+            Some(evm_call)
+        }),
         hook_type: NftHookType::PreHookSender,
     };
 
     // NFT receiver hook (pre-hook)
     let nft_receiver_hook = NftHookCall {
-        hook_call: HookCall::new(
-            Some(hook_id),
-            {
-                let mut evm_call = EvmHookCall::new(Some(vec![0x05, 0x06]));
-                evm_call.set_gas_limit(20_000);
-                Some(evm_call)
-            },
-        ),
+        hook_call: HookCall::new(Some(hook_id), {
+            let mut evm_call = EvmHookCall::new(Some(vec![0x05, 0x06]));
+            evm_call.set_gas_limit(20_000);
+            Some(evm_call)
+        }),
         hook_type: NftHookType::PreHookReceiver,
     };
 
     // Fungible token transfer with pre-post allowance hook
     let fungible_token_hook = FungibleHookCall {
-        hook_call: HookCall::new(
-            Some(hook_id),
-            {
-                let mut evm_call = EvmHookCall::new(Some(vec![0x07, 0x08]));
-                evm_call.set_gas_limit(20_000);
-                Some(evm_call)
-            },
-        ),
+        hook_call: HookCall::new(Some(hook_id), {
+            let mut evm_call = EvmHookCall::new(Some(vec![0x07, 0x08]));
+            evm_call.set_gas_limit(20_000);
+            Some(evm_call)
+        }),
         hook_type: FungibleHookType::PrePostTxAllowanceHook,
     };
 
