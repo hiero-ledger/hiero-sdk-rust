@@ -95,7 +95,7 @@ async fn can_transfer_hbar_with_pre_tx_allowance_hook() -> anyhow::Result<()> {
 
     // Perform transfer with hook
     let transfer_receipt = TransferTransaction::new()
-        .hbar_transfer_with_hook(sender_id, Hbar::from_tinybars(-100), fungible_hook_call)
+        .add_hbar_transfer_with_hook(sender_id, Hbar::from_tinybars(-100), fungible_hook_call)
         .hbar_transfer(receiver_id, Hbar::from_tinybars(100))
         .freeze_with(&client)?
         .sign(sender_key)
@@ -160,7 +160,7 @@ async fn can_transfer_hbar_with_pre_post_tx_allowance_hook() -> anyhow::Result<(
 
     // Perform transfer with hook
     let transfer_receipt = TransferTransaction::new()
-        .hbar_transfer_with_hook(sender_id, Hbar::from_tinybars(-100), fungible_hook_call)
+        .add_hbar_transfer_with_hook(sender_id, Hbar::from_tinybars(-100), fungible_hook_call)
         .hbar_transfer(receiver_id, Hbar::from_tinybars(100))
         .freeze_with(&client)?
         .sign(sender_key)
@@ -247,7 +247,7 @@ async fn can_transfer_fungible_token_with_hook() -> anyhow::Result<()> {
 
     // Perform token transfer with hook
     let transfer_receipt = TransferTransaction::new()
-        .token_transfer_with_hook(token_id, sender_id, -10, fungible_hook_call)
+        .add_token_transfer_with_hook(token_id, sender_id, -10, fungible_hook_call)
         .token_transfer(token_id, receiver_id, 10)
         .freeze_with(&client)?
         .sign(sender_key)
@@ -342,13 +342,18 @@ async fn can_transfer_nft_with_sender_hook() -> anyhow::Result<()> {
     let hook_call = HookCall::new(Some(1), Some(evm_hook_call));
     let sender_nft_hook_call = NftHookCall { hook_call, hook_type: NftHookType::PreHookSender };
 
-    // Perform NFT transfer with sender hook
+    // Perform NFT transfer with sender hook (receiver hook is dummy/empty)
+    let dummy_receiver_hook = NftHookCall {
+        hook_call: HookCall::new(None, None),
+        hook_type: NftHookType::PreHookReceiver,
+    };
     let transfer_receipt = TransferTransaction::new()
-        .nft_transfer_with_sender_hook(
+        .add_nft_transfer_with_hook(
             token_id.nft(serial_number),
             sender_id,
             receiver_id,
             sender_nft_hook_call,
+            dummy_receiver_hook,
         )
         .freeze_with(&client)?
         .sign(sender_key)
@@ -443,12 +448,15 @@ async fn can_transfer_nft_with_receiver_hook() -> anyhow::Result<()> {
     let hook_call = HookCall::new(Some(1), Some(evm_hook_call));
     let receiver_nft_hook_call = NftHookCall { hook_call, hook_type: NftHookType::PreHookReceiver };
 
-    // Perform NFT transfer with receiver hook
+    // Perform NFT transfer with receiver hook (sender hook is dummy/empty)
+    let dummy_sender_hook =
+        NftHookCall { hook_call: HookCall::new(None, None), hook_type: NftHookType::PreHookSender };
     let transfer_receipt = TransferTransaction::new()
-        .nft_transfer_with_receiver_hook(
+        .add_nft_transfer_with_hook(
             token_id.nft(serial_number),
             sender_id,
             receiver_id,
+            dummy_sender_hook,
             receiver_nft_hook_call,
         )
         .freeze_with(&client)?
@@ -556,7 +564,7 @@ async fn can_transfer_nft_with_both_sender_and_receiver_hooks() -> anyhow::Resul
 
     // Perform NFT transfer with both hooks
     let transfer_receipt = TransferTransaction::new()
-        .nft_transfer_with_both_hooks(
+        .add_nft_transfer_with_hook(
             token_id.nft(serial_number),
             sender_id,
             receiver_id,

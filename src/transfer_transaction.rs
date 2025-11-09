@@ -305,28 +305,6 @@ impl TransferTransaction {
         self._hbar_transfer(account_id, amount, false, Some(hook_call))
     }
 
-    /// Add an NFT transfer with a sender hook call.
-    pub fn nft_transfer_with_sender_hook(
-        &mut self,
-        nft_id: impl Into<NftId>,
-        sender: AccountId,
-        receiver: AccountId,
-        sender_hook_call: NftHookCall,
-    ) -> &mut Self {
-        self._nft_transfer(nft_id.into(), sender, receiver, false, Some(sender_hook_call), None)
-    }
-
-    /// Add an NFT transfer with a receiver hook call.
-    pub fn nft_transfer_with_receiver_hook(
-        &mut self,
-        nft_id: impl Into<NftId>,
-        sender: AccountId,
-        receiver: AccountId,
-        receiver_hook_call: NftHookCall,
-    ) -> &mut Self {
-        self._nft_transfer(nft_id.into(), sender, receiver, false, None, Some(receiver_hook_call))
-    }
-
     /// Add a token transfer with a fungible hook call.
     pub fn add_token_transfer_with_hook(
         &mut self,
@@ -338,29 +316,8 @@ impl TransferTransaction {
         self._token_transfer(token_id, account_id, amount, false, None, Some(hook_call))
     }
 
-    /// Add a hbar transfer with a fungible hook call.
-    pub fn hbar_transfer_with_hook(
-        &mut self,
-        account_id: AccountId,
-        amount: Hbar,
-        hook_call: FungibleHookCall,
-    ) -> &mut Self {
-        self._hbar_transfer(account_id, amount, false, Some(hook_call))
-    }
-
-    /// Add a token transfer with a fungible hook call.
-    pub fn token_transfer_with_hook(
-        &mut self,
-        token_id: TokenId,
-        account_id: AccountId,
-        amount: i64,
-        hook_call: FungibleHookCall,
-    ) -> &mut Self {
-        self._token_transfer(token_id, account_id, amount, false, None, Some(hook_call))
-    }
-
     /// Add an NFT transfer with both sender and receiver hook calls.
-    pub fn nft_transfer_with_both_hooks(
+    pub fn add_nft_transfer_with_hook(
         &mut self,
         nft_id: impl Into<NftId>,
         sender: AccountId,

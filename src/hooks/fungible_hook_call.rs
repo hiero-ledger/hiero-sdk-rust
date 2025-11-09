@@ -1,7 +1,6 @@
 use hedera_proto::services;
 
 use crate::hooks::{
-    EvmHookCall,
     FungibleHookType,
     HookCall,
 };
@@ -45,6 +44,7 @@ impl ToProtobuf for FungibleHookCall {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hooks::EvmHookCall;
 
     #[test]
     fn test_fungible_hook_call_creation() {

@@ -1,7 +1,6 @@
 use hedera_proto::services;
 
 use crate::hooks::{
-    EvmHookCall,
     HookCall,
     NftHookType,
 };
@@ -45,6 +44,7 @@ impl ToProtobuf for NftHookCall {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hooks::EvmHookCall;
 
     #[test]
     fn test_nft_hook_call_creation() {

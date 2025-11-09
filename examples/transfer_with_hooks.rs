@@ -206,7 +206,7 @@ async fn main() -> anyhow::Result<()> {
     // Transaction 1: HBAR transfers with hook
     println!("\n1. Executing HBAR TransferTransaction with hook...");
     TransferTransaction::new()
-        .hbar_transfer_with_hook(sender_account_id, Hbar::from_tinybars(-1), hbar_hook)
+        .add_hbar_transfer_with_hook(sender_account_id, Hbar::from_tinybars(-1), hbar_hook)
         .hbar_transfer(receiver_account_id, Hbar::from_tinybars(1))
         .freeze_with(&client)?
         .sign(sender_key.clone())
@@ -219,7 +219,7 @@ async fn main() -> anyhow::Result<()> {
     // Transaction 2: NFT transfer with sender and receiver hooks
     println!("\n2. Executing NFT TransferTransaction with hooks...");
     TransferTransaction::new()
-        .nft_transfer_with_both_hooks(
+        .add_nft_transfer_with_hook(
             nft_id,
             sender_account_id,
             receiver_account_id,
@@ -237,7 +237,7 @@ async fn main() -> anyhow::Result<()> {
     // Transaction 3: Fungible token transfers with hook
     println!("\n3. Executing Fungible Token TransferTransaction with hook...");
     TransferTransaction::new()
-        .token_transfer_with_hook(
+        .add_token_transfer_with_hook(
             fungible_token_id,
             sender_account_id,
             -1_000,
