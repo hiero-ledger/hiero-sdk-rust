@@ -9,11 +9,13 @@ use hedera::{
 mod bytecode;
 mod create;
 mod create_flow;
+mod create_with_hooks;
 mod delete;
 mod execute;
 mod info;
 mod nonce_info;
 mod update;
+mod update_with_hooks;
 
 enum ContractAdminKey {
     Operator,

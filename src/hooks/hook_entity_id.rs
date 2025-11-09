@@ -1,7 +1,8 @@
+use hedera_proto::services;
+
 use crate::account::AccountId;
 use crate::contract::ContractId;
 use crate::ledger_id::RefLedgerId;
-use hedera_proto::services;
 use crate::{
     Error,
     FromProtobuf,
@@ -45,8 +46,12 @@ impl ToProtobuf for HookEntityId {
 impl FromProtobuf<services::HookEntityId> for HookEntityId {
     fn from_protobuf(pb: services::HookEntityId) -> crate::Result<Self> {
         let (account_id, contract_id) = match pb.entity_id {
-            Some(services::hook_entity_id::EntityId::AccountId(id)) => (Some(AccountId::from_protobuf(id)?), None),
-            Some(services::hook_entity_id::EntityId::ContractId(id)) => (None, Some(ContractId::from_protobuf(id)?)),
+            Some(services::hook_entity_id::EntityId::AccountId(id)) => {
+                (Some(AccountId::from_protobuf(id)?), None)
+            }
+            Some(services::hook_entity_id::EntityId::ContractId(id)) => {
+                (None, Some(ContractId::from_protobuf(id)?))
+            }
             None => (None, None),
         };
 

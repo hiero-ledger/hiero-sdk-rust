@@ -697,6 +697,16 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
                     "unsupported transaction `AtomicBatchTransaction`",
                 ))
             }
+            Data::LambdaSstore(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `LambdaSstoreTransaction`",
+                ))
+            }
+            Data::HookDispatch(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `HookDispatchTransaction`",
+                ))
+            }
         };
 
         Ok(data)
@@ -1086,6 +1096,12 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
             }
             Data::AtomicBatch(_) => {
                 return Err(Error::from_protobuf("AtomicBatch transactions are not supported"))
+            }
+            Data::LambdaSstore(_) => {
+                return Err(Error::from_protobuf("LambdaSstore transactions are not supported"))
+            }
+            Data::HookDispatch(_) => {
+                return Err(Error::from_protobuf("HookDispatch transactions are not supported"))
             }
         };
 
