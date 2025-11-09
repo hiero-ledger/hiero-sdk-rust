@@ -39,13 +39,13 @@ impl Default for LambdaSStoreTransactionData {
 
 impl LambdaSStoreTransaction {
     /// Set the hook ID.
-    pub fn hook_id(&mut self, hook_id: HookId) -> &mut Self {
+    pub fn set_hook_id(&mut self, hook_id: HookId) -> &mut Self {
         self.data_mut().hook_id = Some(hook_id);
         self
     }
 
     /// Set the storage updates.
-    pub fn storage_updates(&mut self, storage_updates: Vec<LambdaStorageUpdate>) -> &mut Self {
+    pub fn set_storage_updates(&mut self, storage_updates: Vec<LambdaStorageUpdate>) -> &mut Self {
         self.data_mut().storage_updates = storage_updates;
         self
     }
@@ -162,7 +162,7 @@ mod tests {
         let storage_update = LambdaStorageUpdate::StorageSlot(storage_slot);
 
         let mut transaction = LambdaSStoreTransaction::new();
-        transaction.hook_id(hook_id.clone()).add_storage_update(storage_update);
+        transaction.set_hook_id(hook_id.clone()).add_storage_update(storage_update);
 
         assert_eq!(transaction.get_hook_id(), Some(&hook_id));
         assert_eq!(transaction.get_storage_updates().len(), 1);
