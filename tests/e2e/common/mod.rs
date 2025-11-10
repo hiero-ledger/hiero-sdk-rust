@@ -193,39 +193,3 @@ pub(crate) fn setup_nonfree() -> Option<TestEnvironment> {
         }
     }
 }
-
-/// Setup test environment for non-free tests with local 2-node network.
-/// Specifically configured for node update tests with:
-/// - Node 0.0.3 at 127.0.0.1:50211
-/// - Node 0.0.4 at 127.0.0.1:51211
-/// - Mirror network at 127.0.0.1:5600
-/// Returns None if TEST_RUN_NONFREE is not set or not on local network.
-pub(crate) fn setup_nonfree_local_two_nodes() -> Option<TestEnvironment> {
-    let _ = dotenvy::dotenv();
-    let _ = env_logger::builder().parse_default_env().is_test(true).try_init();
-
-    let config = &*CONFIG;
-
-    if !config.run_nonfree_tests {
-        log::debug!("skipping non-free test");
-        return None;
-    }
-
-    if !config.is_local {
-        log::debug!("skipping test, only runs on local network");
-        return None;
-    }
-
-    let mut network = HashMap::new();
-    network.insert("127.0.0.1:50211".to_string(), AccountId::new(0, 0, 3));
-    network.insert("127.0.0.1:51211".to_string(), AccountId::new(0, 0, 4));
-
-    let client = Client::for_network(network).unwrap();
-    client.set_mirror_network(vec!["127.0.0.1:5600".to_string()]);
-
-    if let Some(op) = &config.operator {
-        client.set_operator(op.account_id, op.private_key.clone());
-    }
-
-    Some(TestEnvironment { config, client })
-}

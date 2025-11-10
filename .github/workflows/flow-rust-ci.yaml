@@ -165,9 +165,12 @@ jobs:
 
       - name: Prepare Hiero Solo for DAB Tests
         id: solo-dab
-        uses: hiero-ledger/hiero-solo-action@6a1a77601cf3e69661fb6880530a4edf656b40d5 # v0.14.0
+        uses: hiero-ledger/hiero-solo-action@9471711c98a56179def6123e1040ab6c2e668881 # branch: 75-add-support-for-multiple-consensus-nodes
         with:
+          hieroVersion: v0.68.0-rc.1
           installMirrorNode: true
+          mirrorNodeVersion: v0.142.0
+          dualMode: true
 
       - name: Create env file for DAB Tests
         run: |
@@ -182,4 +185,4 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --test e2e node::update -- --nocapture
+          cargo test --test e2e node::update --  --test-threads=1

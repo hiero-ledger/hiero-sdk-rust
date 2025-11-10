@@ -639,7 +639,7 @@ impl Client {
 
     /// Triggers an immediate network update from the address book.
     /// Note: This method is not part of the public API and may be changed or removed in future versions.
-    pub(crate) async fn update_network_now(&self) {
+    pub(crate) async fn refresh_network(&self) {
         match NodeAddressBookQuery::new()
             .execute_mirrornet(self.mirrornet().load().channel(), None)
             .await

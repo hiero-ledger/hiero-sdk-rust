@@ -127,6 +127,8 @@ pub(crate) trait Execute: ValidateChecksums {
     fn response_pre_check_status(response: &Self::GrpcResponse) -> crate::Result<i32>;
 }
 
+/// The lifetime `'a` represents the lifetime of the borrowed `Client` reference.
+/// This ensures the context cannot outlive the client it references.
 struct ExecuteContext<'a> {
     // When `Some` the `transaction_id` will be regenerated when expired.
     operator_account_id: Option<AccountId>,
@@ -456,7 +458,7 @@ async fn execute_single<'a, E: Execute + Sync>(
             )))
         }
 
-        Status::InvalidNodeAccountId => {
+        Status::InvalidNodeAccount => {
             // The node account is invalid or doesn't match the submitted node
             // Mark the node as unhealthy and retry with backoff
             // This typically indicates the address book is out of date
@@ -466,8 +468,16 @@ async fn execute_single<'a, E: Execute + Sync>(
                 "Node at index {node_index} / node id {node_account_id} returned {status:?}, marking unhealthy. Updating address book before retry."
             );
 
-            // Update the network address book before retrying
-            ctx.client.update_network_now().await;
+            // Update the network address book before retrying, but only if mirror network is configured
+            if !ctx.client.mirror_network().is_empty() {
+                ctx.client.refresh_network().await;
+                log::info!("Address book updated");
+                log::info!("network: {:?}", ctx.client.network());
+            } else {
+                log::warn!(
+                    "Cannot update address book: no mirror network configured. Retrying with existing network configuration."
+                );
+            }
 
             Err(retry::Error::Transient(executable.make_error_pre_check(
                 status,
