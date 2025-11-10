@@ -20,6 +20,7 @@ mod cancel_airdrop;
 mod claim_airdrop;
 mod revoke_kyc;
 mod transfer;
+mod transfer_with_hooks;
 mod unfreeze;
 mod unpause;
 mod update;

@@ -11,6 +11,7 @@ use super::{
     TokenId,
     TokenNftTransfer,
 };
+use crate::hooks::FungibleHookCall;
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
     FromProtobuf,
@@ -99,7 +100,7 @@ impl TokenAirdropTransaction {
         account_id: AccountId,
         value: i64,
     ) -> &mut Self {
-        self._token_transfer(token_id, account_id, value, false)
+        self._token_transfer(token_id, account_id, value, false, None)
     }
 
     /// Return a non-approved token transfer.
@@ -163,7 +164,7 @@ impl TokenAirdropTransaction {
         account_id: AccountId,
         amount: i64,
     ) -> &mut Self {
-        self._token_transfer(token_id, account_id, amount, true);
+        self._token_transfer(token_id, account_id, amount, true, None);
         self
     }
 
@@ -196,8 +197,9 @@ impl TokenAirdropTransaction {
         account_id: AccountId,
         amount: i64,
         is_approved: bool,
+        hook_call: Option<FungibleHookCall>,
     ) -> &mut Self {
-        let transfer = Transfer { account_id, amount, is_approval: is_approved };
+        let transfer = Transfer { account_id, amount, is_approval: is_approved, hook_call };
         let data = self.data_mut();
 
         if let Some(tt) = data.token_transfers.iter_mut().find(|tt| tt.token_id == token_id) {
@@ -229,7 +231,7 @@ impl TokenAirdropTransaction {
         approved: bool,
         expected_decimals: Option<u32>,
     ) -> &mut Self {
-        let transfer = Transfer { account_id, amount, is_approval: approved };
+        let transfer = Transfer { account_id, amount, is_approval: approved, hook_call: None };
         let data = self.data_mut();
 
         if let Some(tt) = data.token_transfers.iter_mut().find(|tt| tt.token_id == token_id) {
@@ -267,7 +269,15 @@ impl TokenAirdropTransaction {
         is_approved: bool,
     ) -> &mut Self {
         let NftId { token_id, serial } = nft_id;
-        let transfer = TokenNftTransfer { token_id, serial, sender, receiver, is_approved };
+        let transfer = TokenNftTransfer {
+            token_id,
+            serial,
+            sender,
+            receiver,
+            is_approved,
+            sender_hook_call: None,
+            receiver_hook_call: None,
+        };
 
         let data = self.data_mut();
 
@@ -551,8 +561,8 @@ mod tests {
                     ),
                     serial_number: 1,
                     is_approval: true,
-                    receiver_allowance_hook_call: None,
                     sender_allowance_hook_call: None,
+                    receiver_allowance_hook_call: None,
                 }],
                 expected_decimals: Some(3),
             }],
