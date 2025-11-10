@@ -75,6 +75,7 @@ impl LambdaSStoreTransactionData {
 }
 
 impl TransactionData for LambdaSStoreTransactionData {
+    // 2 habrs are the default max transaction fee for most transaction acrooss the SDK
     fn default_max_transaction_fee(&self) -> crate::Hbar {
         crate::Hbar::new(2)
     }
