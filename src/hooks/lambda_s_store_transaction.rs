@@ -23,7 +23,7 @@ use crate::{
 /// A transaction to store lambda data in hook storage.
 pub type LambdaSStoreTransaction = Transaction<LambdaSStoreTransactionData>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LambdaSStoreTransactionData {
     /// The hook ID to store data for.
     hook_id: Option<HookId>,
