@@ -36,6 +36,8 @@ TokenAirdrop(
                         ),
                         serial_number: 4,
                         is_approval: false,
+                        sender_allowance_hook_call: None,
+                        receiver_allowance_hook_call: None,
                     },
                 ],
                 expected_decimals: None,
@@ -75,6 +77,8 @@ TokenAirdrop(
                         ),
                         serial_number: 1,
                         is_approval: false,
+                        sender_allowance_hook_call: None,
+                        receiver_allowance_hook_call: None,
                     },
                     NftTransfer {
                         sender_account_id: Some(
@@ -101,6 +105,8 @@ TokenAirdrop(
                         ),
                         serial_number: 2,
                         is_approval: false,
+                        sender_allowance_hook_call: None,
+                        receiver_allowance_hook_call: None,
                     },
                     NftTransfer {
                         sender_account_id: Some(
@@ -127,6 +133,8 @@ TokenAirdrop(
                         ),
                         serial_number: 3,
                         is_approval: false,
+                        sender_allowance_hook_call: None,
+                        receiver_allowance_hook_call: None,
                     },
                     NftTransfer {
                         sender_account_id: Some(
@@ -153,6 +161,8 @@ TokenAirdrop(
                         ),
                         serial_number: 4,
                         is_approval: false,
+                        sender_allowance_hook_call: None,
+                        receiver_allowance_hook_call: None,
                     },
                 ],
                 expected_decimals: None,
@@ -180,6 +190,7 @@ TokenAirdrop(
                         ),
                         amount: -1,
                         is_approval: false,
+                        hook_call: None,
                     },
                     AccountAmount {
                         account_id: Some(
@@ -195,6 +206,7 @@ TokenAirdrop(
                         ),
                         amount: 123,
                         is_approval: true,
+                        hook_call: None,
                     },
                     AccountAmount {
                         account_id: Some(
@@ -210,6 +222,7 @@ TokenAirdrop(
                         ),
                         amount: 1,
                         is_approval: false,
+                        hook_call: None,
                     },
                 ],
                 nft_transfers: [
@@ -238,6 +251,8 @@ TokenAirdrop(
                         ),
                         serial_number: 4,
                         is_approval: true,
+                        sender_allowance_hook_call: None,
+                        receiver_allowance_hook_call: None,
                     },
                 ],
                 expected_decimals: None,
@@ -265,6 +280,7 @@ TokenAirdrop(
                         ),
                         amount: -800,
                         is_approval: false,
+                        hook_call: None,
                     },
                     AccountAmount {
                         account_id: Some(
@@ -280,6 +296,7 @@ TokenAirdrop(
                         ),
                         amount: -400,
                         is_approval: false,
+                        hook_call: None,
                     },
                 ],
                 nft_transfers: [],
@@ -310,6 +327,7 @@ TokenAirdrop(
                         ),
                         amount: 400,
                         is_approval: false,
+                        hook_call: None,
                     },
                 ],
                 nft_transfers: [],

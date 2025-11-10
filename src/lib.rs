@@ -248,9 +248,9 @@ pub use hedera_proto::services::ResponseCodeEnum as Status;
 pub use hooks::{
     EvmHookCall,
     EvmHookSpec,
-    // FungibleHookCall,
-    // FungibleHookType,
-    // HookCall,
+    FungibleHookCall,
+    FungibleHookType,
+    HookCall,
     HookCreationDetails,
     HookEntityId,
     HookExtensionPoint,
@@ -258,8 +258,8 @@ pub use hooks::{
     LambdaEvmHook,
     LambdaStorageSlot,
     LambdaStorageUpdate,
-    // NftHookCall,
-    // NftHookType,
+    NftHookCall,
+    NftHookType,
 };
 pub use key::{
     Key,

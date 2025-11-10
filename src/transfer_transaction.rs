@@ -7,6 +7,12 @@ use hedera_proto::services;
 use hedera_proto::services::crypto_service_client::CryptoServiceClient;
 use tonic::transport::Channel;
 
+use crate::hooks::{
+    FungibleHookCall,
+    FungibleHookType,
+    NftHookCall,
+    NftHookType,
+};
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
 use crate::transaction::{
@@ -60,6 +66,9 @@ pub(crate) struct Transfer {
 
     /// If this is an approved transfer.
     pub is_approval: bool,
+
+    /// Optional fungible hook call for this transfer.
+    pub hook_call: Option<FungibleHookCall>,
 }
 
 #[derive(Debug, Clone)]
@@ -75,11 +84,18 @@ pub(crate) struct TokenTransfer {
 }
 
 impl TransferTransaction {
-    fn _hbar_transfer(&mut self, account_id: AccountId, amount: Hbar, approved: bool) -> &mut Self {
+    fn _hbar_transfer(
+        &mut self,
+        account_id: AccountId,
+        amount: Hbar,
+        approved: bool,
+        hook_call: Option<FungibleHookCall>,
+    ) -> &mut Self {
         self.data_mut().transfers.push(Transfer {
             account_id,
             amount: amount.to_tinybars(),
             is_approval: approved,
+            hook_call,
         });
 
         self
@@ -87,12 +103,12 @@ impl TransferTransaction {
 
     /// Add a non-approved hbar transfer to the transaction.
     pub fn hbar_transfer(&mut self, account_id: AccountId, amount: Hbar) -> &mut Self {
-        self._hbar_transfer(account_id, amount, false)
+        self._hbar_transfer(account_id, amount, false, None)
     }
 
     /// Add an approved hbar transfer to the transaction.
     pub fn approved_hbar_transfer(&mut self, account_id: AccountId, amount: Hbar) -> &mut Self {
-        self._hbar_transfer(account_id, amount, true)
+        self._hbar_transfer(account_id, amount, true, None)
     }
 
     /// Returns all transfers associated with this transaction.
@@ -111,8 +127,9 @@ impl TransferTransaction {
         amount: i64,
         approved: bool,
         expected_decimals: Option<u32>,
+        hook_call: Option<FungibleHookCall>,
     ) -> &mut Self {
-        let transfer = Transfer { account_id, amount, is_approval: approved };
+        let transfer = Transfer { account_id, amount, is_approval: approved, hook_call };
         let data = self.data_mut();
 
         if let Some(tt) = data.token_transfers.iter_mut().find(|tt| tt.token_id == token_id) {
@@ -139,7 +156,7 @@ impl TransferTransaction {
         account_id: AccountId,
         amount: i64,
     ) -> &mut Self {
-        self._token_transfer(token_id, account_id, amount, false, None)
+        self._token_transfer(token_id, account_id, amount, false, None, None)
     }
 
     /// Add an approved token transfer to the transaction.
@@ -151,7 +168,7 @@ impl TransferTransaction {
         account_id: AccountId,
         amount: i64,
     ) -> &mut Self {
-        self._token_transfer(token_id, account_id, amount, true, None)
+        self._token_transfer(token_id, account_id, amount, true, None, None)
     }
 
     // todo: make the examples into code, just not sure how to do that.
@@ -166,7 +183,7 @@ impl TransferTransaction {
         amount: i64,
         expected_decimals: u32,
     ) -> &mut Self {
-        self._token_transfer(token_id, account_id, amount, false, Some(expected_decimals))
+        self._token_transfer(token_id, account_id, amount, false, Some(expected_decimals), None)
     }
 
     /// Add an approved token transfer, ensuring that the token has `expected_decimals` decimals.
@@ -180,7 +197,7 @@ impl TransferTransaction {
         amount: i64,
         expected_decimals: u32,
     ) -> &mut Self {
-        self._token_transfer(token_id, account_id, amount, true, Some(expected_decimals))
+        self._token_transfer(token_id, account_id, amount, true, Some(expected_decimals), None)
     }
 
     /// Returns all the token transfers associated associated with this transaction.
@@ -219,6 +236,8 @@ impl TransferTransaction {
         sender_account_id: AccountId,
         receiver_account_id: AccountId,
         approved: bool,
+        sender_hook_call: Option<NftHookCall>,
+        receiver_hook_call: Option<NftHookCall>,
     ) -> &mut Self {
         let NftId { token_id, serial } = nft_id;
         let transfer = TokenNftTransfer {
@@ -227,6 +246,8 @@ impl TransferTransaction {
             sender: sender_account_id,
             receiver: receiver_account_id,
             is_approved: approved,
+            sender_hook_call,
+            receiver_hook_call,
         };
 
         let data = self.data_mut();
@@ -252,7 +273,7 @@ impl TransferTransaction {
         sender_account_id: AccountId,
         receiver_account_id: AccountId,
     ) -> &mut Self {
-        self._nft_transfer(nft_id.into(), sender_account_id, receiver_account_id, true)
+        self._nft_transfer(nft_id.into(), sender_account_id, receiver_account_id, true, None, None)
     }
 
     /// Add a non-approved nft transfer to the transaction.
@@ -262,7 +283,7 @@ impl TransferTransaction {
         sender_account_id: AccountId,
         receiver_account_id: AccountId,
     ) -> &mut Self {
-        self._nft_transfer(nft_id.into(), sender_account_id, receiver_account_id, false)
+        self._nft_transfer(nft_id.into(), sender_account_id, receiver_account_id, false, None, None)
     }
 
     /// Returns all the NFT transfers associated with this transaction.
@@ -272,6 +293,46 @@ impl TransferTransaction {
             .iter()
             .map(|it| (it.token_id, it.nft_transfers.clone()))
             .collect()
+    }
+
+    /// Add a hbar transfer with a fungible hook call.
+    pub fn add_hbar_transfer_with_hook(
+        &mut self,
+        account_id: AccountId,
+        amount: Hbar,
+        hook_call: FungibleHookCall,
+    ) -> &mut Self {
+        self._hbar_transfer(account_id, amount, false, Some(hook_call))
+    }
+
+    /// Add a token transfer with a fungible hook call.
+    pub fn add_token_transfer_with_hook(
+        &mut self,
+        token_id: TokenId,
+        account_id: AccountId,
+        amount: i64,
+        hook_call: FungibleHookCall,
+    ) -> &mut Self {
+        self._token_transfer(token_id, account_id, amount, false, None, Some(hook_call))
+    }
+
+    /// Add an NFT transfer with both sender and receiver hook calls.
+    pub fn add_nft_transfer_with_hook(
+        &mut self,
+        nft_id: impl Into<NftId>,
+        sender: AccountId,
+        receiver: AccountId,
+        sender_hook_call: NftHookCall,
+        receiver_hook_call: NftHookCall,
+    ) -> &mut Self {
+        self._nft_transfer(
+            nft_id.into(),
+            sender,
+            receiver,
+            false,
+            Some(sender_hook_call),
+            Some(receiver_hook_call),
+        )
     }
 }
 
@@ -309,10 +370,27 @@ impl ValidateChecksums for TransferTransactionData {
 
 impl FromProtobuf<services::AccountAmount> for Transfer {
     fn from_protobuf(pb: services::AccountAmount) -> crate::Result<Self> {
+        let hook_call = match pb.hook_call {
+            Some(services::account_amount::HookCall::PreTxAllowanceHook(hook)) => {
+                Some(FungibleHookCall::from_protobuf_with_type(
+                    hook,
+                    FungibleHookType::PreTxAllowanceHook,
+                )?)
+            }
+            Some(services::account_amount::HookCall::PrePostTxAllowanceHook(hook)) => {
+                Some(FungibleHookCall::from_protobuf_with_type(
+                    hook,
+                    FungibleHookType::PrePostTxAllowanceHook,
+                )?)
+            }
+            None => None,
+        };
+
         Ok(Self {
-            amount: pb.amount,
             account_id: AccountId::from_protobuf(pb_getf!(pb, account_id)?)?,
+            amount: pb.amount,
             is_approval: pb.is_approval,
+            hook_call,
         })
     }
 }
@@ -321,11 +399,20 @@ impl ToProtobuf for Transfer {
     type Protobuf = services::AccountAmount;
 
     fn to_protobuf(&self) -> Self::Protobuf {
+        let hook_call = self.hook_call.as_ref().map(|hook| match hook.hook_type {
+            FungibleHookType::PreTxAllowanceHook => {
+                services::account_amount::HookCall::PreTxAllowanceHook(hook.to_protobuf())
+            }
+            FungibleHookType::PrePostTxAllowanceHook => {
+                services::account_amount::HookCall::PrePostTxAllowanceHook(hook.to_protobuf())
+            }
+        });
+
         services::AccountAmount {
-            amount: self.amount,
             account_id: Some(self.account_id.to_protobuf()),
+            amount: self.amount,
             is_approval: self.is_approval,
-            hook_call: None,
+            hook_call,
         }
     }
 }
@@ -367,13 +454,57 @@ impl ToProtobuf for TokenNftTransfer {
     type Protobuf = services::NftTransfer;
 
     fn to_protobuf(&self) -> Self::Protobuf {
+        // Serialize sender hook call to oneof union
+        let sender_allowance_hook_call = self.sender_hook_call.as_ref().map(|hook| {
+            match hook.hook_type {
+                NftHookType::PreHookSender => {
+                    services::nft_transfer::SenderAllowanceHookCall::PreTxSenderAllowanceHook(
+                        hook.to_protobuf(),
+                    )
+                }
+                NftHookType::PrePostHookSender => {
+                    services::nft_transfer::SenderAllowanceHookCall::PrePostTxSenderAllowanceHook(
+                        hook.to_protobuf(),
+                    )
+                }
+                _ => {
+                    // This shouldn't happen as sender_hook_call should only have sender types
+                    services::nft_transfer::SenderAllowanceHookCall::PreTxSenderAllowanceHook(
+                        hook.to_protobuf(),
+                    )
+                }
+            }
+        });
+
+        // Serialize receiver hook call to oneof union
+        let receiver_allowance_hook_call = self.receiver_hook_call.as_ref().map(|hook| {
+            match hook.hook_type {
+                NftHookType::PreHookReceiver => {
+                    services::nft_transfer::ReceiverAllowanceHookCall::PreTxReceiverAllowanceHook(
+                        hook.to_protobuf(),
+                    )
+                }
+                NftHookType::PrePostHookReceiver => {
+                    services::nft_transfer::ReceiverAllowanceHookCall::PrePostTxReceiverAllowanceHook(
+                        hook.to_protobuf(),
+                    )
+                }
+                _ => {
+                    // This shouldn't happen as receiver_hook_call should only have receiver types
+                    services::nft_transfer::ReceiverAllowanceHookCall::PreTxReceiverAllowanceHook(
+                        hook.to_protobuf(),
+                    )
+                }
+            }
+        });
+
         services::NftTransfer {
             sender_account_id: Some(self.sender.to_protobuf()),
             receiver_account_id: Some(self.receiver.to_protobuf()),
             serial_number: self.serial as i64,
             is_approval: self.is_approved,
-            receiver_allowance_hook_call: None,
-            sender_allowance_hook_call: None,
+            sender_allowance_hook_call,
+            receiver_allowance_hook_call,
         }
     }
 }
@@ -519,6 +650,7 @@ mod tests {
                                     ),
                                     amount: 400,
                                     is_approval: false,
+                                    hook_call: None,
                                 },
                                 AccountAmount {
                                     account_id: Some(
@@ -534,6 +666,7 @@ mod tests {
                                     ),
                                     amount: -800,
                                     is_approval: false,
+                                    hook_call: None,
                                 },
                                 AccountAmount {
                                     account_id: Some(
@@ -549,6 +682,7 @@ mod tests {
                                     ),
                                     amount: 400,
                                     is_approval: true,
+                                    hook_call: None,
                                 },
                             ],
                         },
@@ -577,6 +711,7 @@ mod tests {
                                     ),
                                     amount: 400,
                                     is_approval: false,
+                                    hook_call: None,
                                 },
                                 AccountAmount {
                                     account_id: Some(
@@ -592,6 +727,7 @@ mod tests {
                                     ),
                                     amount: -800,
                                     is_approval: false,
+                                    hook_call: None,
                                 },
                                 AccountAmount {
                                     account_id: Some(
@@ -607,6 +743,7 @@ mod tests {
                                     ),
                                     amount: 400,
                                     is_approval: false,
+                                    hook_call: None,
                                 },
                             ],
                             nft_transfers: [],
@@ -637,6 +774,7 @@ mod tests {
                                     ),
                                     amount: 1,
                                     is_approval: false,
+                                    hook_call: None,
                                 },
                                 AccountAmount {
                                     account_id: Some(
@@ -652,6 +790,7 @@ mod tests {
                                     ),
                                     amount: -1,
                                     is_approval: true,
+                                    hook_call: None,
                                 },
                             ],
                             nft_transfers: [],
@@ -692,6 +831,8 @@ mod tests {
                                     ),
                                     serial_number: 2,
                                     is_approval: false,
+                                    sender_allowance_hook_call: None,
+                                    receiver_allowance_hook_call: None,
                                 },
                                 NftTransfer {
                                     sender_account_id: Some(
@@ -718,6 +859,8 @@ mod tests {
                                     ),
                                     serial_number: 1,
                                     is_approval: true,
+                                    sender_allowance_hook_call: None,
+                                    receiver_allowance_hook_call: None,
                                 },
                                 NftTransfer {
                                     sender_account_id: Some(
@@ -744,6 +887,8 @@ mod tests {
                                     ),
                                     serial_number: 3,
                                     is_approval: false,
+                                    sender_allowance_hook_call: None,
+                                    receiver_allowance_hook_call: None,
                                 },
                                 NftTransfer {
                                     sender_account_id: Some(
@@ -770,6 +915,8 @@ mod tests {
                                     ),
                                     serial_number: 4,
                                     is_approval: false,
+                                    sender_allowance_hook_call: None,
+                                    receiver_allowance_hook_call: None,
                                 },
                             ],
                             expected_decimals: None,
@@ -809,6 +956,8 @@ mod tests {
                                     ),
                                     serial_number: 4,
                                     is_approval: false,
+                                    sender_allowance_hook_call: None,
+                                    receiver_allowance_hook_call: None,
                                 },
                             ],
                             expected_decimals: None,

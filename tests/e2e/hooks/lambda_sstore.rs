@@ -45,11 +45,13 @@ async fn create_account_with_hook(
     let account_key = PrivateKey::generate_ed25519();
 
     // Create initial storage slot (use minimal representation - no leading zeros)
-    let storage_slot = LambdaStorageSlot::new(vec![0x01, 0x02, 0x03, 0x04], vec![0x05, 0x06, 0x07, 0x08]);
+    let storage_slot =
+        LambdaStorageSlot::new(vec![0x01, 0x02, 0x03, 0x04], vec![0x05, 0x06, 0x07, 0x08]);
 
     // Create lambda hook with storage
     let spec = EvmHookSpec::new(Some(contract_id));
-    let lambda_hook = LambdaEvmHook::new(spec, vec![LambdaStorageUpdate::StorageSlot(storage_slot)]);
+    let lambda_hook =
+        LambdaEvmHook::new(spec, vec![LambdaStorageUpdate::StorageSlot(storage_slot)]);
 
     let hook_details =
         HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(lambda_hook));
@@ -82,15 +84,17 @@ async fn can_update_storage_slots_with_valid_signatures() -> anyhow::Result<()> 
     };
 
     let contract_id = create_hook_contract(&client).await?;
-    let (_account_id, account_key, hook_id) = create_account_with_hook(&client, contract_id).await?;
+    let (_account_id, account_key, hook_id) =
+        create_account_with_hook(&client, contract_id).await?;
 
     // Create new storage update (use minimal representation - no leading zeros)
-    let new_storage_slot = LambdaStorageSlot::new(vec![0x09, 0x0a, 0x0b, 0x0c], vec![0x0d, 0x0e, 0x0f, 0x10]);
+    let new_storage_slot =
+        LambdaStorageSlot::new(vec![0x09, 0x0a, 0x0b, 0x0c], vec![0x0d, 0x0e, 0x0f, 0x10]);
     let storage_update = LambdaStorageUpdate::StorageSlot(new_storage_slot);
 
     // Update storage slots
     let receipt = LambdaSStoreTransaction::new()
-        .hook_id(hook_id)
+        .set_hook_id(hook_id)
         .add_storage_update(storage_update)
         .freeze_with(&client)?
         .sign(account_key)
@@ -111,16 +115,18 @@ async fn cannot_update_more_than_256_storage_slots() -> anyhow::Result<()> {
     };
 
     let contract_id = create_hook_contract(&client).await?;
-    let (_account_id, account_key, hook_id) = create_account_with_hook(&client, contract_id).await?;
+    let (_account_id, account_key, hook_id) =
+        create_account_with_hook(&client, contract_id).await?;
 
     // Create 257 storage slots (exceeds limit)
-    let storage_slot = LambdaStorageSlot::new(vec![0x01, 0x02, 0x03, 0x04], vec![0x05, 0x06, 0x07, 0x08]);
+    let storage_slot =
+        LambdaStorageSlot::new(vec![0x01, 0x02, 0x03, 0x04], vec![0x05, 0x06, 0x07, 0x08]);
     let storage_updates: Vec<LambdaStorageUpdate> =
         (0..257).map(|_| LambdaStorageUpdate::StorageSlot(storage_slot.clone())).collect();
 
     let result = LambdaSStoreTransaction::new()
-        .hook_id(hook_id)
-        .storage_updates(storage_updates)
+        .set_hook_id(hook_id)
+        .set_storage_updates(storage_updates)
         .freeze_with(&client)?
         .sign(account_key)
         .execute(&client)
@@ -149,16 +155,18 @@ async fn cannot_update_storage_with_invalid_signature() -> anyhow::Result<()> {
     };
 
     let contract_id = create_hook_contract(&client).await?;
-    let (_account_id, _account_key, hook_id) = create_account_with_hook(&client, contract_id).await?;
+    let (_account_id, _account_key, hook_id) =
+        create_account_with_hook(&client, contract_id).await?;
 
     // Use wrong key
     let invalid_key = PrivateKey::generate_ed25519();
 
-    let storage_slot = LambdaStorageSlot::new(vec![0x31, 0x32, 0x33, 0x34], vec![0x35, 0x36, 0x37, 0x38]);
+    let storage_slot =
+        LambdaStorageSlot::new(vec![0x31, 0x32, 0x33, 0x34], vec![0x35, 0x36, 0x37, 0x38]);
     let storage_update = LambdaStorageUpdate::StorageSlot(storage_slot);
 
     let result = LambdaSStoreTransaction::new()
-        .hook_id(hook_id)
+        .set_hook_id(hook_id)
         .add_storage_update(storage_update)
         .freeze_with(&client)?
         .sign(invalid_key)
@@ -185,13 +193,15 @@ async fn cannot_update_storage_for_nonexistent_hook() -> anyhow::Result<()> {
     };
 
     let contract_id = create_hook_contract(&client).await?;
-    let (account_id, account_key, _hook_id) = create_account_with_hook(&client, contract_id).await?;
+    let (account_id, account_key, _hook_id) =
+        create_account_with_hook(&client, contract_id).await?;
 
     // Use non-existent hook ID
     let entity_id = HookEntityId::new(Some(account_id));
     let nonexistent_hook_id = HookId::new(Some(entity_id), 999);
 
-    let storage_slot = LambdaStorageSlot::new(vec![0x41, 0x42, 0x43, 0x44], vec![0x45, 0x46, 0x47, 0x48]);
+    let storage_slot =
+        LambdaStorageSlot::new(vec![0x41, 0x42, 0x43, 0x44], vec![0x45, 0x46, 0x47, 0x48]);
     let storage_update = LambdaStorageUpdate::StorageSlot(storage_slot);
 
     let result = LambdaSStoreTransaction::new()
@@ -224,7 +234,8 @@ async fn can_update_multiple_storage_slots() -> anyhow::Result<()> {
     };
 
     let contract_id = create_hook_contract(&client).await?;
-    let (_account_id, account_key, hook_id) = create_account_with_hook(&client, contract_id).await?;
+    let (_account_id, account_key, hook_id) =
+        create_account_with_hook(&client, contract_id).await?;
 
     // Create multiple storage updates
     let storage_slot1 =
@@ -242,8 +253,8 @@ async fn can_update_multiple_storage_slots() -> anyhow::Result<()> {
 
     // Update multiple storage slots at once
     let receipt = LambdaSStoreTransaction::new()
-        .hook_id(hook_id)
-        .storage_updates(storage_updates)
+        .set_hook_id(hook_id)
+        .set_storage_updates(storage_updates)
         .freeze_with(&client)?
         .sign(account_key)
         .execute(&client)
