@@ -145,6 +145,7 @@ fn main() -> anyhow::Result<()> {
         .extern_path(".proto.TopicID", "crate::services::TopicId")
         .extern_path(".proto.FileID", "crate::services::FileId")
         .extern_path(".proto.NodeAddress", "crate::services::NodeAddress")
+        .extern_path(".proto.Transaction", "crate::services::Transaction")
         .extern_path(
             ".proto.ConsensusMessageChunkInfo",
             "crate::services::ConsensusMessageChunkInfo",
