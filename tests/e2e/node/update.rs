@@ -366,10 +366,8 @@ async fn updates_addressbook_and_retries_after_node_account_id_change() -> anyho
         let mut updated_network = HashMap::new();
         for (addr, acc_id) in network.iter() {
             if *acc_id == new_node_account_id {
-                updated_network.insert(
-                    "network-node2-svc.solo.svc.cluster.local:51211".to_string(),
-                    *acc_id,
-                );
+                updated_network
+                    .insert("network-node2-svc.solo.svc.cluster.local:51211".to_string(), *acc_id);
             } else {
                 updated_network.insert(addr.clone(), *acc_id);
             }
@@ -475,4 +473,3 @@ async fn handles_node_account_id_change_without_mirror_node_setup() -> anyhow::R
 
     Ok(())
 }
-
