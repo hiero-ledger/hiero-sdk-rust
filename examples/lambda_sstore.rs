@@ -132,7 +132,7 @@ async fn main() -> anyhow::Result<()> {
     // Execute LambdaSStoreTransaction
     println!("Executing LambdaSStoreTransaction...");
     let lambda_store_receipt = LambdaSStoreTransaction::new()
-        .hook_id(hook_id)
+        .set_hook_id(hook_id)
         .add_storage_update(storage_update)
         .freeze_with(&client)?
         .sign(account_key)
