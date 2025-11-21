@@ -345,6 +345,7 @@ async fn updates_addressbook_and_retries_after_node_account_id_change() -> anyho
     let has_new_node_account =
         network.values().any(|account_id| *account_id == new_node_account_id);
 
+        println!("network: {:?}", network);
     assert!(has_new_node_account, "Address book should contain the new node account ID");
 
     // Check if the new node account has the specific address and apply workaround if needed
@@ -420,8 +421,9 @@ async fn handles_node_account_id_change_without_mirror_node_setup() -> anyhow::R
 
     // Update node account ID
     let update_resp = NodeUpdateTransaction::new()
-        .node_id(0)
+        .node_id(1)
         .account_id(new_node_account_id)
+        .node_account_ids(vec![AccountId::new(0, 0, 3)])
         .freeze_with(&network_client)?
         .sign(new_account_key)
         .execute(&network_client)
@@ -437,7 +439,7 @@ async fn handles_node_account_id_change_without_mirror_node_setup() -> anyhow::R
     // Submit transaction - should retry since no mirror node to update addressbook
     let test_resp = AccountCreateTransaction::new()
         .set_key_without_alias(another_new_key.public_key())
-        .node_account_ids(vec![AccountId::new(0, 0, 3), AccountId::new(0, 0, 4)])
+        .node_account_ids(vec![AccountId::new(0, 0, 4), AccountId::new(0, 0, 3)])
         .execute(&network_client)
         .await?;
 
@@ -455,6 +457,7 @@ async fn handles_node_account_id_change_without_mirror_node_setup() -> anyhow::R
     // This transaction should succeed with retries
     let final_resp = AccountCreateTransaction::new()
         .set_key_without_alias(another_new_key.public_key())
+        .node_account_ids(vec![AccountId::new(0, 0, 4), AccountId::new(0, 0, 3)])
         .execute(&network_client)
         .await?;
 
@@ -463,13 +466,15 @@ async fn handles_node_account_id_change_without_mirror_node_setup() -> anyhow::R
 
     // Revert the node account ID
     let revert_resp = NodeUpdateTransaction::new()
-        .node_id(0)
-        .node_account_ids(vec![AccountId::new(0, 0, 4)])
-        .account_id(AccountId::new(0, 0, 3))
+        .node_id(1)
+        .node_account_ids(vec![ AccountId::new(0, 0, 3)])
+        .account_id(AccountId::new(0, 0, 4))
         .execute(&network_client)
         .await?;
 
     revert_resp.get_receipt(&network_client).await?;
+    // Wait for changes to propagate
+    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
     Ok(())
 }

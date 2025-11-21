@@ -165,7 +165,7 @@ jobs:
 
       - name: Prepare Hiero Solo for DAB Tests
         id: solo-dab
-        uses: hiero-ledger/hiero-solo-action@9471711c98a56179def6123e1040ab6c2e668881 # branch: 75-add-support-for-multiple-consensus-nodes
+        uses: hiero-ledger/hiero-solo-action@33f19f2eb8cbc49a61567a0781f3bc37bf2a32aa # branch: main
         with:
           hieroVersion: v0.68.0-rc.1
           installMirrorNode: true
