@@ -1,22 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use std::str::FromStr;
-
+use clap::Parser;
 use hedera::{
     AccountBalanceQuery, AccountCreateTransaction, AccountId, BatchTransaction, Client, Hbar, PrivateKey, TransferTransaction
 };
 
+#[derive(Parser, Debug)]
+struct Args {
+    /// Operator account ID (can also be set via OPERATOR_ACCOUNT_ID environment variable)
+    #[clap(long, env)]
+    operator_account_id: AccountId,
+
+    /// Operator private key (can also be set via OPERATOR_KEY environment variable)
+    #[clap(long, env)]
+    operator_key: PrivateKey,
+}
+
 #[tokio::main]
-async fn main() -> hedera::Result<()> {
+async fn main() -> anyhow::Result<()> {
+    // Load environment variables from .env file if present
+    let _ = dotenvy::dotenv();
+    let args = Args::parse();
+
     // Create client for testnet (you can also use mainnet or previewnet)
     let client = Client::for_testnet();
 
     // Set operator (the account that pays for transactions)
-    let operator_key = PrivateKey::from_str_ed25519(
-        "302e020100300506032b6570042204205e999eab5a5c27cc7be2d1e5c9531bbe24009fcfb360c600afc420129089f351"
-    )?;
-    let operator_account = AccountId::from_str("0.0.2672318")?;
-    client.set_operator(operator_account, operator_key.clone());
+    client.set_operator(args.operator_account_id, args.operator_key.clone());
 
     println!("BatchTransaction Example");
     println!("========================");
@@ -43,7 +53,7 @@ async fn main() -> hedera::Result<()> {
     let mut alice_transfer = TransferTransaction::new();
     alice_transfer
         .hbar_transfer(alice, Hbar::new(-1)) // Alice sends 1 HBAR
-        .hbar_transfer(operator_account, Hbar::new(1)); // Operator receives 1 HBAR
+        .hbar_transfer(args.operator_account_id, Hbar::new(1)); // Operator receives 1 HBAR
 
     // Set Batch Key and Batchify the transaction
     client.set_operator(alice, alice_key.clone());
@@ -54,7 +64,7 @@ async fn main() -> hedera::Result<()> {
     let mut bob_transfer = TransferTransaction::new();
     bob_transfer
         .hbar_transfer(bob, Hbar::new(-2)) // Bob sends 2 HBAR
-        .hbar_transfer(operator_account, Hbar::new(2)); // Operator receives 2 HBAR
+        .hbar_transfer(args.operator_account_id, Hbar::new(2)); // Operator receives 2 HBAR
 
     // Set Batch Key and Batchify the transaction
     client.set_operator(bob, bob_key.clone());
@@ -65,12 +75,12 @@ async fn main() -> hedera::Result<()> {
     println!("\nBalances before batch execution:");
     print_balance(&client, "Alice", alice).await?;
     print_balance(&client, "Bob", bob).await?;
-    print_balance(&client, "Operator", operator_account).await?;
+    print_balance(&client, "Operator", args.operator_account_id).await?;
 
     // Step 5: Create and execute the batch transaction
     println!("\nExecuting batch transaction...");
 
-    client.set_operator(operator_account, operator_key.clone());
+    client.set_operator(args.operator_account_id, args.operator_key.clone());
     let mut batch = BatchTransaction::new();
     batch.add_inner_transaction(alice_transfer.into())?;
     batch.add_inner_transaction(bob_transfer.into())?;
@@ -90,7 +100,7 @@ async fn main() -> hedera::Result<()> {
     println!("\nBalances after batch execution:");
     print_balance(&client, "Alice", alice).await?;
     print_balance(&client, "Bob", bob).await?;
-    print_balance(&client, "Operator", operator_account).await?;
+    print_balance(&client, "Operator", args.operator_account_id).await?;
 
     // Step 7: Get inner transaction IDs
     println!("\nInner transaction IDs:");
