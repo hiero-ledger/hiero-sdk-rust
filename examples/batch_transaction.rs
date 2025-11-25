@@ -7,23 +7,23 @@ use hedera::{
 };
 
 #[tokio::main]
-#[ignore] // Will currently not be working as the feature is disabled on testnet
 async fn main() -> hedera::Result<()> {
     // Create client for testnet (you can also use mainnet or previewnet)
     let client = Client::for_testnet();
 
     // Set operator (the account that pays for transactions)
     let operator_key = PrivateKey::from_str_ed25519(
-        "302e020100300506032b657004220420a869f4c6191b9c8c99933e7f6b6611711737e4b1a1a5a4cb5370e719a1f6df98"
+        "302e020100300506032b6570042204205e999eab5a5c27cc7be2d1e5c9531bbe24009fcfb360c600afc420129089f351"
     )?;
-    let operator_account = AccountId::from_str("0.0.1001")?;
-    client.set_operator(operator_account, operator_key);
+    let operator_account = AccountId::from_str("0.0.2672318")?;
+    client.set_operator(operator_account, operator_key.clone());
 
     println!("BatchTransaction Example");
     println!("========================");
 
     // Step 1: Create a batch key
-    // This key will be used to sign the batch transaction itself
+    // This key will be used to sign the batch transaction itself.
+    // IMPORTANT: The BatchTransaction MUST be signed with this key before execution!
     let batch_key = PrivateKey::generate_ed25519();
     println!("Generated batch key: {}", batch_key.public_key());
 
@@ -45,10 +45,10 @@ async fn main() -> hedera::Result<()> {
         .hbar_transfer(alice, Hbar::new(-1)) // Alice sends 1 HBAR
         .hbar_transfer(operator_account, Hbar::new(1)); // Operator receives 1 HBAR
 
-    // Freeze the transaction and set batch key
-    alice_transfer.freeze_with(&client)?;
+    // Set Batch Key and Batchify the transaction
+    client.set_operator(alice, alice_key.clone());
     alice_transfer.set_batch_key(batch_key.public_key().into());
-    alice_transfer.sign(alice_key.clone());
+    alice_transfer.batchify(&client, batch_key.public_key().into())?;
 
     // Create a transfer from Bob to the operator
     let mut bob_transfer = TransferTransaction::new();
@@ -56,10 +56,10 @@ async fn main() -> hedera::Result<()> {
         .hbar_transfer(bob, Hbar::new(-2)) // Bob sends 2 HBAR
         .hbar_transfer(operator_account, Hbar::new(2)); // Operator receives 2 HBAR
 
-    // Freeze the transaction and set batch key
-    bob_transfer.freeze_with(&client)?;
+    // Set Batch Key and Batchify the transaction
+    client.set_operator(bob, bob_key.clone());
     bob_transfer.set_batch_key(batch_key.public_key().into());
-    bob_transfer.sign(bob_key.clone());
+    bob_transfer.batchify(&client, batch_key.public_key().into())?;
 
     // Step 4: Get balances before batch execution
     println!("\nBalances before batch execution:");
@@ -70,10 +70,12 @@ async fn main() -> hedera::Result<()> {
     // Step 5: Create and execute the batch transaction
     println!("\nExecuting batch transaction...");
 
+    client.set_operator(operator_account, operator_key.clone());
     let mut batch = BatchTransaction::new();
     batch.add_inner_transaction(alice_transfer.into())?;
     batch.add_inner_transaction(bob_transfer.into())?;
-    batch.freeze_with(&client)?;
+
+    // Sign the batch transaction with the batch key (CRITICAL!)
     batch.sign(batch_key);
 
     // Execute the batch transaction
