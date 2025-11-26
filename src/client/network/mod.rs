@@ -8,13 +8,25 @@ use std::collections::{
     HashMap,
 };
 use std::num::NonZeroUsize;
+use std::sync::atomic::{
+    AtomicBool,
+    Ordering,
+};
 use std::time::{
     Duration,
     Instant,
 };
 
 use backoff::backoff::Backoff;
+use hyper_openssl::client::legacy::HttpsConnector;
+use hyper_util::client::legacy::connect::HttpConnector;
 use once_cell::sync::OnceCell;
+use openssl::ssl::{
+    SslConnector,
+    SslMethod,
+    SslVerifyMode,
+};
+use openssl::x509::X509;
 use parking_lot::RwLock;
 use rand::thread_rng;
 use tonic::transport::{
@@ -160,6 +172,7 @@ pub(crate) struct NetworkData {
     // Health stuff has to be in an Arc because it needs to stick around even if the map changes.
     health: Box<[Arc<parking_lot::RwLock<NodeHealth>>]>,
     connections: Box<[NodeConnection]>,
+    transport_security: AtomicBool,
 }
 
 impl NetworkData {
@@ -188,6 +201,7 @@ impl NetworkData {
             health: health.into_boxed_slice(),
             connections: connections.into_boxed_slice(),
             backoff: NodeBackoff::default().into(),
+            transport_security: AtomicBool::new(false),
         }
     }
 
@@ -204,7 +218,9 @@ impl NetworkData {
                 .service_endpoints
                 .iter()
                 .filter(|endpoint_str| {
-                    // Check if port matches PLAINTEXT_PORT
+                    // Only include plaintext port (50211) in the base network map
+                    // TLS port (50212) is handled separately via channel_with_tls_conversion()
+                    // when TLS is enabled
                     if let Some(port_str) = endpoint_str.split(':').nth(1) {
                         if let Ok(port) = port_str.parse::<i32>() {
                             return port == NodeConnection::PLAINTEXT_PORT as i32;
@@ -225,14 +241,25 @@ impl NetworkData {
                         match old.connections[account].addresses.symmetric_difference(&new).count()
                         {
                             0 => old.connections[account].clone(),
-                            _ => NodeConnection { addresses: new, channel: OnceCell::new() },
+                            _ => NodeConnection {
+                                addresses: new,
+                                channel: OnceCell::new(),
+                                tls_channels: OnceCell::new(),
+                                tls_channel_index: std::sync::atomic::AtomicUsize::new(0),
+                            },
                         };
 
                     (old.health[account].clone(), connection)
                 }
-                None => {
-                    (Arc::default(), NodeConnection { addresses: new, channel: OnceCell::new() })
-                }
+                None => (
+                    Arc::default(),
+                    NodeConnection {
+                        addresses: new,
+                        channel: OnceCell::new(),
+                        tls_channels: OnceCell::new(),
+                        tls_channel_index: std::sync::atomic::AtomicUsize::new(0),
+                    },
+                ),
             };
 
             map.insert(address.node_account_id, i);
@@ -247,7 +274,16 @@ impl NetworkData {
             health: health.into_boxed_slice(),
             connections: connections.into_boxed_slice(),
             backoff: NodeBackoff::default().into(),
+            transport_security: AtomicBool::new(old.transport_security.load(Ordering::Relaxed)),
         }
+    }
+
+    pub(crate) fn set_transport_security(&self, enabled: bool) {
+        self.transport_security.store(enabled, Ordering::Relaxed);
+    }
+
+    pub(crate) fn transport_security(&self) -> bool {
+        self.transport_security.load(Ordering::Relaxed)
     }
 
     fn with_addresses(&self, addresses: &HashMap<String, AccountId>) -> crate::Result<Self> {
@@ -271,6 +307,8 @@ impl NetworkData {
                     connections.push(NodeConnection {
                         addresses: BTreeSet::from([address.clone()]),
                         channel: OnceCell::new(),
+                        tls_channels: OnceCell::new(),
+                        tls_channel_index: std::sync::atomic::AtomicUsize::new(0),
                     });
 
                     health.push(match self.map.get(node) {
@@ -287,6 +325,7 @@ impl NetworkData {
             health: health.into_boxed_slice(),
             connections: connections.into_boxed_slice(),
             backoff: NodeBackoff::default().into(),
+            transport_security: AtomicBool::new(self.transport_security.load(Ordering::Relaxed)),
         })
     }
 
@@ -388,7 +427,15 @@ impl NetworkData {
     pub(crate) fn channel(&self, index: usize, grpc_deadline: Duration) -> (AccountId, Channel) {
         let id = self.node_ids[index];
 
-        let channel = self.connections[index].channel(grpc_deadline);
+        // Convert addresses based on TLS setting
+        let use_tls = self.transport_security.load(Ordering::Relaxed);
+        let channel = if use_tls {
+            // When TLS is enabled, convert port 50211 to 50212 addresses
+            self.connections[index].channel_with_tls_conversion(grpc_deadline)
+        } else {
+            // When TLS is disabled, use addresses as-is (port 50211)
+            self.connections[index].channel(grpc_deadline)
+        };
 
         (id, channel)
     }
@@ -516,14 +563,28 @@ impl NodeHealth {
     }
 }
 
-#[derive(Clone)]
 struct NodeConnection {
     addresses: BTreeSet<String>,
     channel: OnceCell<Channel>,
+    // For TLS: store all channels and use round-robin
+    tls_channels: OnceCell<Vec<Channel>>,
+    tls_channel_index: std::sync::atomic::AtomicUsize,
+}
+
+impl Clone for NodeConnection {
+    fn clone(&self) -> Self {
+        Self {
+            addresses: self.addresses.clone(),
+            channel: OnceCell::new(), // Channels are cloned on access, so we create a new OnceCell
+            tls_channels: OnceCell::new(), // TLS channels are cloned on access, so we create a new OnceCell
+            tls_channel_index: std::sync::atomic::AtomicUsize::new(0), // Reset index for new instance
+        }
+    }
 }
 
 impl NodeConnection {
     const PLAINTEXT_PORT: u16 = 50211;
+    const TLS_PORT: u16 = 50212;
 
     fn new_static(addresses: &[&'static str]) -> NodeConnection {
         Self {
@@ -533,27 +594,226 @@ impl NodeConnection {
                 .map(|addr| format!("{}:{}", addr, Self::PLAINTEXT_PORT))
                 .collect(),
             channel: OnceCell::default(),
+            tls_channels: OnceCell::new(),
+            tls_channel_index: std::sync::atomic::AtomicUsize::new(0),
         }
     }
 
+    /// Check if any address uses TLS port (50212)
+    fn uses_tls(&self) -> bool {
+        self.addresses.iter().any(|addr| {
+            if let Some(port_str) = addr.split(':').nth(1) {
+                port_str.parse::<u16>().map_or(false, |p| p == Self::TLS_PORT)
+            } else {
+                false
+            }
+        })
+    }
+
+    /// Retrieve the server's certificate dynamically (like JS SDK)
+    /// Connects with rejectUnauthorized: false to get the cert
+    /// Returns the certificate in DER format (like JS SDK's cert.raw)
+    fn retrieve_certificate(host: &str, port: u16) -> Result<Vec<u8>, Error> {
+        // Parse IP from host (remove port if present)
+        let ip = if let Some(colon_pos) = host.rfind(':') { &host[..colon_pos] } else { host };
+
+        // Connect with TLS but without certificate verification (like JS SDK's rejectUnauthorized: false)
+        let mut connector = SslConnector::builder(SslMethod::tls())
+            .map_err(|e| Error::basic_parse(format!("Failed to create SSL connector: {}", e)))?;
+        connector.set_verify(SslVerifyMode::NONE);
+        connector
+            .set_alpn_protos(b"\x02h2")
+            .map_err(|e| Error::basic_parse(format!("Failed to set ALPN: {}", e)))?;
+        let connector = connector.build();
+
+        // Create TCP connection with timeout
+        let stream = std::net::TcpStream::connect((ip, port)).map_err(|e| {
+            Error::basic_parse(format!("Failed to connect to {}:{}: {}", ip, port, e))
+        })?;
+
+        // Set read/write timeouts
+        stream
+            .set_read_timeout(Some(Duration::from_secs(10)))
+            .map_err(|e| Error::basic_parse(format!("Failed to set read timeout: {}", e)))?;
+        stream
+            .set_write_timeout(Some(Duration::from_secs(10)))
+            .map_err(|e| Error::basic_parse(format!("Failed to set write timeout: {}", e)))?;
+
+        // Connect with TLS using "127.0.0.1" as hostname (like JS SDK's grpc.ssl_target_name_override)
+        // This bypasses hostname verification during certificate retrieval
+        let ssl_stream = connector.connect("127.0.0.1", stream).map_err(|e| {
+            Error::basic_parse(format!("Failed to establish TLS connection: {}", e))
+        })?;
+
+        // Get peer certificate (like JS SDK's socket.getPeerCertificate())
+        let cert = ssl_stream
+            .ssl()
+            .peer_certificate()
+            .ok_or_else(|| Error::basic_parse("No certificate retrieved from server"))?;
+
+        // Convert to DER format (like JS SDK's cert.raw)
+        let cert_der = cert.to_der().map_err(|e| {
+            Error::basic_parse(format!("Failed to convert certificate to DER: {}", e))
+        })?;
+
+        Ok(cert_der)
+    }
+
     pub(crate) fn channel(&self, grpc_deadline: Duration) -> Channel {
-        let channel = self
-            .channel
-            .get_or_init(|| {
-                let addresses = self.addresses.iter().map(|it| {
-                    Endpoint::from_shared(format!("tcp://{it}"))
-                        .unwrap()
-                        .keep_alive_timeout(Duration::from_secs(10))
-                        .keep_alive_while_idle(true)
-                        .tcp_keepalive(Some(Duration::from_secs(10)))
-                        .connect_timeout(grpc_deadline)
-                });
+        // Check if we should use TLS (port 50212) - like JS SDK checks nodePort === "50212"
+        if self.uses_tls() {
+            // For TLS, we need to use round-robin across all channels
+            let channels = self.tls_channels.get_or_init(|| self.create_all_tls_channels(grpc_deadline));
 
-                Channel::balance_list(addresses)
+            // Use round-robin to select a channel
+            let index = self.tls_channel_index.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                % channels.len();
+            channels[index].clone()
+        } else {
+            self.channel.get_or_init(|| self.create_plaintext_channel(grpc_deadline)).clone()
+        }
+    }
+
+    /// Create channel with TLS conversion (converts port 50211 -> 50212)
+    pub(crate) fn channel_with_tls_conversion(&self, grpc_deadline: Duration) -> Channel {
+        // Convert port 50211 addresses to 50212 for TLS
+        let tls_addresses: BTreeSet<String> = self
+            .addresses
+            .iter()
+            .map(|addr| {
+                addr.replace(&format!(":{}", Self::PLAINTEXT_PORT), &format!(":{}", Self::TLS_PORT))
             })
-            .clone();
+            .collect();
 
-        channel
+        // Create temporary connection with TLS addresses
+        let tls_connection = NodeConnection {
+            addresses: tls_addresses,
+            channel: OnceCell::default(),
+            tls_channels: OnceCell::default(),
+            tls_channel_index: std::sync::atomic::AtomicUsize::new(0),
+        };
+
+        tls_connection.channel(grpc_deadline)
+    }
+
+    fn create_plaintext_channel(&self, grpc_deadline: Duration) -> Channel {
+        let addresses = self.addresses.iter().map(|it| {
+            Endpoint::from_shared(format!("tcp://{it}"))
+                .unwrap()
+                .keep_alive_timeout(Duration::from_secs(10))
+                .keep_alive_while_idle(true)
+                .tcp_keepalive(Some(Duration::from_secs(10)))
+                .connect_timeout(grpc_deadline)
+        });
+
+        Channel::balance_list(addresses)
+    }
+
+    fn create_tls_channel(&self, grpc_deadline: Duration) -> Channel {
+        // This method is kept for backward compatibility
+        // It now delegates to create_all_tls_channels and returns the first channel
+        // The channel() method uses round-robin to distribute requests across all TLS channels
+        self.create_all_tls_channels(grpc_deadline)[0].clone()
+    }
+
+    fn create_all_tls_channels(&self, grpc_deadline: Duration) -> Vec<Channel> {
+        // First, collect all TLS addresses and retrieve certificates for all of them
+        let mut tls_addresses = Vec::new();
+        let mut certificates = Vec::new();
+
+        for addr in &self.addresses {
+            // Parse address
+            let (host, port_str) = if let Some(colon_pos) = addr.rfind(':') {
+                (&addr[..colon_pos], &addr[colon_pos + 1..])
+            } else {
+                continue;
+            };
+
+            let port: u16 = match port_str.parse() {
+                Ok(p) => p,
+                Err(_) => continue,
+            };
+
+            // Only process TLS ports
+            if port != Self::TLS_PORT {
+                continue;
+            }
+
+            // Retrieve certificate from server (like JS SDK's _retrieveCertificate)
+            match Self::retrieve_certificate(host, port) {
+                Ok(cert_der) => {
+                    // Convert DER to X509
+                    match X509::from_der(&cert_der) {
+                        Ok(cert) => {
+                            tls_addresses.push(addr.clone());
+                            certificates.push(cert);
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "Warning: Failed to parse certificate DER for {}: {}",
+                                addr, e
+                            );
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Warning: Failed to retrieve certificate from {}: {}", addr, e);
+                }
+            }
+        }
+
+        if tls_addresses.is_empty() {
+            panic!("No TLS endpoints available - certificate retrieval failed for all nodes");
+        }
+
+        // Create a single SSL connector that trusts ALL retrieved certificates
+        let mut ssl_builder = match SslConnector::builder(SslMethod::tls()) {
+            Ok(builder) => builder,
+            Err(e) => {
+                panic!("Failed to create SSL builder: {}", e);
+            }
+        };
+
+        // Add all retrieved certificates to the trust store
+        let cert_store = ssl_builder.cert_store_mut();
+        for cert in certificates {
+            if let Err(e) = cert_store.add_cert(cert) {
+                eprintln!("Warning: Failed to add certificate to trust store: {}", e);
+            }
+        }
+
+        // Set verification with callback to bypass hostname verification
+        ssl_builder.set_verify_callback(SslVerifyMode::PEER, |_preverify_ok, _x509_ctx| true);
+
+        ssl_builder.set_alpn_protos(b"\x02h2").expect("Failed to set ALPN protocols");
+
+        // Create a single HTTPS connector that trusts all certificates
+        let mut http = HttpConnector::new();
+        http.enforce_http(false);
+        let https = HttpsConnector::with_connector(http, ssl_builder)
+            .expect("Failed to create HTTPS connector");
+
+        // Create channels for all TLS addresses using the shared connector
+        // The connector trusts all certificates we retrieved from all nodes
+        let channels: Vec<Channel> = tls_addresses
+            .iter()
+            .map(|addr| {
+                let uri = format!("https://{}", addr);
+                Endpoint::from_shared(uri)
+                    .expect("Invalid URI")
+                    .keep_alive_timeout(Duration::from_secs(10))
+                    .keep_alive_while_idle(true)
+                    .tcp_keepalive(Some(Duration::from_secs(10)))
+                    .connect_timeout(grpc_deadline)
+                    .connect_with_connector_lazy(https.clone())
+            })
+            .collect();
+
+        if channels.is_empty() {
+            panic!("No TLS channels created");
+        }
+
+        channels
     }
 }
 
@@ -682,6 +942,8 @@ mod tests {
                 "example.com:50211".to_string(),
             ]),
             channel: OnceCell::new(),
+            tls_channels: OnceCell::new(),
+            tls_channel_index: std::sync::atomic::AtomicUsize::new(0),
         };
 
         assert_eq!(connection.addresses.len(), 2);
