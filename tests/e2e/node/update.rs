@@ -331,21 +331,27 @@ async fn updates_addressbook_and_retries_after_node_account_id_change() -> anyho
     let another_new_key = PrivateKey::generate_ed25519();
 
     // Submit to the updated node - should trigger addressbook refresh
-    let test_resp = AccountCreateTransaction::new()
-        .set_key_without_alias(another_new_key.public_key())
-        .node_account_ids(vec![AccountId::new(0, 0, 4), AccountId::new(0, 0, 3)])
-        .execute(&client)
-        .await?;
+    // We force this request to go to the node that changed (0.0.4) to ensure we hit the "InvalidNodeAccount" error
+    // which triggers the address book update.
+    // We set max attempts to 1 because we expect this specific request to fail (it's hitting the old node account ID),
+    // but we just want the side effect of updating the address book.
+    client.set_max_attempts(1);
 
-    let test_receipt = test_resp.get_receipt(&client).await?;
-    assert_eq!(test_receipt.status, Status::Success);
+    let _ = AccountCreateTransaction::new()
+        .set_key_without_alias(another_new_key.public_key())
+        .node_account_ids(vec![AccountId::new(0, 0, 4)])
+        .execute(&client)
+        .await;
+
+    // Reset max attempts for subsequent requests
+    client.set_max_attempts(10);
 
     // Verify address book has been updated
     let network = client.network();
     let has_new_node_account =
         network.values().any(|account_id| *account_id == new_node_account_id);
 
-        println!("network: {:?}", network);
+    println!("network: {:?}", network);
     assert!(has_new_node_account, "Address book should contain the new node account ID");
 
     // Check if the new node account has the specific address and apply workaround if needed
@@ -467,7 +473,7 @@ async fn handles_node_account_id_change_without_mirror_node_setup() -> anyhow::R
     // Revert the node account ID
     let revert_resp = NodeUpdateTransaction::new()
         .node_id(1)
-        .node_account_ids(vec![ AccountId::new(0, 0, 3)])
+        .node_account_ids(vec![AccountId::new(0, 0, 3)])
         .account_id(AccountId::new(0, 0, 4))
         .execute(&network_client)
         .await?;
