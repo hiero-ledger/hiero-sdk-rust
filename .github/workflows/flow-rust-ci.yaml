@@ -165,7 +165,7 @@ jobs:
 
       - name: Prepare Hiero Solo for DAB Tests
         id: solo-dab
-        uses: hiero-ledger/hiero-solo-action@33f19f2eb8cbc49a61567a0781f3bc37bf2a32aa # branch: main
+        uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
         with:
           hieroVersion: v0.68.0-rc.1
           installMirrorNode: true
