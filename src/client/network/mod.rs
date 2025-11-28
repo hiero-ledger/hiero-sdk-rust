@@ -377,7 +377,7 @@ impl NetworkData {
             node_ids = self.node_ids.to_vec();
         }
 
-        let node_sample_amount = (node_ids.len() + 2) / 3;
+        let node_sample_amount = node_ids.len();
 
         let node_id_indecies =
             rand::seq::index::sample(&mut thread_rng(), node_ids.len(), node_sample_amount);

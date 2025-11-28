@@ -8,6 +8,7 @@ mod ethereum_transaction;
 mod fee_schedules;
 mod file;
 mod network_version_info;
+mod node;
 mod node_address_book;
 mod prng;
 /// Resources for various tests.
