@@ -25,7 +25,6 @@ use crate::common::{
 use crate::resources::BIG_CONTENTS;
 
 #[tokio::test]
-#[ignore] // Due to NotSupported error from network
 async fn can_execute_batch_transaction() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
@@ -58,7 +57,6 @@ async fn can_execute_batch_transaction() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[ignore] // Due to NotSupported error from network
 async fn can_execute_large_batch_transaction() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
@@ -162,7 +160,7 @@ async fn cannot_execute_batch_transaction_with_blacklisted_transaction() -> anyh
 }
 
 #[tokio::test]
-#[ignore]
+#[ignore] // Ignored for now as we run the tests with 0.0.2 which does not incur fees
 async fn cannot_execute_batch_transaction_with_invalid_inner_batch_key() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
@@ -231,7 +229,6 @@ async fn cannot_execute_batch_transaction_without_batchifying_inner() -> anyhow:
 }
 
 #[tokio::test]
-#[ignore] // Due to NotSupported error from network
 async fn can_execute_batch_transaction_with_chunked_inner() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
