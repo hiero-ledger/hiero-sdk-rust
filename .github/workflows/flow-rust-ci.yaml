@@ -114,7 +114,6 @@ jobs:
         uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
         with:
           installMirrorNode: true
-          hieroVersion: v0.65.0
 
       - name: Create env file
         run: |
@@ -129,4 +128,61 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
+          cargo test --workspace -- --skip node::update
+  dab-tests:
+    needs: ['check']
+    runs-on: hiero-client-sdk-linux-medium
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          submodules: 'recursive'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
+        with:
+          toolchain: 1.88.0
+
+      - name: Setup GCC and OpenSSL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
+
+      - name: Install Protoc
+        uses: step-security/setup-protoc@f6eb248a6510dbb851209febc1bd7981604a52e3 # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Prepare Hiero Solo for DAB Tests
+        id: solo-dab
+        uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
+        with:
+          hieroVersion: v0.68.0-rc.1
+          installMirrorNode: true
+          mirrorNodeVersion: v0.142.0
+          dualMode: true
+
+      - name: Create env file for DAB Tests
+        run: |
+            touch .env
+            echo TEST_OPERATOR_KEY="${{ steps.solo-dab.outputs.privateKey }}" >> .env
+            echo TEST_OPERATOR_ID="${{ steps.solo-dab.outputs.accountId }}" >> .env
+            echo TEST_NETWORK_NAME="localhost" >> .env
+            echo TEST_RUN_NONFREE="1" >> .env
+            cat .env
+
+      - name: Run DAB Tests
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
+          cargo test --test e2e node::update --  --test-threads=1

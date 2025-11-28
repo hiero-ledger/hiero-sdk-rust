@@ -814,6 +814,8 @@ impl FromProtobuf<services::SubType> for FeeDataType {
             SubType::ScheduleCreateContractCall => Self::ScheduleCreateContractCall,
             SubType::TopicCreateWithCustomFees => Self::TopicCreateWithCustomFees,
             SubType::SubmitMessageWithCustomFees => Self::SubmitMessageWithCustomFees,
+            // Hooks are not implemented, map to Default
+            SubType::CryptoTransferWithHooks => Self::Default,
         };
 
         Ok(value)

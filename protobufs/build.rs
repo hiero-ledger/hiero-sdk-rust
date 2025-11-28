@@ -50,8 +50,16 @@ fn main() -> anyhow::Result<()> {
         .chain(read_dir(&services_tmp_path.join("auxiliary").join("tss"))?)
         .filter_map(|entry| {
             let entry = entry.ok()?;
+            let path = entry.path();
 
-            entry.file_type().ok()?.is_file().then(|| entry.path())
+            // Skip hook-related proto files
+            if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+                if file_name.starts_with("hook_") || file_name.starts_with("lambda_") {
+                    return None;
+                }
+            }
+
+            entry.file_type().ok()?.is_file().then(|| path)
         })
         .collect();
 
@@ -67,6 +75,8 @@ fn main() -> anyhow::Result<()> {
         let contents = contents.replace("com.hedera.hapi.services.auxiliary.history.", "");
         let contents = contents.replace("com.hedera.hapi.services.auxiliary.tss.", "");
         let contents = contents.replace("com.hedera.hapi.platform.event.", "");
+        let contents = contents.replace("com.hedera.hapi.node.hooks.", "");
+        let contents = contents.replace("com.hedera.hapi.node.hooks.legacy.", "");
 
         let contents = remove_unused_types(&contents);
 
@@ -259,6 +269,121 @@ fn remove_useless_comments(path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+// Helper function to comment out entire oneof blocks by name
+fn comment_out_oneof(contents: &str, oneof_name: &str) -> String {
+    let lines: Vec<&str> = contents.lines().collect();
+    let mut result = Vec::new();
+    let mut i = 0;
+    let oneof_pattern = format!("oneof {} {{", oneof_name);
+
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if line.starts_with(&oneof_pattern) || line == &format!("oneof {}", oneof_name) {
+            // Found the start of the oneof, comment it out and track brace depth
+            let original_line = lines[i];
+            let indent = original_line.len() - original_line.trim_start().len();
+            let indent_str = &original_line[..indent];
+
+            let mut depth = 0;
+            let mut found_opening_brace = line.contains('{');
+
+            result.push(format!("{}// {}", indent_str, lines[i].trim_start()));
+            if found_opening_brace {
+                depth = 1;
+            }
+            i += 1;
+
+            // Comment out all lines until we close the oneof block
+            while i < lines.len() && (depth > 0 || !found_opening_brace) {
+                let current_line = lines[i];
+                let current_indent = current_line.len() - current_line.trim_start().len();
+                let current_indent_str = &current_line[..current_indent.min(current_line.len())];
+
+                result.push(format!("{}// {}", current_indent_str, current_line.trim_start()));
+
+                if !found_opening_brace && current_line.trim_start().starts_with('{') {
+                    found_opening_brace = true;
+                    depth = 1;
+                }
+
+                if found_opening_brace {
+                    for ch in current_line.chars() {
+                        if ch == '{' {
+                            depth += 1;
+                        } else if ch == '}' {
+                            depth -= 1;
+                        }
+                    }
+                }
+
+                i += 1;
+                if depth == 0 && found_opening_brace {
+                    break;
+                }
+            }
+        } else {
+            result.push(lines[i].to_string());
+            i += 1;
+        }
+    }
+
+    result.join("\n")
+}
+
+// Helper function to comment out entire message blocks
+fn comment_out_message(contents: &str, message_name: &str) -> String {
+    let lines: Vec<&str> = contents.lines().collect();
+    let mut result = Vec::new();
+    let mut i = 0;
+    let message_start = format!("message {} {{", message_name);
+
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if line.starts_with(&message_start) || line == &format!("message {}", message_name) {
+            // Found the start of the message, comment it out and track brace depth
+            let mut depth = 0;
+            let mut found_opening_brace = line.contains('{');
+
+            result.push(format!("// {}", lines[i]));
+            if found_opening_brace {
+                depth = 1;
+            }
+            i += 1;
+
+            // Comment out all lines until we close the message block
+            while i < lines.len() && (depth > 0 || !found_opening_brace) {
+                let current_line = lines[i];
+                result.push(format!("// {}", current_line));
+
+                if !found_opening_brace && current_line.trim_start().starts_with('{') {
+                    found_opening_brace = true;
+                    depth = 1;
+                }
+
+                if found_opening_brace {
+                    for ch in current_line.chars() {
+                        if ch == '{' {
+                            depth += 1;
+                        } else if ch == '}' {
+                            depth -= 1;
+                        }
+                    }
+                }
+
+                i += 1;
+                if depth == 0 && found_opening_brace {
+                    break;
+                }
+            }
+        } else {
+            result.push(lines[i].to_string());
+            i += 1;
+        }
+    }
+
+    result.join("\n")
+}
+
 // Temporary function to remove unused types in transaction.proto
 fn remove_unused_types(contents: &str) -> String {
     let contents = contents.replace(
@@ -331,6 +456,64 @@ fn remove_unused_types(contents: &str) -> String {
         "com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody",
         "// com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody",
     );
+
+    // Comment out hook-related imports
+    let contents = contents.replace(
+        "import \"services/hook_types.proto\";",
+        "// import \"services/hook_types.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"services/hook_dispatch.proto\";",
+        "// import \"services/hook_dispatch.proto\";",
+    );
+
+    let contents = contents.replace(
+        "import \"services/lambda_sstore.proto\";",
+        "// import \"services/lambda_sstore.proto\";",
+    );
+
+    // Comment out hook transaction bodies in transaction.proto
+    // Note: After package replacement, these become just the class name
+    let contents = contents.replace(
+        "HookDispatchTransactionBody hook_dispatch",
+        "// HookDispatchTransactionBody hook_dispatch",
+    );
+
+    let contents = contents.replace(
+        "LambdaSStoreTransactionBody lambda_sstore",
+        "// LambdaSStoreTransactionBody lambda_sstore",
+    );
+
+    // Comment out hook creation details in various transaction bodies
+    // Note: After package replacement, this becomes just "HookCreationDetails"
+    let contents = contents.replace(
+        "repeated HookCreationDetails hook_creation_details",
+        "// repeated HookCreationDetails hook_creation_details",
+    );
+
+    // Comment out hook_ids_to_delete field
+    let contents = contents
+        .replace("repeated int64 hook_ids_to_delete", "// repeated int64 hook_ids_to_delete");
+
+    // Comment out HookId references
+    let contents = contents.replace("proto.HookId", "// proto.HookId");
+    let contents = contents.replace("HookId hook_id", "// HookId hook_id");
+
+    // Comment out entire Hook message blocks
+    let contents = comment_out_message(&contents, "HookId");
+    let contents = comment_out_message(&contents, "HookEntityId");
+    let contents = comment_out_message(&contents, "HookCall");
+    let contents = comment_out_message(&contents, "EvmHookCall");
+
+    // Comment out all hook-related oneofs that contain HookCall fields
+    let contents = comment_out_oneof(&contents, "hook_call");
+    let contents = comment_out_oneof(&contents, "sender_allowance_hook_call");
+    let contents = comment_out_oneof(&contents, "receiver_allowance_hook_call");
+
+    // Comment out hook-related enum values in HederaFunctionality
+    let contents = contents.replace("LambdaSStore = 109;", "// LambdaSStore = 109;");
+    let contents = contents.replace("HookDispatch = 110;", "// HookDispatch = 110;");
 
     contents
 }

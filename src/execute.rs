@@ -127,7 +127,9 @@ pub(crate) trait Execute: ValidateChecksums {
     fn response_pre_check_status(response: &Self::GrpcResponse) -> crate::Result<i32>;
 }
 
-struct ExecuteContext {
+/// The lifetime `'a` represents the lifetime of the borrowed `Client` reference.
+/// This ensures the context cannot outlive the client it references.
+struct ExecuteContext<'a> {
     // When `Some` the `transaction_id` will be regenerated when expired.
     operator_account_id: Option<AccountId>,
     network: Arc<NetworkData>,
@@ -135,6 +137,8 @@ struct ExecuteContext {
     max_attempts: usize,
     // timeout for a single grpc request.
     grpc_timeout: Option<Duration>,
+    // Reference to the client for triggering network updates
+    client: &'a Client,
 }
 
 pub(crate) async fn execute<E>(
@@ -187,17 +191,21 @@ where
             operator_account_id,
             network: client.net().0.load_full(),
             grpc_timeout: backoff.grpc_timeout,
+            client,
         },
         executable,
     )
     .await
 }
 
-async fn execute_inner<E>(ctx: &ExecuteContext, executable: &E) -> crate::Result<E::Response>
+async fn execute_inner<'a, E>(
+    ctx: &ExecuteContext<'a>,
+    executable: &E,
+) -> crate::Result<E::Response>
 where
     E: Execute + Sync,
 {
-    fn recurse_ping(ctx: &ExecuteContext, index: usize) -> BoxFuture<'_, bool> {
+    fn recurse_ping<'a, 'b: 'a>(ctx: &'b ExecuteContext<'a>, index: usize) -> BoxFuture<'b, bool> {
         Box::pin(async move {
             let ctx = ExecuteContext {
                 operator_account_id: None,
@@ -205,6 +213,7 @@ where
                 backoff_config: ctx.backoff_config.clone(),
                 max_attempts: ctx.max_attempts,
                 grpc_timeout: ctx.grpc_timeout,
+                client: ctx.client,
             };
             let ping_query = PingQuery::new(ctx.network.node_ids()[index]);
 
@@ -350,8 +359,8 @@ fn map_tonic_error(
     }
 }
 
-async fn execute_single<E: Execute + Sync>(
-    ctx: &ExecuteContext,
+async fn execute_single<'a, E: Execute + Sync>(
+    ctx: &ExecuteContext<'a>,
     executable: &E,
     node_index: usize,
     transaction_id: &mut Option<TransactionId>,
@@ -443,6 +452,34 @@ async fn execute_single<E: Execute + Sync>(
             *transaction_id = Some(new);
 
             Ok(ControlFlow::Continue(executable.make_error_pre_check(
+                status,
+                transaction_id.as_ref(),
+                response,
+            )))
+        }
+
+        Status::InvalidNodeAccount => {
+            // The node account is invalid or doesn't match the submitted node
+            // Mark the node as unhealthy and retry with backoff
+            // This typically indicates the address book is out of date
+            ctx.network.mark_node_unhealthy(node_index);
+
+            log::warn!(
+                "Node at index {node_index} / node id {node_account_id} returned {status:?}, marking unhealthy. Updating address book before retry."
+            );
+
+            // Update the network address book before retrying, but only if mirror network is configured
+            if !ctx.client.mirror_network().is_empty() {
+                ctx.client.refresh_network().await;
+                log::info!("Address book updated");
+                log::info!("network: {:?}", ctx.client.network());
+            } else {
+                log::warn!(
+                    "Cannot update address book: no mirror network configured. Retrying with existing network configuration."
+                );
+            }
+
+            Err(retry::Error::Transient(executable.make_error_pre_check(
                 status,
                 transaction_id.as_ref(),
                 response,
