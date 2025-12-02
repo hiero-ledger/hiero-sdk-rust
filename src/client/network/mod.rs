@@ -385,10 +385,10 @@ impl NetworkData {
         node_id_indecies.into_iter().map(|index| node_ids[index]).collect()
     }
 
-    pub(crate) fn channel(&self, index: usize) -> (AccountId, Channel) {
+    pub(crate) fn channel(&self, index: usize, grpc_deadline: Duration) -> (AccountId, Channel) {
         let id = self.node_ids[index];
 
-        let channel = self.connections[index].channel();
+        let channel = self.connections[index].channel(grpc_deadline);
 
         (id, channel)
     }
@@ -536,7 +536,7 @@ impl NodeConnection {
         }
     }
 
-    pub(crate) fn channel(&self) -> Channel {
+    pub(crate) fn channel(&self, grpc_deadline: Duration) -> Channel {
         let channel = self
             .channel
             .get_or_init(|| {
@@ -546,7 +546,7 @@ impl NodeConnection {
                         .keep_alive_timeout(Duration::from_secs(10))
                         .keep_alive_while_idle(true)
                         .tcp_keepalive(Some(Duration::from_secs(10)))
-                        .connect_timeout(Duration::from_secs(10))
+                        .connect_timeout(grpc_deadline)
                 });
 
                 Channel::balance_list(addresses)

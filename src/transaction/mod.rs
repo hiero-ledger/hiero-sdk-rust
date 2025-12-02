@@ -72,6 +72,10 @@ pub struct Transaction<D> {
     signers: Vec<AnySigner>,
 
     sources: Option<TransactionSources>,
+
+    /// The gRPC deadline for this transaction.
+    /// If set, this overrides the client's default grpc_deadline.
+    grpc_deadline: Option<std::time::Duration>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -124,6 +128,7 @@ where
             },
             signers: Vec::new(),
             sources: None,
+            grpc_deadline: None,
         }
     }
 }
@@ -153,7 +158,7 @@ where
 
 impl<D> Transaction<D> {
     pub(crate) fn from_parts(body: TransactionBody<D>, signers: Vec<AnySigner>) -> Self {
-        Self { body, signers, sources: None }
+        Self { body, signers, sources: None, grpc_deadline: None }
     }
 
     pub(crate) fn is_frozen(&self) -> bool {
@@ -295,6 +300,23 @@ impl<D> Transaction<D> {
     /// Maximum length of 100 characters.
     pub fn transaction_memo(&mut self, memo: impl AsRef<str>) -> &mut Self {
         self.body_mut().transaction_memo = memo.as_ref().to_owned();
+        self
+    }
+
+    /// Returns the gRPC deadline for this transaction.
+    ///
+    /// If set, this overrides the client's default grpc_deadline.
+    #[must_use]
+    pub fn get_grpc_deadline(&self) -> Option<std::time::Duration> {
+        self.grpc_deadline
+    }
+
+    /// Sets the gRPC deadline for this transaction.
+    ///
+    /// This overrides the client's default grpc_deadline.
+    /// The deadline applies to both the channel connection timeout and the request execution timeout.
+    pub fn grpc_deadline(&mut self, deadline: std::time::Duration) -> &mut Self {
+        self.grpc_deadline = Some(deadline);
         self
     }
 
@@ -1267,7 +1289,7 @@ where
     D: DowncastOwned<U>,
 {
     fn downcast_owned(self) -> Result<Transaction<U>, Self> {
-        let Self { body, signers, sources } = self;
+        let Self { body, signers, sources, grpc_deadline } = self;
         let TransactionBody {
             data,
             node_account_ids,
@@ -1300,6 +1322,7 @@ where
                 },
                 signers,
                 sources,
+                grpc_deadline,
             }),
 
             Err(data) => Err(Self {
@@ -1318,6 +1341,7 @@ where
                 },
                 signers,
                 sources,
+                grpc_deadline,
             }),
         }
     }

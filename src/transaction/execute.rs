@@ -178,6 +178,10 @@ where
         self.body.regenerate_transaction_id
     }
 
+    fn grpc_deadline(&self) -> Option<std::time::Duration> {
+        self.grpc_deadline
+    }
+
     fn make_request(
         &self,
         transaction_id: Option<&TransactionId>,

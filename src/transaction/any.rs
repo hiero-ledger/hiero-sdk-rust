@@ -915,6 +915,7 @@ impl AnyTransaction {
             },
             signers: Vec::new(),
             sources: None,
+            grpc_deadline: None,
         })
     }
 }
@@ -1180,6 +1181,7 @@ macro_rules! impl_cast_any {
                         },
                         signers: transaction.signers,
                         sources: transaction.sources,
+                        grpc_deadline: transaction.grpc_deadline,
                     }
                 }
             }

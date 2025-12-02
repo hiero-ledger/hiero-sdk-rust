@@ -31,6 +31,7 @@ async fn create_account(client: &Client, name: &'static str) -> hedera::Result<A
         .set_key_without_alias(key.public_key())
         .initial_balance(Hbar::new(5))
         .account_memo(format!("[sdk::rust::account_allowance_example::{name}]"))
+        .grpc_deadline(Duration::from_secs(10))
         .execute(client)
         .await?
         .get_receipt(client)

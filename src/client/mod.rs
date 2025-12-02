@@ -46,6 +46,9 @@ mod config;
 mod network;
 mod operator;
 
+/// Default gRPC deadline for requests and channel connection timeouts
+pub(crate) const DEFAULT_GRPC_DEADLINE: Duration = Duration::from_secs(10);
+
 #[derive(Copy, Clone)]
 pub(crate) struct ClientBackoff {
     pub(crate) max_backoff: Duration,
@@ -53,7 +56,7 @@ pub(crate) struct ClientBackoff {
     pub(crate) initial_backoff: Duration,
     pub(crate) max_attempts: usize,
     pub(crate) request_timeout: Option<Duration>,
-    pub(crate) grpc_timeout: Option<Duration>,
+    pub(crate) grpc_deadline: Duration,
 }
 
 impl Default for ClientBackoff {
@@ -63,7 +66,7 @@ impl Default for ClientBackoff {
             initial_backoff: Duration::from_millis(backoff::default::INITIAL_INTERVAL_MILLIS),
             max_attempts: 10,
             request_timeout: None,
-            grpc_timeout: None,
+            grpc_deadline: DEFAULT_GRPC_DEADLINE,
         }
     }
 }
@@ -568,6 +571,19 @@ impl Client {
         self.0.backoff.write().max_backoff = max_backoff;
     }
 
+    /// Returns the gRPC deadline for individual requests.
+    #[must_use]
+    pub fn grpc_deadline(&self) -> Duration {
+        self.backoff().grpc_deadline
+    }
+
+    /// Sets the gRPC deadline for individual requests.
+    ///
+    /// This timeout is used both for establishing connections to nodes and for individual gRPC calls.
+    pub fn set_grpc_deadline(&self, grpc_deadline: Duration) {
+        self.0.backoff.write().grpc_deadline = grpc_deadline;
+    }
+
     #[must_use]
     pub(crate) fn backoff(&self) -> ClientBackoff {
         *self.0.backoff.read()
@@ -641,7 +657,7 @@ impl Client {
     /// Note: This method is not part of the public API and may be changed or removed in future versions.
     pub(crate) async fn refresh_network(&self) {
         match NodeAddressBookQuery::new()
-            .execute_mirrornet(self.mirrornet().load().channel(), None)
+            .execute_mirrornet(self.mirrornet().load().channel(self.grpc_deadline()), None)
             .await
         {
             Ok(address_book) => {
