@@ -55,7 +55,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
+        uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # v1
         with:
           toolchain: 1.88.0
 
@@ -90,7 +90,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
+        uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # v1
         with:
           toolchain: 1.88.0
 
@@ -144,7 +144,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
+        uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # v1
         with:
           toolchain: 1.88.0
 
