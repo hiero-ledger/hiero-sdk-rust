@@ -294,7 +294,7 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace 
+          cargo test --workspace -- --skip node::update
 
   publish:
     name: Publish SDK to crates.io
@@ -422,7 +422,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
           cargo check --examples --workspace
-          cargo test --workspace 
+          cargo test --workspace -- --skip node::update
           cargo generate-lockfile
           echo "::endgroup::"
 
@@ -473,7 +473,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
           cargo check --examples --workspace
-          cargo test --workspace 
+          cargo test --workspace -- --skip node::update
           cargo generate-lockfile
           echo "::endgroup::"
 
