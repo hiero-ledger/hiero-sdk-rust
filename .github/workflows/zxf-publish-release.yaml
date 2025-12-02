@@ -28,7 +28,7 @@ permissions:
   contents: write
 
 env:
-  CONSENSUS_NODE_VERSION: "v0.65.0"
+  CONSENSUS_NODE_VERSION: "v0.68.0-rc.1"
   NODE_VERSION: "20.18.3"
 
 jobs:
