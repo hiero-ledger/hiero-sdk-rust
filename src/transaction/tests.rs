@@ -159,8 +159,8 @@ async fn chunked_to_from_bytes() -> crate::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_client_grpc_deadline() {
+#[tokio::test]
+async fn test_client_grpc_deadline() {
     // Test 1: Client defaults to DEFAULT_GRPC_DEADLINE (10 seconds)
     let client = Client::for_testnet();
     assert_eq!(client.grpc_deadline(), DEFAULT_GRPC_DEADLINE);
@@ -202,8 +202,8 @@ fn test_transaction_grpc_deadline() {
     assert_eq!(tx.get_grpc_deadline(), Some(new_deadline));
 }
 
-#[test]
-fn test_transaction_grpc_deadline_precedence() {
+#[tokio::test]
+async fn test_transaction_grpc_deadline_precedence() {
     // Test that transaction's grpc_deadline can override client's default
     // This is tested through the Execute trait implementation
 
