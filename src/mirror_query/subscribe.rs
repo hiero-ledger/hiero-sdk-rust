@@ -125,7 +125,7 @@ where
         });
 
         // note: we don't care about keeping the mirrornet around, so, we just take the channel (which is arc-like)
-        let channel = client.mirrornet().load().channel();
+        let channel = client.mirrornet().load().channel(client.grpc_deadline());
 
         Self::make_item_stream(crate::mirror_query::subscribe(channel, timeout, self.clone()))
     }
@@ -141,7 +141,7 @@ where
         });
 
         // note: we don't care about keeping the mirrornet around, so, we just take the channel (which is arc-like)
-        let channel = client.mirrornet().load().channel();
+        let channel = client.mirrornet().load().channel(client.grpc_deadline());
 
         Self::try_collect(crate::mirror_query::subscribe(channel, timeout, self.clone()))
     }
