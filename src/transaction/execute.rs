@@ -182,6 +182,10 @@ where
         self.grpc_deadline
     }
 
+    fn request_timeout(&self) -> Option<std::time::Duration> {
+        self.request_timeout
+    }
+
     fn make_request(
         &self,
         transaction_id: Option<&TransactionId>,

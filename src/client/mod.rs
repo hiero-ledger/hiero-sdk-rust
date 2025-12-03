@@ -49,6 +49,9 @@ mod operator;
 /// Default gRPC deadline for requests and channel connection timeouts
 pub(crate) const DEFAULT_GRPC_DEADLINE: Duration = Duration::from_secs(10);
 
+/// Default request timeout for the entire operation (including retries)
+pub(crate) const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
+
 #[derive(Copy, Clone)]
 pub(crate) struct ClientBackoff {
     pub(crate) max_backoff: Duration,
@@ -65,7 +68,7 @@ impl Default for ClientBackoff {
             max_backoff: Duration::from_millis(backoff::default::MAX_INTERVAL_MILLIS),
             initial_backoff: Duration::from_millis(backoff::default::INITIAL_INTERVAL_MILLIS),
             max_attempts: 10,
-            request_timeout: None,
+            request_timeout: Some(DEFAULT_REQUEST_TIMEOUT),
             grpc_deadline: DEFAULT_GRPC_DEADLINE,
         }
     }

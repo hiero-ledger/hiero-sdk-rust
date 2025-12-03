@@ -76,6 +76,10 @@ pub struct Transaction<D> {
     /// The gRPC deadline for this transaction.
     /// If set, this overrides the client's default grpc_deadline.
     grpc_deadline: Option<std::time::Duration>,
+
+    /// The request timeout for this transaction (including retries).
+    /// If set, this overrides the client's request_timeout and any timeout passed to execute methods.
+    request_timeout: Option<std::time::Duration>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -129,6 +133,7 @@ where
             signers: Vec::new(),
             sources: None,
             grpc_deadline: None,
+            request_timeout: None,
         }
     }
 }
@@ -158,7 +163,7 @@ where
 
 impl<D> Transaction<D> {
     pub(crate) fn from_parts(body: TransactionBody<D>, signers: Vec<AnySigner>) -> Self {
-        Self { body, signers, sources: None, grpc_deadline: None }
+        Self { body, signers, sources: None, grpc_deadline: None, request_timeout: None }
     }
 
     pub(crate) fn is_frozen(&self) -> bool {
@@ -317,6 +322,23 @@ impl<D> Transaction<D> {
     /// The deadline applies to both the channel connection timeout and the request execution timeout.
     pub fn grpc_deadline(&mut self, deadline: std::time::Duration) -> &mut Self {
         self.grpc_deadline = Some(deadline);
+        self
+    }
+
+    /// Returns the request timeout for this transaction (including retries).
+    ///
+    /// If set, this takes priority over the timeout passed to execute methods and the client's request_timeout.
+    #[must_use]
+    pub fn get_request_timeout(&self) -> Option<std::time::Duration> {
+        self.request_timeout
+    }
+
+    /// Sets the request timeout for this transaction (including retries).
+    ///
+    /// This takes priority over the timeout passed to execute methods and the client's request_timeout.
+    /// The timeout applies to the entire operation including all retry attempts.
+    pub fn request_timeout(&mut self, timeout: std::time::Duration) -> &mut Self {
+        self.request_timeout = Some(timeout);
         self
     }
 
@@ -1289,7 +1311,7 @@ where
     D: DowncastOwned<U>,
 {
     fn downcast_owned(self) -> Result<Transaction<U>, Self> {
-        let Self { body, signers, sources, grpc_deadline } = self;
+        let Self { body, signers, sources, grpc_deadline, request_timeout } = self;
         let TransactionBody {
             data,
             node_account_ids,
@@ -1323,6 +1345,7 @@ where
                 signers,
                 sources,
                 grpc_deadline,
+                request_timeout,
             }),
 
             Err(data) => Err(Self {

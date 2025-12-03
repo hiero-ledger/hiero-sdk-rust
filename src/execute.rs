@@ -78,6 +78,13 @@ pub(crate) trait Execute: ValidateChecksums {
         None
     }
 
+    /// Returns the request timeout for this request (including retries).
+    ///
+    /// If set, this takes priority over the timeout passed to execute methods and the client's request_timeout.
+    fn request_timeout(&self) -> Option<std::time::Duration> {
+        None
+    }
+
     /// Check whether to retry an pre-check status.
     fn should_retry_pre_check(&self, _status: Status) -> bool {
         false
@@ -187,9 +194,17 @@ where
         .with_initial_interval(backoff.initial_backoff)
         .with_max_interval(backoff.max_backoff);
 
-    if let Some(timeout) = timeout.or(backoff.request_timeout) {
-        backoff_builder.with_max_elapsed_time(Some(timeout));
-    }
+    // Timeout priority (matching JS SDK behavior):
+    // 1. Transaction's request_timeout field (if set)
+    // 2. Parameter timeout passed to execute
+    // 3. Client's request_timeout
+    // 4. Default DEFAULT_REQUEST_TIMEOUT
+    let request_timeout = executable
+        .request_timeout()
+        .or(timeout)
+        .or(backoff.request_timeout)
+        .unwrap_or(client::DEFAULT_REQUEST_TIMEOUT);
+    backoff_builder.with_max_elapsed_time(Some(request_timeout));
 
     // Use transaction's grpc_deadline if set, otherwise use client's default
     let grpc_deadline = executable.grpc_deadline().unwrap_or(backoff.grpc_deadline);
