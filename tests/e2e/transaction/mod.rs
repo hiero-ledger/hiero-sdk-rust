@@ -33,6 +33,8 @@ use crate::common::{
     setup_nonfree,
     TestEnvironment,
 };
+
+mod hip_1300;
 // HIP-745: Tests for serializing and deserializing incomplete non-frozen transactions
 #[tokio::test]
 async fn basic() -> anyhow::Result<()> {
