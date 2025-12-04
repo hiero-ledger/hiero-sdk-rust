@@ -3,9 +3,11 @@ use std::str::FromStr;
 use hedera::{
     AccountCreateTransaction,
     AccountId,
+    Error,
     FileCreateTransaction,
     Hbar,
     PrivateKey,
+    Status,
 };
 
 use crate::common::setup_nonfree;
@@ -88,24 +90,13 @@ async fn should_not_create_transaction_with_more_than_6kbs_of_data_in_a_file_if_
     let result = transaction.execute(&client).await;
 
     match result {
-        Ok(response) => {
-            let receipt_result = response.get_receipt(&client).await;
-            match receipt_result {
-                Ok(_) => anyhow::bail!("Transaction should have failed"),
-                Err(e) => {
-                    // Check if error contains TRANSACTION_OVERSIZE
-                    if !e.to_string().contains("TRANSACTION_OVERSIZE") {
-                        anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            // Check if error contains TRANSACTION_OVERSIZE
-            if !e.to_string().contains("TRANSACTION_OVERSIZE") {
-                anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e);
-            }
-        }
+        Ok(response) => match response.get_receipt(&client).await {
+            Ok(_) => anyhow::bail!("Transaction should have failed"),
+            Err(Error::ReceiptStatus { status: Status::TransactionOversize, .. }) => {}
+            Err(e) => anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e),
+        },
+        Err(Error::TransactionPreCheckStatus { status: Status::TransactionOversize, .. }) => {}
+        Err(e) => anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e),
     }
 
     Ok(())
@@ -142,24 +133,13 @@ async fn should_not_create_transaction_with_more_than_6kbs_of_data_with_signatur
     let result = transaction.execute(&client).await;
 
     match result {
-        Ok(response) => {
-            let receipt_result = response.get_receipt(&client).await;
-            match receipt_result {
-                Ok(_) => anyhow::bail!("Transaction should have failed"),
-                Err(e) => {
-                    // Check if error contains TRANSACTION_OVERSIZE
-                    if !e.to_string().contains("TRANSACTION_OVERSIZE") {
-                        anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            // Check if error contains TRANSACTION_OVERSIZE
-            if !e.to_string().contains("TRANSACTION_OVERSIZE") {
-                anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e);
-            }
-        }
+        Ok(response) => match response.get_receipt(&client).await {
+            Ok(_) => anyhow::bail!("Transaction should have failed"),
+            Err(Error::ReceiptStatus { status: Status::TransactionOversize, .. }) => {}
+            Err(e) => anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e),
+        },
+        Err(Error::TransactionPreCheckStatus { status: Status::TransactionOversize, .. }) => {}
+        Err(e) => anyhow::bail!("Expected TRANSACTION_OVERSIZE error, got: {:?}", e),
     }
 
     Ok(())
