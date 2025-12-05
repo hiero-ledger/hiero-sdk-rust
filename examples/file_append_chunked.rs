@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountId, FileAppendTransaction, FileContentsQuery, FileCreateTransaction, Hbar, PrivateKey
 };
 
@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    let client = hedera::Client::for_name(&args.hedera_network)?;
+    let client = hiero_sdk::Client::for_name(&args.hedera_network)?;
 
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 

@@ -3,8 +3,8 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
-use hedera_proto::services::file_service_client::FileServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::file_service_client::FileServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;

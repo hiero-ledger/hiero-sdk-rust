@@ -1,7 +1,7 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use tonic::transport::Channel;
 
 use super::{

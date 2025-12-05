@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 use std::ops::Not;
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::crypto_service_client::CryptoServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;

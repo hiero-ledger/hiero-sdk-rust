@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use hedera::Client;
+use hiero_sdk::Client;
 
 #[tokio::test]
 async fn initialize_with_mirror_network() -> anyhow::Result<()> {

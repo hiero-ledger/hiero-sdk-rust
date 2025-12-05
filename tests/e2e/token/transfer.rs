@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     FixedFee,
     FixedFeeData,
@@ -166,7 +166,7 @@ async fn insufficient_balance_for_fee_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
+        Err(hiero_sdk::Error::ReceiptStatus {
             status: Status::InsufficientSenderAccountBalanceForCustomFee,
             ..
         })
@@ -224,7 +224,7 @@ async fn unowned_token_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InsufficientTokenBalance, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InsufficientTokenBalance, .. })
     );
 
     token.burn(&client, 10).await?;
@@ -320,7 +320,7 @@ async fn incorrect_decimals_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::UnexpectedTokenDecimals, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::UnexpectedTokenDecimals, .. })
     );
 
     token.burn(&client, 10).await?;

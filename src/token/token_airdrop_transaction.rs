@@ -2,8 +2,8 @@
 
 use std::collections::HashMap;
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::token_service_client::TokenServiceClient;
 use tonic::transport::Channel;
 
 use super::{
@@ -406,7 +406,7 @@ mod tests {
     use std::str::FromStr;
 
     use expect_test::expect_file;
-    use hedera_proto::services::{
+    use hiero_sdk_proto::services::{
         self,
         AccountAmount,
         NftTransfer,

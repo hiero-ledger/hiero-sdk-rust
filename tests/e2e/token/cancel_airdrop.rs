@@ -2,7 +2,7 @@ use std::iter::repeat;
 
 use anyhow::anyhow;
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery,
     PrivateKey,
     Status,
@@ -443,7 +443,7 @@ async fn cannot_cancel_nonexisting_airdrops_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -492,7 +492,7 @@ async fn cannot_cancel_canceled_airdrops_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidPendingAirdropId, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidPendingAirdropId, .. })
     );
 
     Ok(())
@@ -510,7 +510,7 @@ async fn cannot_cancel_empty_airdrop_list_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::EmptyPendingAirdropIdList,
             ..
         })
@@ -553,7 +553,7 @@ async fn cannot_cancel_duplicated_entries_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::PendingAirdropIdRepeated,
             ..
         })

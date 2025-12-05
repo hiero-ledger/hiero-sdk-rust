@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::token_service_client::TokenServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
@@ -168,7 +168,7 @@ impl ToProtobuf for TokenMintTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services::TokenMintTransactionBody;
+    use hiero_sdk_proto::services::TokenMintTransactionBody;
 
     use crate::protobuf::{
         FromProtobuf,

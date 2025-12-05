@@ -25,7 +25,7 @@ mod unpause;
 mod update;
 mod wipe;
 
-use hedera::{
+use hiero_sdk::{
     Client,
     PublicKey,
     TokenBurnTransaction,
@@ -113,7 +113,7 @@ impl FungibleToken {
         client: &Client,
         owner: &Account,
         params: CreateFungibleToken,
-    ) -> hedera::Result<Self> {
+    ) -> hiero_sdk::Result<Self> {
         let owner_public_key = owner.key.public_key();
 
         let token_id = {
@@ -202,7 +202,7 @@ impl FungibleToken {
             .initial_supply(1_000_000)
             .max_supply(1_000_000)
             .treasury_account_id(owner.id)
-            .token_supply_type(hedera::TokenSupplyType::Finite)
+            .token_supply_type(hiero_sdk::TokenSupplyType::Finite)
             .admin_key(owner.key.public_key())
             .freeze_key(owner.key.public_key())
             .wipe_key(owner.key.public_key())
@@ -219,8 +219,8 @@ impl FungibleToken {
         Ok(FungibleToken { id, owner: owner.clone() })
     }
 
-    async fn burn(&self, client: &Client, supply: u64) -> hedera::Result<()> {
-        hedera::TokenBurnTransaction::new()
+    async fn burn(&self, client: &Client, supply: u64) -> hiero_sdk::Result<()> {
+        hiero_sdk::TokenBurnTransaction::new()
             .token_id(self.id)
             .amount(supply)
             .sign(self.owner.key.clone())
@@ -232,7 +232,7 @@ impl FungibleToken {
         Ok(())
     }
 
-    async fn delete(self, client: &Client) -> hedera::Result<()> {
+    async fn delete(self, client: &Client) -> hiero_sdk::Result<()> {
         TokenDeleteTransaction::new()
             .token_id(self.id)
             .sign(self.owner.key)
@@ -251,12 +251,12 @@ pub(crate) struct Nft {
 }
 
 impl Nft {
-    pub(crate) async fn create(client: &Client, owner: &Account) -> hedera::Result<Self> {
+    pub(crate) async fn create(client: &Client, owner: &Account) -> hiero_sdk::Result<Self> {
         let owner_public_key = owner.key.public_key();
         let token_id = TokenCreateTransaction::new()
             .name("ffff")
             .symbol("F")
-            .token_type(hedera::TokenType::NonFungibleUnique)
+            .token_type(hiero_sdk::TokenType::NonFungibleUnique)
             .treasury_account_id(owner.id)
             .admin_key(owner_public_key)
             .freeze_key(owner_public_key)
@@ -282,7 +282,7 @@ impl Nft {
         &self,
         client: &Client,
         nfts_to_mint: u8,
-    ) -> hedera::Result<Vec<i64>> {
+    ) -> hiero_sdk::Result<Vec<i64>> {
         self.mint(client, (0..nfts_to_mint).map(|it| [it])).await
     }
 
@@ -290,12 +290,12 @@ impl Nft {
         &self,
         client: &Client,
         metadata: impl IntoIterator<Item = Bytes>,
-    ) -> hedera::Result<Vec<i64>> {
+    ) -> hiero_sdk::Result<Vec<i64>> {
         async fn inner(
             nft: &Nft,
             client: &Client,
             mut tx: TokenMintTransaction,
-        ) -> hedera::Result<Vec<i64>> {
+        ) -> hiero_sdk::Result<Vec<i64>> {
             let serials = tx
                 .token_id(nft.id)
                 .sign(nft.owner.key.clone())
@@ -319,13 +319,13 @@ impl Nft {
         &self,
         client: &Client,
         serials: impl IntoIterator<Item = i64>,
-    ) -> hedera::Result<()> {
+    ) -> hiero_sdk::Result<()> {
         // non generic inner function to save generic instantiations... Not that that's a huge concern here.
         async fn inner(
             nft: &Nft,
             client: &Client,
             mut tx: TokenBurnTransaction,
-        ) -> hedera::Result<()> {
+        ) -> hiero_sdk::Result<()> {
             tx.token_id(nft.id)
                 .sign(nft.owner.key.clone())
                 .execute(client)
@@ -342,7 +342,7 @@ impl Nft {
         inner(self, client, tx).await
     }
 
-    pub(crate) async fn delete(self, client: &Client) -> hedera::Result<()> {
+    pub(crate) async fn delete(self, client: &Client) -> hiero_sdk::Result<()> {
         TokenDeleteTransaction::new()
             .token_id(self.id)
             .sign(self.owner.key)
@@ -361,7 +361,7 @@ async fn mint_several_nfts_at_once() -> anyhow::Result<()> {
         let token_id = TokenCreateTransaction::new()
             .name("sdk::rust::e2e::mint_many")
             .symbol("µ")
-            .token_type(hedera::TokenType::NonFungibleUnique)
+            .token_type(hiero_sdk::TokenType::NonFungibleUnique)
             .treasury_account_id(op.account_id)
             .admin_key(op.private_key.clone().public_key())
             .supply_key(op.private_key.clone().public_key())
@@ -452,7 +452,7 @@ async fn create_nft(
     client: &Client,
     token_id: TokenId,
     nfts: usize,
-) -> hedera::Result<TransactionResponse> {
+) -> hiero_sdk::Result<TransactionResponse> {
     TokenMintTransaction::default()
         .token_id(token_id)
         .metadata(vec![Vec::from([0x12, 0x34]); nfts])

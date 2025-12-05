@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     Status,
     TokenUnpauseTransaction,
@@ -55,7 +55,7 @@ async fn missing_token_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
     );
 
     Ok(())
@@ -80,7 +80,7 @@ async fn missing_pause_key_sig_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -105,7 +105,7 @@ async fn missing_pause_key_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::TokenHasNoPauseKey, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenHasNoPauseKey, .. })
     );
 
     Ok(())

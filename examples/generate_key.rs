@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera::PrivateKey;
+use hiero_sdk::PrivateKey;
 
 fn main() {
     // Generate a Ed25519 key

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction, AccountDeleteTransaction, AccountId, Client, Hbar, Key, KeyList, PrivateKey, ScheduleCreateTransaction, ScheduleId, ScheduleInfoQuery, ScheduleSignTransaction, Status, TransactionReceiptQuery, TransferTransaction
 };
 

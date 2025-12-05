@@ -2,7 +2,7 @@
 
 use core::fmt;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::pending_airdrop_id::PendingAirdropId;
 use crate::protobuf::{
@@ -76,7 +76,7 @@ impl ToProtobuf for PendingAirdropRecord {
             pending_airdrop_id: Some(self.pending_airdrop_id.to_protobuf()),
             pending_airdrop_value: self
                 .pending_airdrop_value
-                .map(|v| hedera_proto::services::PendingAirdropValue { amount: v }),
+                .map(|v| hiero_sdk_proto::services::PendingAirdropValue { amount: v }),
         }
     }
 }

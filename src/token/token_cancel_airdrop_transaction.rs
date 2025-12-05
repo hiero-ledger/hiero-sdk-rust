@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::token_service_client::TokenServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
@@ -136,7 +136,7 @@ impl FromProtobuf<services::TokenCancelAirdropTransactionBody>
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
 
     use crate::pending_airdrop_id::PendingAirdropId;
     use crate::protobuf::{

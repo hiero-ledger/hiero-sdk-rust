@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery, AccountCreateTransaction, AccountId, BatchTransaction, Client, Hbar, PrivateKey, TransferTransaction
 };
 
@@ -117,9 +117,9 @@ async fn main() -> anyhow::Result<()> {
 
 async fn create_account(
     client: &Client,
-    public_key: hedera::PublicKey,
+    public_key: hiero_sdk::PublicKey,
     initial_balance: Hbar,
-) -> hedera::Result<AccountId> {
+) -> hiero_sdk::Result<AccountId> {
     let response = AccountCreateTransaction::new()
         .set_key_without_alias(public_key)
         .initial_balance(initial_balance)
@@ -128,13 +128,17 @@ async fn create_account(
 
     let receipt = response.get_receipt(client).await?;
     receipt.account_id.ok_or_else(|| {
-        hedera::Error::TimedOut(Box::new(hedera::Error::GrpcStatus(
+        hiero_sdk::Error::TimedOut(Box::new(hiero_sdk::Error::GrpcStatus(
             tonic::Status::not_found("account_id not found in receipt"),
         )))
     })
 }
 
-async fn print_balance(client: &Client, name: &str, account_id: AccountId) -> hedera::Result<()> {
+async fn print_balance(
+    client: &Client,
+    name: &str,
+    account_id: AccountId,
+) -> hiero_sdk::Result<()> {
     let balance = AccountBalanceQuery::new()
         .account_id(account_id)
         .execute(client)

@@ -1,4 +1,4 @@
-use hedera::Error;
+use hiero_sdk::Error;
 use jsonrpsee::types::error::INTERNAL_ERROR_CODE;
 use jsonrpsee::types::{
     ErrorObject,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{AccountId, Client, FileId, NodeAddressBookQuery, PrivateKey};
+use hiero_sdk::{AccountId, Client, FileId, NodeAddressBookQuery, PrivateKey};
 
 #[derive(Parser, Debug)]
 struct Args {

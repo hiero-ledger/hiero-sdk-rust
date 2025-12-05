@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery, AccountCreateTransaction, AccountId, Client, Hbar, PrivateKey, Transaction, TransferTransaction
 };
 
@@ -120,7 +120,7 @@ async fn main() -> anyhow::Result<()> {
 fn exchange_signs_transaction(
     exchange_key: PrivateKey,
     transaction_data: &[u8],
-) -> hedera::Result<Vec<u8>> {
+) -> hiero_sdk::Result<Vec<u8>> {
     Transaction::from_bytes(transaction_data)?
         .sign(exchange_key)
         .to_bytes()

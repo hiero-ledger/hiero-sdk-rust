@@ -2,7 +2,7 @@ use std::iter::repeat;
 
 use anyhow::anyhow;
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery,
     PrivateKey,
     Status,
@@ -365,7 +365,7 @@ async fn cannot_claim_nonexisting_tokens_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -418,7 +418,7 @@ async fn cannot_claim_already_claimed_airdrop_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidPendingAirdropId, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidPendingAirdropId, .. })
     );
 
     Ok(())
@@ -436,7 +436,7 @@ async fn cannot_claim_empty_pending_airdrops_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::EmptyPendingAirdropIdList,
             ..
         })
@@ -479,7 +479,7 @@ async fn cannot_claim_duplicate_entries_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::PendingAirdropIdRepeated,
             ..
         })
@@ -531,7 +531,10 @@ async fn cannot_claim_deleted_tokens_fail() -> anyhow::Result<()> {
         .get_record(&client)
         .await;
 
-    assert_matches!(res, Err(hedera::Error::ReceiptStatus { status: Status::TokenWasDeleted, .. }));
+    assert_matches!(
+        res,
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenWasDeleted, .. })
+    );
 
     Ok(())
 }
@@ -593,7 +596,7 @@ async fn cannot_claim_frozen_token_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::AccountFrozenForToken, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::AccountFrozenForToken, .. })
     );
 
     Ok(())

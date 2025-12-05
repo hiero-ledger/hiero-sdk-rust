@@ -9,7 +9,7 @@ use futures_util::{
     TryFutureExt,
     TryStreamExt,
 };
-use hedera_proto::{
+use hiero_sdk_proto::{
     mirror,
     services,
 };

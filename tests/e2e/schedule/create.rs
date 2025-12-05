@@ -6,7 +6,7 @@ use std::hash::{
 use std::thread::sleep;
 
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
@@ -224,7 +224,10 @@ async fn double_schedule_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::IdenticalScheduleAlreadyCreated, .. })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::IdenticalScheduleAlreadyCreated,
+            ..
+        })
     );
 
     account.delete(&client).await?;
@@ -386,7 +389,7 @@ async fn schedule_ahead_one_year_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
+        Err(hiero_sdk::Error::ReceiptStatus {
             status: Status::ScheduleExpirationTimeTooFarInFuture,
             ..
         })
@@ -424,7 +427,7 @@ async fn schedule_in_the_past_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
+        Err(hiero_sdk::Error::ReceiptStatus {
             status: Status::ScheduleExpirationTimeMustBeHigherThanConsensusTime,
             ..
         })

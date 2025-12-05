@@ -5,7 +5,7 @@ use std::sync::{
     Mutex,
 };
 
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountId,
     AccountUpdateTransaction,

@@ -18,7 +18,7 @@
  * ‍
  */
 
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountId,
     AnyTransaction,

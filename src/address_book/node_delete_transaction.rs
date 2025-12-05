@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::address_book_service_client::AddressBookServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::address_book_service_client::AddressBookServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
@@ -121,7 +121,7 @@ impl ToProtobuf for NodeDeleteTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect_file;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
 
     use super::NodeDeleteTransaction;
     use crate::address_book::NodeDeleteTransactionData;

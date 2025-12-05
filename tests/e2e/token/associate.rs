@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     Status,
     TokenAssociateTransaction,
@@ -73,7 +73,7 @@ async fn missing_account_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidAccountId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidAccountId, .. })
     );
 
     Ok(())
@@ -97,7 +97,7 @@ async fn missing_signature_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     account.delete(&client).await?;
