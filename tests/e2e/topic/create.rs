@@ -278,7 +278,10 @@ async fn update_fee_schedule_key_without_permission_fails() -> anyhow::Result<()
 
     assert!(matches!(
         result.unwrap_err(),
-        hiero_sdk::Error::ReceiptStatus { status: hiero_sdk::Status::FeeScheduleKeyCannotBeUpdated, .. }
+        hiero_sdk::Error::ReceiptStatus {
+            status: hiero_sdk::Status::FeeScheduleKeyCannotBeUpdated,
+            ..
+        }
     ));
 
     Ok(())

@@ -160,8 +160,8 @@ impl ToProtobuf for FreezeTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hiero_sdk_proto::services;
     use hex_literal::hex;
+    use hiero_sdk_proto::services;
     use time::OffsetDateTime;
 
     use crate::protobuf::{

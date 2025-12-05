@@ -224,7 +224,10 @@ async fn double_schedule_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::IdenticalScheduleAlreadyCreated, .. })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::IdenticalScheduleAlreadyCreated,
+            ..
+        })
     );
 
     account.delete(&client).await?;

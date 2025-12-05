@@ -19,7 +19,10 @@ pub struct Account {
 }
 
 impl Account {
-    pub async fn create(initial_balance: Hbar, client: &hiero_sdk::Client) -> hiero_sdk::Result<Self> {
+    pub async fn create(
+        initial_balance: Hbar,
+        client: &hiero_sdk::Client,
+    ) -> hiero_sdk::Result<Self> {
         let key = PrivateKey::generate_ed25519();
 
         let receipt = hiero_sdk::AccountCreateTransaction::new()

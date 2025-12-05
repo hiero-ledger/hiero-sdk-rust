@@ -398,8 +398,8 @@ impl ToProtobuf for AccountCreateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hiero_sdk_proto::services;
     use hex_literal::hex;
+    use hiero_sdk_proto::services;
     use time::Duration;
 
     use crate::account::AccountCreateTransactionData;

@@ -112,8 +112,8 @@ impl FromProtobuf<services::Key> for Key {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use hiero_sdk_proto::services;
     use hex_literal::hex;
+    use hiero_sdk_proto::services;
 
     use crate::protobuf::FromProtobuf;
     use crate::{

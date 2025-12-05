@@ -457,7 +457,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -471,7 +474,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -485,7 +491,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -499,7 +508,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -513,7 +525,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -527,7 +542,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -541,7 +559,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -555,7 +576,10 @@ async fn update_keys_empty_keylist_without_admin_sig_fails() -> anyhow::Result<(
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;
@@ -597,7 +621,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -611,7 +638,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -625,7 +655,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -639,7 +672,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -653,7 +689,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -667,7 +706,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -681,7 +723,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -695,7 +740,10 @@ async fn update_keys_unusable_key_without_admin_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;
@@ -758,7 +806,10 @@ async fn update_admin_key_to_usuable_key_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;
@@ -986,7 +1037,10 @@ async fn remove_empty_keylist_keys_lower_privilege_keys_sigs_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::TokenIsImmutable,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1002,7 +1056,10 @@ async fn remove_empty_keylist_keys_lower_privilege_keys_sigs_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::TokenIsImmutable,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1018,7 +1075,10 @@ async fn remove_empty_keylist_keys_lower_privilege_keys_sigs_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::TokenIsImmutable,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1034,7 +1094,10 @@ async fn remove_empty_keylist_keys_lower_privilege_keys_sigs_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::TokenIsImmutable,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1050,7 +1113,10 @@ async fn remove_empty_keylist_keys_lower_privilege_keys_sigs_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::TokenIsImmutable,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1066,7 +1132,10 @@ async fn remove_empty_keylist_keys_lower_privilege_keys_sigs_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::TokenIsImmutable,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1082,7 +1151,10 @@ async fn remove_empty_keylist_keys_lower_privilege_keys_sigs_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::TokenIsImmutable,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;
@@ -1126,7 +1198,10 @@ async fn update_keys_unusable_key_different_key_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1140,7 +1215,10 @@ async fn update_keys_unusable_key_different_key_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1154,7 +1232,10 @@ async fn update_keys_unusable_key_different_key_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1168,7 +1249,10 @@ async fn update_keys_unusable_key_different_key_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1182,7 +1266,10 @@ async fn update_keys_unusable_key_different_key_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1196,7 +1283,10 @@ async fn update_keys_unusable_key_different_key_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1210,7 +1300,10 @@ async fn update_keys_unusable_key_different_key_sig_fails() -> anyhow::Result<()
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;
@@ -1256,7 +1349,10 @@ async fn update_with_unusable_key_with_old_key_sig_fails() -> anyhow::Result<()>
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1272,7 +1368,10 @@ async fn update_with_unusable_key_with_old_key_sig_fails() -> anyhow::Result<()>
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1288,7 +1387,10 @@ async fn update_with_unusable_key_with_old_key_sig_fails() -> anyhow::Result<()>
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1304,7 +1406,10 @@ async fn update_with_unusable_key_with_old_key_sig_fails() -> anyhow::Result<()>
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1320,7 +1425,10 @@ async fn update_with_unusable_key_with_old_key_sig_fails() -> anyhow::Result<()>
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1336,7 +1444,10 @@ async fn update_with_unusable_key_with_old_key_sig_fails() -> anyhow::Result<()>
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1352,7 +1463,10 @@ async fn update_with_unusable_key_with_old_key_sig_fails() -> anyhow::Result<()>
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;
@@ -1402,7 +1516,10 @@ async fn update_unusable_key_old_new_key_sig_full_validation_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1419,7 +1536,10 @@ async fn update_unusable_key_old_new_key_sig_full_validation_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1436,7 +1556,10 @@ async fn update_unusable_key_old_new_key_sig_full_validation_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1453,7 +1576,10 @@ async fn update_unusable_key_old_new_key_sig_full_validation_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1470,7 +1596,10 @@ async fn update_unusable_key_old_new_key_sig_full_validation_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1487,7 +1616,10 @@ async fn update_unusable_key_old_new_key_sig_full_validation_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1504,7 +1636,10 @@ async fn update_unusable_key_old_new_key_sig_full_validation_fails() -> anyhow::
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;
@@ -1547,7 +1682,10 @@ async fn update_keys_old_key_sig_full_validation_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1563,7 +1701,10 @@ async fn update_keys_old_key_sig_full_validation_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1579,7 +1720,10 @@ async fn update_keys_old_key_sig_full_validation_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1595,7 +1739,10 @@ async fn update_keys_old_key_sig_full_validation_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1611,7 +1758,10 @@ async fn update_keys_old_key_sig_full_validation_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1627,7 +1777,10 @@ async fn update_keys_old_key_sig_full_validation_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     let tx = TokenUpdateTransaction::new()
@@ -1643,7 +1796,10 @@ async fn update_keys_old_key_sig_full_validation_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         tx,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, transaction_id: _ })
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: Status::InvalidSignature,
+            transaction_id: _
+        })
     );
 
     _ = TokenDeleteTransaction::new().token_id(token_id).execute(&client).await?;

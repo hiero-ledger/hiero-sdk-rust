@@ -531,7 +531,10 @@ async fn cannot_claim_deleted_tokens_fail() -> anyhow::Result<()> {
         .get_record(&client)
         .await;
 
-    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenWasDeleted, .. }));
+    assert_matches!(
+        res,
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenWasDeleted, .. })
+    );
 
     Ok(())
 }

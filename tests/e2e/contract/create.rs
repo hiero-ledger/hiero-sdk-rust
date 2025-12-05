@@ -176,7 +176,10 @@ async fn bytecode_file_id_unset_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidFileId, .. }));
+    assert_matches!(
+        res,
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidFileId, .. })
+    );
 
     Ok(())
 }

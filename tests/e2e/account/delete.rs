@@ -63,7 +63,10 @@ async fn missing_account_id_fails() {
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::AccountIdDoesNotExist, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: Status::AccountIdDoesNotExist,
+            ..
+        })
     );
 }
 

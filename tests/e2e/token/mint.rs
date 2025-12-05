@@ -273,7 +273,10 @@ async fn nft_metadata_too_long_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::MetadataTooLong, .. }));
+    assert_matches!(
+        res,
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::MetadataTooLong, .. })
+    );
 
     token.delete(&client).await?;
     account.delete(&client).await?;

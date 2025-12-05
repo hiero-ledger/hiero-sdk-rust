@@ -373,7 +373,10 @@ async fn ft_and_nft_paused_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsPaused, .. }));
+    assert_matches!(
+        res,
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsPaused, .. })
+    );
 
     let nft_serials = TokenMintTransaction::new()
         .token_id(nft.id)
@@ -412,7 +415,10 @@ async fn ft_and_nft_paused_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsPaused, .. }));
+    assert_matches!(
+        res,
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsPaused, .. })
+    );
 
     Ok(())
 }

@@ -86,7 +86,10 @@ async fn missing_key_error() {
 
     assert_matches::assert_matches!(
         res,
-        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: hiero_sdk::Status::KeyRequired, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: hiero_sdk::Status::KeyRequired,
+            ..
+        })
     );
 }
 

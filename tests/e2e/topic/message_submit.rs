@@ -100,7 +100,10 @@ async fn missing_message_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidTopicMessage, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: Status::InvalidTopicMessage,
+            ..
+        })
     );
 
     topic.delete(&client).await?;

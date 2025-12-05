@@ -134,7 +134,11 @@ async fn create_account(
     })
 }
 
-async fn print_balance(client: &Client, name: &str, account_id: AccountId) -> hiero_sdk::Result<()> {
+async fn print_balance(
+    client: &Client,
+    name: &str,
+    account_id: AccountId,
+) -> hiero_sdk::Result<()> {
     let balance = AccountBalanceQuery::new()
         .account_id(account_id)
         .execute(client)

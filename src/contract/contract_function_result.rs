@@ -298,8 +298,8 @@ impl ToProtobuf for ContractFunctionResult {
 
 #[cfg(test)]
 mod tests {
-    use hiero_sdk_proto::services;
     use hex_literal::hex;
+    use hiero_sdk_proto::services;
     use num_bigint::{
         BigInt,
         BigUint,
