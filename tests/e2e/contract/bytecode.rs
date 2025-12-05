@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     ContractBytecodeQuery,
     ContractCreateTransaction,
     ContractDeleteTransaction,
@@ -187,7 +187,7 @@ async fn get_cost_small_max_query() -> anyhow::Result<()> {
 
     assert_matches!(
         bytecode,
-        Err(hedera::Error::MaxQueryPaymentExceeded {
+        Err(hiero_sdk::Error::MaxQueryPaymentExceeded {
             max_query_payment: _max_payment_amount,
             query_cost: _cost
         })

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use hedera::{
+use hiero_sdk::{
     AccountId,
     Hbar,
     Key,

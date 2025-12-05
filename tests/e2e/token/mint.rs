@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     Status,
     TokenCreateTransaction,
@@ -71,7 +71,7 @@ async fn over_supply_limit_fails() -> anyhow::Result<()> {
     let token_id = TokenCreateTransaction::new()
         .name("ffff")
         .symbol("F")
-        .token_supply_type(hedera::TokenSupplyType::Finite)
+        .token_supply_type(hiero_sdk::TokenSupplyType::Finite)
         .max_supply(5)
         .treasury_account_id(account.id)
         .admin_key(account.key.public_key())
@@ -98,7 +98,7 @@ async fn over_supply_limit_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::TokenMaxSupplyReached, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenMaxSupplyReached, .. })
     );
 
     token.delete(&client).await?;
@@ -117,7 +117,7 @@ async fn missing_token_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
     );
 
     Ok(())
@@ -180,7 +180,7 @@ async fn missing_supply_key_sig_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     token.delete(&client).await?;
@@ -273,7 +273,7 @@ async fn nft_metadata_too_long_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hedera::Error::ReceiptStatus { status: Status::MetadataTooLong, .. }));
+    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::MetadataTooLong, .. }));
 
     token.delete(&client).await?;
     account.delete(&client).await?;

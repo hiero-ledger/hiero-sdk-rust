@@ -4,7 +4,7 @@ use std::iter::repeat;
 
 use anyhow::anyhow;
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery,
     Client,
     Hbar,
@@ -284,7 +284,7 @@ async fn ft_and_nft_freeze_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::AccountFrozenForToken, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::AccountFrozenForToken, .. })
     );
 
     let nft_serials = TokenMintTransaction::new()
@@ -327,7 +327,7 @@ async fn ft_and_nft_freeze_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::AccountFrozenForToken, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::AccountFrozenForToken, .. })
     );
 
     nft.delete(&client).await?;
@@ -373,7 +373,7 @@ async fn ft_and_nft_paused_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hedera::Error::ReceiptStatus { status: Status::TokenIsPaused, .. }));
+    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsPaused, .. }));
 
     let nft_serials = TokenMintTransaction::new()
         .token_id(nft.id)
@@ -412,7 +412,7 @@ async fn ft_and_nft_paused_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hedera::Error::ReceiptStatus { status: Status::TokenIsPaused, .. }));
+    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsPaused, .. }));
 
     Ok(())
 }
@@ -462,7 +462,7 @@ async fn add_or_set_nft_token_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
+        Err(hiero_sdk::Error::ReceiptStatus {
             status: Status::AccountAmountTransfersOnlyAllowedForFungibleCommon,
             ..
         })
@@ -480,7 +480,7 @@ async fn add_or_set_nft_token_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
+        Err(hiero_sdk::Error::ReceiptStatus {
             status: Status::AccountAmountTransfersOnlyAllowedForFungibleCommon,
             ..
         })
@@ -511,7 +511,7 @@ async fn treasury_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::AccountIsTreasury, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::AccountIsTreasury, .. })
     );
 
     let nft_serials = TokenMintTransaction::new()
@@ -536,7 +536,7 @@ async fn treasury_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::AccountIsTreasury, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::AccountIsTreasury, .. })
     );
 
     Ok(())
@@ -574,7 +574,7 @@ async fn invalid_sig_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     ft.delete(&client).await?;
@@ -593,7 +593,7 @@ async fn missing_token_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::EmptyTokenReferenceList,
             ..
         })
@@ -668,7 +668,7 @@ async fn token_reference_list_size_exceeded_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
+        Err(hiero_sdk::Error::ReceiptStatus {
             status: Status::TokenReferenceListSizeLimitExceeded,
             ..
         })
@@ -693,7 +693,7 @@ async fn create_ft(
         .initial_supply(1_000_000)
         .max_supply(1_000_000)
         .treasury_account_id(owner.id)
-        .token_supply_type(hedera::TokenSupplyType::Finite)
+        .token_supply_type(hiero_sdk::TokenSupplyType::Finite)
         .admin_key(owner.key.public_key())
         .freeze_key(owner.key.public_key())
         .wipe_key(owner.key.public_key())
@@ -721,9 +721,9 @@ async fn test_operator_account(config: &Config) -> anyhow::Result<Account> {
 async fn create_receiver_account(
     max_automatic_token_associations: i32,
     account_key: &PrivateKey,
-    client: &hedera::Client,
-) -> hedera::Result<Account> {
-    let receipt = hedera::AccountCreateTransaction::new()
+    client: &hiero_sdk::Client,
+) -> hiero_sdk::Result<Account> {
+    let receipt = hiero_sdk::AccountCreateTransaction::new()
         .set_key_without_alias(account_key.public_key())
         .initial_balance(Hbar::new(10))
         .max_automatic_token_associations(max_automatic_token_associations)

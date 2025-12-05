@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountId,
@@ -134,7 +134,7 @@ async fn fails_with_invalid_signature_when_updating_without_admin_key() -> anyho
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -173,7 +173,7 @@ async fn fails_when_changing_to_non_existent_account_id() -> anyhow::Result<()> 
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -208,7 +208,7 @@ async fn fails_when_changing_node_account_id_without_account_key() -> anyhow::Re
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -255,7 +255,7 @@ async fn fails_when_changing_to_deleted_account_id() -> anyhow::Result<()> {
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::AccountDeleted, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::AccountDeleted, .. })
     );
 
     Ok(())
@@ -292,7 +292,7 @@ async fn fails_when_new_node_account_has_zero_balance() -> anyhow::Result<()> {
     // Should fail with status code 526 (NODE_ACCOUNT_HAS_ZERO_BALANCE)
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::NodeAccountHasZeroBalance, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::NodeAccountHasZeroBalance, .. })
     );
 
     Ok(())

@@ -6,7 +6,7 @@ mod resources;
 
 use clap::Parser;
 use futures_util::StreamExt;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, PrivateKey, TopicCreateTransaction, TopicMessageQuery, TopicMessageSubmitTransaction, Transaction
 };
 use tokio::task::JoinHandle;
@@ -51,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::time::sleep(Duration::from_secs(10)).await;
 
-    let _handle: JoinHandle<hedera::Result<()>> = tokio::spawn({
+    let _handle: JoinHandle<hiero_sdk::Result<()>> = tokio::spawn({
         let client = client.clone();
         async move {
             println!(

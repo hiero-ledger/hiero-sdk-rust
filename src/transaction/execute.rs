@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use prost::Message;
 use tonic::transport::Channel;
 

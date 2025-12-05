@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, ContractCreateFlow, ContractExecuteTransaction, ContractFunctionParameters,
     ContractFunctionResult, ContractId, Hbar, PrivateKey, TransactionId,
 };
@@ -24,7 +24,7 @@ impl ContractHelper {
         Self { contract_id, steps }
     }
 
-    pub async fn execute(&self, client: &Client) -> hedera::Result<()> {
+    pub async fn execute(&self, client: &Client) -> hiero_sdk::Result<()> {
         for (index, step) in self.steps.iter().enumerate() {
             println!("Attempting to execute step {index}");
 
@@ -88,7 +88,7 @@ pub async fn create_contract(
     client: &Client,
     bytecode: &str,
     constructor_parameters: ContractFunctionParameters,
-) -> hedera::Result<ContractId> {
+) -> hiero_sdk::Result<ContractId> {
     let contract_id = ContractCreateFlow::new()
         .bytecode_hex(bytecode)?
         .max_chunks(30)

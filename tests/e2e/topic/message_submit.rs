@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AnyTransaction,
     Status,
     TopicInfoQuery,
@@ -82,7 +82,7 @@ async fn missing_topic_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidTopicId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidTopicId, .. })
     );
 
     Ok(())
@@ -100,7 +100,7 @@ async fn missing_message_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidTopicMessage, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidTopicMessage, .. })
     );
 
     topic.delete(&client).await?;

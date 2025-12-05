@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::util_service_client::UtilServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::util_service_client::UtilServiceClient;
 use prost::Message;
 use tonic::transport::Channel;
 
@@ -44,9 +44,9 @@ use crate::{
 /// # Example usage
 ///
 /// ```rust,no_run
-/// use hedera::{BatchTransaction, TransferTransaction, PrivateKey, Client, Hbar, AccountId};
+/// use hiero_sdk::{BatchTransaction, TransferTransaction, PrivateKey, Client, Hbar, AccountId};
 ///
-/// # async fn example() -> hedera::Result<()> {
+/// # async fn example() -> hiero_sdk::Result<()> {
 /// let client = Client::for_testnet();
 /// let batch_key = PrivateKey::generate_ed25519();
 /// let operator_key = PrivateKey::generate_ed25519();
@@ -560,7 +560,7 @@ mod tests {
 
         // Should return AtomicBatch variant
         match protobuf_data {
-            hedera_proto::services::transaction_body::Data::AtomicBatch(atomic_batch) => {
+            hiero_sdk_proto::services::transaction_body::Data::AtomicBatch(atomic_batch) => {
                 assert_eq!(atomic_batch.transactions.len(), 1);
                 assert!(!atomic_batch.transactions[0].is_empty());
             }
@@ -585,7 +585,7 @@ mod tests {
 
         // Extract AtomicBatchTransactionBody
         let atomic_batch = match protobuf_data {
-            hedera_proto::services::transaction_body::Data::AtomicBatch(atomic_batch) => {
+            hiero_sdk_proto::services::transaction_body::Data::AtomicBatch(atomic_batch) => {
                 atomic_batch
             }
             _ => panic!("Expected AtomicBatch variant"),
@@ -613,7 +613,7 @@ mod tests {
         let protobuf_data = empty_batch.data().to_transaction_data_protobuf(&chunk_info);
 
         match protobuf_data {
-            hedera_proto::services::transaction_body::Data::AtomicBatch(atomic_batch) => {
+            hiero_sdk_proto::services::transaction_body::Data::AtomicBatch(atomic_batch) => {
                 assert!(atomic_batch.transactions.is_empty());
             }
             _ => panic!("Expected AtomicBatch variant"),

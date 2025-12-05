@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::crypto_service_client::CryptoServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::crypto_service_client::CryptoServiceClient;
 use time::Duration;
 use tonic::transport::Channel;
 
@@ -398,7 +398,7 @@ impl ToProtobuf for AccountCreateTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
     use hex_literal::hex;
     use time::Duration;
 

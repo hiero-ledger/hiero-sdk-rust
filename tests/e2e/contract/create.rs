@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     ContractCreateTransaction,
     ContractDeleteTransaction,
     ContractFunctionParameters,
@@ -123,7 +123,7 @@ async fn unset_gas_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InsufficientGas, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InsufficientGas, .. })
     );
 
     Ok(())
@@ -153,7 +153,7 @@ async fn constructor_parameters_unset_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::ContractRevertExecuted, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::ContractRevertExecuted, .. })
     );
 
     Ok(())
@@ -176,7 +176,7 @@ async fn bytecode_file_id_unset_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hedera::Error::ReceiptStatus { status: Status::InvalidFileId, .. }));
+    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidFileId, .. }));
 
     Ok(())
 }

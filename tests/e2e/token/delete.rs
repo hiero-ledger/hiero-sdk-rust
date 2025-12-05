@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     Status,
     TokenDeleteTransaction,
@@ -83,7 +83,7 @@ async fn missing_admin_key_signature_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     token.delete(&client).await?;
@@ -116,7 +116,7 @@ async fn missing_admin_key_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::TokenIsImmutable, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenIsImmutable, .. })
     );
 
     Ok(())
@@ -132,7 +132,7 @@ async fn missing_token_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
     );
 
     Ok(())

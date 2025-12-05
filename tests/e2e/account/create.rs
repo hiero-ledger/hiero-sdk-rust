@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountInfoQuery,
     Hbar,
@@ -86,7 +86,7 @@ async fn missing_key_error() {
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: hedera::Status::KeyRequired, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: hiero_sdk::Status::KeyRequired, .. })
     );
 }
 
@@ -254,7 +254,7 @@ async fn alias_from_admin_key_with_receiver_sig_required_and_no_signature_errors
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: hedera::Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: hiero_sdk::Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -317,7 +317,7 @@ async fn alias_missing_signature_fails() -> anyhow::Result<()> {
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: hedera::Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: hiero_sdk::Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -384,7 +384,7 @@ async fn alias_with_receiver_sig_required_missing_signature_fails() -> anyhow::R
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: hedera::Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: hiero_sdk::Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -407,8 +407,8 @@ async fn cannot_create_account_with_invalid_negative_max_auto_token_assocation(
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
-            status: hedera::Status::InvalidMaxAutoAssociations,
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: hiero_sdk::Status::InvalidMaxAutoAssociations,
             ..
         })
     );

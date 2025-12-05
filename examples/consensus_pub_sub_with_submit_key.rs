@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use futures_util::StreamExt;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, PrivateKey, TopicCreateTransaction, TopicMessageQuery, TopicMessageSubmitTransaction
 };
 
@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::time::sleep(Duration::from_secs(10)).await;
 
-    let _handle: tokio::task::JoinHandle<hedera::Result<()>> = tokio::spawn({
+    let _handle: tokio::task::JoinHandle<hiero_sdk::Result<()>> = tokio::spawn({
         let client = client.clone();
         async move {
             println!("sending 5 messages");

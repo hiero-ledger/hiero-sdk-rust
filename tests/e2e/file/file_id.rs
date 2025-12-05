@@ -1,4 +1,4 @@
-use hedera::FileId;
+use hiero_sdk::FileId;
 
 #[tokio::test]
 async fn should_get_address_book_file_id_for_shard_realm() -> anyhow::Result<()> {

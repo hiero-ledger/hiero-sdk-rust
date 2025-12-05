@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     AccountInfoQuery,
     CustomFeeLimit,
     CustomFixedFee,

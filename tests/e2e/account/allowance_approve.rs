@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     AccountAllowanceApproveTransaction,
     Hbar,
     TokenAssociateTransaction,
@@ -156,8 +156,8 @@ async fn missing_nft_allowance_approval_fails() -> anyhow::Result<()> {
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
-            status: hedera::Status::SpenderDoesNotHaveAllowance,
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: hiero_sdk::Status::SpenderDoesNotHaveAllowance,
             ..
         })
     );

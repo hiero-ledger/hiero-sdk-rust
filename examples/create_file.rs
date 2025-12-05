@@ -2,7 +2,7 @@
 
 use assert_matches::assert_matches;
 use clap::Parser;
-use hedera::{AccountId, Client, FileCreateTransaction, PrivateKey};
+use hiero_sdk::{AccountId, Client, FileCreateTransaction, PrivateKey};
 
 #[derive(Parser, Debug)]
 struct Args {

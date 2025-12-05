@@ -973,7 +973,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
-name = "hedera"
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "hex-literal"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e712f64ec3850b98572bffac52e2c6f282b29fe6c5fa6d42334b30be438d95c1"
+
+[[package]]
+name = "hiero-sdk"
 version = "0.42.1"
 dependencies = [
  "aes",
@@ -993,9 +1005,9 @@ dependencies = [
  "futures-core",
  "futures-util",
  "h2",
- "hedera-proto",
  "hex",
  "hex-literal",
+ "hiero-sdk-proto",
  "hmac",
  "hyper",
  "hyper-openssl",
@@ -1033,7 +1045,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "hedera-proto"
+name = "hiero-sdk-proto"
 version = "0.20.0"
 dependencies = [
  "anyhow",
@@ -1048,28 +1060,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "hex"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
-
-[[package]]
-name = "hex-literal"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e712f64ec3850b98572bffac52e2c6f282b29fe6c5fa6d42334b30be438d95c1"
-
-[[package]]
 name = "hiero-sdk-tck"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
  "futures-util",
- "hedera",
- "hedera-proto",
  "hex",
  "hex-literal",
+ "hiero-sdk",
+ "hiero-sdk-proto",
  "hyper",
  "jsonrpsee",
  "once_cell",

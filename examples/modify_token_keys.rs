@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, KeyList, PrivateKey, PublicKey, TokenCreateTransaction, TokenInfoQuery, TokenKeyValidation, TokenUpdateTransaction
 };
 use time::{Duration, OffsetDateTime};
@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
     let token_id = TokenCreateTransaction::new()
         .name("Example NFT")
         .symbol("ENFT")
-        .token_type(hedera::TokenType::NonFungibleUnique)
+        .token_type(hiero_sdk::TokenType::NonFungibleUnique)
         .treasury_account_id(client.get_operator_account_id().unwrap())
         .admin_key(admin_key.public_key())
         .wipe_key(wipe_key.public_key())

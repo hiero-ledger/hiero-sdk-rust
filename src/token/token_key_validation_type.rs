@@ -7,7 +7,7 @@ use std::fmt::{
     Formatter,
 };
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::{
     FromProtobuf,
