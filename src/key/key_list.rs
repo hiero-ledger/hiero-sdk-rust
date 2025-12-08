@@ -1,4 +1,4 @@
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::protobuf::{
     FromProtobuf,
@@ -117,7 +117,7 @@ impl FromProtobuf<services::ThresholdKey> for KeyList {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
 
     use crate::protobuf::{
         FromProtobuf,

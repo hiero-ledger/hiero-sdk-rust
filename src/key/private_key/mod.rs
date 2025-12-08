@@ -335,7 +335,7 @@ impl PrivateKey {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use hedera::PrivateKey;
+    /// use hiero_sdk::PrivateKey;
     /// use hex_literal::hex;
     ///
     /// // ⚠️ WARNING ⚠️
@@ -511,7 +511,7 @@ impl PrivateKey {
     /// # Examples
     ///
     /// ```
-    /// use hedera::PrivateKey;
+    /// use hiero_sdk::PrivateKey;
     ///
     /// let key: PrivateKey = "3030020100300706052b8104000a042204208776c6b831a1b61ac10dac0304a2843de4716f54b1919bb91a2685d0fe3f3048".parse().unwrap();
     ///
@@ -538,13 +538,13 @@ impl PrivateKey {
     ///
     /// # Examples
     /// ```
-    /// use hedera::PrivateKey;
+    /// use hiero_sdk::PrivateKey;
     /// let sk = PrivateKey::generate_ed25519();
     ///
     /// assert!(sk.is_ed25519());
     /// ```
     /// ```
-    /// use hedera::PrivateKey;
+    /// use hiero_sdk::PrivateKey;
     /// let sk = PrivateKey::generate_ecdsa();
     ///
     /// assert!(!sk.is_ed25519());
@@ -558,13 +558,13 @@ impl PrivateKey {
     ///
     /// # Examples
     /// ```
-    /// use hedera::PrivateKey;
+    /// use hiero_sdk::PrivateKey;
     /// let sk = PrivateKey::generate_ecdsa();
     ///
     /// assert!(sk.is_ecdsa());
     /// ```
     /// ```
-    /// use hedera::PrivateKey;
+    /// use hiero_sdk::PrivateKey;
     /// let sk = PrivateKey::generate_ed25519();
     ///
     /// assert!(!sk.is_ecdsa());

@@ -2,7 +2,7 @@
 
 use crate::Error;
 
-/// Convert to a `hedera_protobufs` type.
+/// Convert to a `hiero_sdk_protobufs` type.
 pub trait ToProtobuf: Send + Sync {
     /// The protobuf output.
     type Protobuf;
@@ -45,7 +45,7 @@ impl<T: ToProtobuf> ToProtobuf for Vec<T> {
     }
 }
 
-/// Convert from a `hedera_protobufs` type.
+/// Convert from a `hiero_sdk_protobufs` type.
 pub trait FromProtobuf<Protobuf>
 where
     Self: Sized,

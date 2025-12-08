@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     AccountAllowanceApproveTransaction,
     AccountAllowanceDeleteTransaction,
     Hbar,
@@ -84,8 +84,8 @@ async fn transfer_after_allowance_remove_fails() -> anyhow::Result<()> {
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
-            status: hedera::Status::SpenderDoesNotHaveAllowance,
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: hiero_sdk::Status::SpenderDoesNotHaveAllowance,
             ..
         })
     );

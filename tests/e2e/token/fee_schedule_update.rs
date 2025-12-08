@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     FixedFee,
     FixedFeeData,
     FractionalFee,
@@ -52,7 +52,7 @@ async fn basic() -> anyhow::Result<()> {
                 numerator: 1,
                 minimum_amount: 1,
                 maximum_amount: 10,
-                assessment_method: hedera::FeeAssessmentMethod::Exclusive,
+                assessment_method: hiero_sdk::FeeAssessmentMethod::Exclusive,
             },
             fee_collector_account_id: Some(account.id),
             all_collectors_are_exempt: false,
@@ -105,7 +105,7 @@ async fn invalid_signature_fails() -> anyhow::Result<()> {
                 numerator: 1,
                 minimum_amount: 1,
                 maximum_amount: 10,
-                assessment_method: hedera::FeeAssessmentMethod::Exclusive,
+                assessment_method: hiero_sdk::FeeAssessmentMethod::Exclusive,
             },
             fee_collector_account_id: Some(account.id),
             all_collectors_are_exempt: false,
@@ -126,7 +126,7 @@ async fn invalid_signature_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())

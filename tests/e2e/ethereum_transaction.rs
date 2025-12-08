@@ -2,7 +2,7 @@ use bytes::{
     BufMut,
     BytesMut,
 };
-use hedera::{
+use hiero_sdk::{
     AccountInfoQuery,
     ContractCreateTransaction,
     ContractDeleteTransaction,

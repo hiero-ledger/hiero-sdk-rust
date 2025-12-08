@@ -10,9 +10,9 @@ use futures_core::future::BoxFuture;
 use futures_core::stream::BoxStream;
 use futures_core::Stream;
 use futures_util::TryStreamExt;
-use hedera_proto::mirror;
-use hedera_proto::mirror::consensus_service_client::ConsensusServiceClient;
-use hedera_proto::mirror::ConsensusTopicQuery;
+use hiero_sdk_proto::mirror;
+use hiero_sdk_proto::mirror::consensus_service_client::ConsensusServiceClient;
+use hiero_sdk_proto::mirror::ConsensusTopicQuery;
 use time::{
     Duration,
     OffsetDateTime,

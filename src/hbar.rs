@@ -51,7 +51,7 @@ impl HbarUnit {
     ///
     /// # Examples
     /// ```
-    /// use hedera::HbarUnit;
+    /// use hiero_sdk::HbarUnit;
     /// assert_eq!(HbarUnit::Microbar.tinybars(), 100);
     /// ```
     #[must_use]
@@ -63,7 +63,7 @@ impl HbarUnit {
     ///
     /// # Examples
     /// ```
-    /// use hedera::HbarUnit;
+    /// use hiero_sdk::HbarUnit;
     /// assert_eq!(HbarUnit::Millibar.symbol(), "mℏ");
     /// ```
     #[must_use]
@@ -123,7 +123,7 @@ impl Hbar {
     ///
     /// # Examples
     /// ```
-    /// # use hedera::Hbar;
+    /// # use hiero_sdk::Hbar;
     /// let hbar = Hbar::new(52);
     /// assert_eq!(hbar.to_string(), "52 ℏ");
     #[must_use]
@@ -135,7 +135,7 @@ impl Hbar {
     ///
     /// # Examples
     /// ```
-    /// # use hedera::Hbar;
+    /// # use hiero_sdk::Hbar;
     /// let hbar = Hbar::from_tinybars(250);
     /// assert_eq!(hbar.to_string(), "250 tℏ");
     /// ```
@@ -162,8 +162,8 @@ impl Hbar {
     /// # Examples
     ///
     /// ```
-    /// use hedera::Hbar;
-    /// use hedera::HbarUnit;
+    /// use hiero_sdk::Hbar;
+    /// use hiero_sdk::HbarUnit;
     /// let value = Hbar::from_unit(20, HbarUnit::Millibar);
     /// assert_eq!(value.to_string(), "0.02 ℏ");
     /// ```
@@ -196,7 +196,7 @@ impl Hbar {
     /// # Examples
     /// ```
     /// use rust_decimal::Decimal;
-    /// use hedera::Hbar;
+    /// use hiero_sdk::Hbar;
     /// # use std::str::FromStr;
     /// let value: Hbar = "20 mℏ".parse().unwrap();
     ///

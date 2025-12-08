@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera::{AccountBalanceQuery, AccountId, Client, NodeAddressBookQuery};
+use hiero_sdk::{AccountBalanceQuery, AccountId, Client, NodeAddressBookQuery};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
