@@ -2,8 +2,8 @@
 
 use std::net::Ipv4Addr;
 
-use hedera_proto::services;
-use hedera_proto::services::address_book_service_client::AddressBookServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::address_book_service_client::AddressBookServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
@@ -323,7 +323,7 @@ mod tests {
     use std::net::Ipv4Addr;
 
     use expect_test::expect_file;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
 
     use super::NodeCreateTransaction;
     use crate::address_book::NodeCreateTransactionData;

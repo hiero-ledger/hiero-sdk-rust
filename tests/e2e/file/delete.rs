@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     FileCreateTransaction,
     FileDeleteTransaction,
     FileInfoQuery,
@@ -68,7 +68,7 @@ async fn immutable_file_fails() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await;
 
-    assert_matches!(res, Err(hedera::Error::ReceiptStatus { status: Status::Unauthorized, .. }));
+    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::Unauthorized, .. }));
 
     Ok(())
 }

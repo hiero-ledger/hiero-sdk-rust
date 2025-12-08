@@ -243,7 +243,7 @@ pub use hbar::{
     HbarUnit,
     Tinybar,
 };
-pub use hedera_proto::services::ResponseCodeEnum as Status;
+pub use hiero_sdk_proto::services::ResponseCodeEnum as Status;
 pub use key::{
     Key,
     KeyList,

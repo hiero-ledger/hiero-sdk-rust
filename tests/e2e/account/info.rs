@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     account_info_flow,
     AccountInfoQuery,
     Hbar,
@@ -108,7 +108,7 @@ async fn query_cost_small_max_fails() -> anyhow::Result<()> {
 
     let (max_query_payment, query_cost) = assert_matches!(
         res,
-        Err(hedera::Error::MaxQueryPaymentExceeded {
+        Err(hiero_sdk::Error::MaxQueryPaymentExceeded {
             max_query_payment,
             query_cost
         }) => (max_query_payment, query_cost)
@@ -143,7 +143,7 @@ async fn get_cost_insufficient_tx_fee_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryPaymentPreCheckStatus { status: Status::InsufficientTxFee, .. })
+        Err(hiero_sdk::Error::QueryPaymentPreCheckStatus { status: Status::InsufficientTxFee, .. })
     );
 
     Ok(())
@@ -165,14 +165,14 @@ async fn flow_verify_transaction() -> anyhow::Result<()> {
 
     let new_public_key = new_key.public_key();
 
-    let mut signed_tx = hedera::AccountCreateTransaction::new();
+    let mut signed_tx = hiero_sdk::AccountCreateTransaction::new();
     signed_tx
         .set_key_without_alias(new_public_key)
         .initial_balance(Hbar::from_tinybars(1000))
         .freeze_with(&client)?
         .sign_with_operator(&client)?;
 
-    let mut unsigned_tx = hedera::AccountCreateTransaction::new();
+    let mut unsigned_tx = hiero_sdk::AccountCreateTransaction::new();
     unsigned_tx
         .set_key_without_alias(new_public_key)
         .initial_balance(Hbar::from_tinybars(1000))
@@ -187,7 +187,7 @@ async fn flow_verify_transaction() -> anyhow::Result<()> {
     assert_matches!(
         account_info_flow::verify_transaction_signature(&client, op.account_id, &mut unsigned_tx)
             .await,
-        Err(hedera::Error::SignatureVerify(_))
+        Err(hiero_sdk::Error::SignatureVerify(_))
     );
 
     Ok(())

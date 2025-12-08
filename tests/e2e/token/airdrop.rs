@@ -2,7 +2,7 @@ use std::iter::repeat;
 
 use anyhow::anyhow;
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountAllowanceApproveTransaction,
     AccountBalanceQuery,
     AccountCreateTransaction,
@@ -502,7 +502,7 @@ async fn token_allowance_and_no_balance_ft_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::NotSupported, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::NotSupported, .. })
     );
 
     Ok(())
@@ -593,7 +593,7 @@ async fn token_allowance_and_no_balance_nft_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::NotSupported, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::NotSupported, .. })
     );
 
     Ok(())
@@ -613,7 +613,7 @@ async fn invalid_body_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::EmptyTokenTransferBody,
             ..
         })
@@ -632,7 +632,7 @@ async fn invalid_body_fail() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::AirdropContainsMultipleSendersForAToken,
             ..
         })

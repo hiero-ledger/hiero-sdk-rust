@@ -9,7 +9,7 @@ use std::fmt::{
 };
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use prost::Message;
 use time::Duration;
 use triomphe::Arc;
@@ -635,7 +635,7 @@ impl<D: TransactionExecute> Transaction<D> {
         let transaction_list = self
             .signed_sources()
             .map_or_else(|| self.make_transaction_list(), |it| Ok(it.transactions().to_vec()))?;
-        Ok(hedera_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
+        Ok(hiero_sdk_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
     }
 
     pub(crate) fn add_signature_signer(&mut self, signer: &AnySigner) -> Vec<u8> {
@@ -1112,8 +1112,8 @@ where
 impl AnyTransaction {
     /// # Examples
     /// ```
-    /// # fn main() -> hedera::Result<()> {
-    /// use hedera::AnyTransaction;
+    /// # fn main() -> hiero_sdk::Result<()> {
+    /// use hiero_sdk::AnyTransaction;
     /// let bytes = hex::decode(concat!(
     ///     "0a522a500a4c0a120a0c0885c8879e0610a8bdd9840312021865120218061880",
     ///     "94ebdc0322020877320c686920686173686772617068721a0a180a0a0a021802",
@@ -1131,8 +1131,8 @@ impl AnyTransaction {
     /// - [`Error::FromProtobuf`] if a valid transaction cannot be parsed from the bytes.
     #[allow(deprecated)]
     pub fn from_bytes(bytes: &[u8]) -> crate::Result<Self> {
-        let list: hedera_proto::sdk::TransactionList =
-            hedera_proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
+        let list: hiero_sdk_proto::sdk::TransactionList =
+            hiero_sdk_proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
 
         let list = if list.transaction_list.is_empty() {
             Vec::from([services::Transaction::decode(bytes).map_err(Error::from_protobuf)?])
@@ -1373,7 +1373,7 @@ where
 
 #[cfg(test)]
 pub(crate) mod test_helpers {
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
     use prost::Message;
     use time::{
         Duration,

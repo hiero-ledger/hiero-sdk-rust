@@ -238,7 +238,7 @@ impl Client {
     /// ```
     /// # #[tokio::main]
     /// # async fn main() {
-    /// use hedera::Client;
+    /// use hiero_sdk::Client;
     ///
     /// let client = Client::for_testnet();
     ///

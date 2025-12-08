@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::freeze_service_client::FreezeServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::freeze_service_client::FreezeServiceClient;
 use time::OffsetDateTime;
 use tonic::transport::Channel;
 
@@ -160,8 +160,8 @@ impl ToProtobuf for FreezeTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
     use hex_literal::hex;
+    use hiero_sdk_proto::services;
     use time::OffsetDateTime;
 
     use crate::protobuf::{

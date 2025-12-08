@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     Status,
     TopicInfoQuery,
@@ -90,7 +90,7 @@ async fn query_cost_small_max() -> anyhow::Result<()> {
 
     let (max_query_payment, query_cost) = assert_matches!(
         res,
-        Err(hedera::Error::MaxQueryPaymentExceeded {
+        Err(hiero_sdk::Error::MaxQueryPaymentExceeded {
             max_query_payment,
             query_cost
         }) => (max_query_payment, query_cost)
@@ -123,7 +123,7 @@ async fn query_cost_insufficient_tx_fee() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryPaymentPreCheckStatus { status: Status::InsufficientTxFee, .. })
+        Err(hiero_sdk::Error::QueryPaymentPreCheckStatus { status: Status::InsufficientTxFee, .. })
     );
 
     topic.delete(&client).await?;

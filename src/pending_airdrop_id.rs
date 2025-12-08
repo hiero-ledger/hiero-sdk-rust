@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::ledger_id::RefLedgerId;
 use crate::{

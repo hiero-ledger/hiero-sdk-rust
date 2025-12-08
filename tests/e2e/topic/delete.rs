@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     PrivateKey,
     Status,
     TopicCreateTransaction,
@@ -50,7 +50,7 @@ async fn immutable_fails() -> anyhow::Result<()> {
         .await?
         .get_receipt(&client)
         .await;
-    assert_matches!(res, Err(hedera::Error::ReceiptStatus { status: Status::Unauthorized, .. }));
+    assert_matches!(res, Err(hiero_sdk::Error::ReceiptStatus { status: Status::Unauthorized, .. }));
 
     Ok(())
 }
@@ -82,7 +82,7 @@ async fn wrong_admin_key_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())

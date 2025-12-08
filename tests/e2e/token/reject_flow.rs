@@ -4,7 +4,7 @@ use std::iter::repeat;
 
 use anyhow::anyhow;
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery,
     Client,
     Hbar,
@@ -82,7 +82,7 @@ async fn basic_flow_fungible_token() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::TokenNotAssociatedToAccount, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenNotAssociatedToAccount, .. })
     );
 
     ft.delete(&client).await?;
@@ -156,7 +156,7 @@ async fn basic_flow_nft() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::TokenNotAssociatedToAccount, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::TokenNotAssociatedToAccount, .. })
     );
 
     nft.delete(&client).await?;
@@ -177,7 +177,7 @@ async fn create_ft(
         .initial_supply(1_000_000)
         .max_supply(1_000_000)
         .treasury_account_id(owner.id)
-        .token_supply_type(hedera::TokenSupplyType::Finite)
+        .token_supply_type(hiero_sdk::TokenSupplyType::Finite)
         .admin_key(owner.key.public_key())
         .freeze_key(owner.key.public_key())
         .wipe_key(owner.key.public_key())
@@ -205,9 +205,9 @@ async fn test_operator_account(config: &Config) -> anyhow::Result<Account> {
 async fn create_receiver_account(
     max_automatic_token_associations: i32,
     account_key: &PrivateKey,
-    client: &hedera::Client,
-) -> hedera::Result<Account> {
-    let receipt = hedera::AccountCreateTransaction::new()
+    client: &hiero_sdk::Client,
+) -> hiero_sdk::Result<Account> {
+    let receipt = hiero_sdk::AccountCreateTransaction::new()
         .set_key_without_alias(account_key.public_key())
         .initial_balance(Hbar::new(1))
         .max_automatic_token_associations(max_automatic_token_associations)

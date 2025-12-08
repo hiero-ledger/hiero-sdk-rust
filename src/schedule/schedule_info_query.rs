@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::schedule_service_client::ScheduleServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::schedule_service_client::ScheduleServiceClient;
 use tonic::transport::Channel;
 
 use crate::query::{

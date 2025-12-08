@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use prost::Message;
 use time::{
     Duration,

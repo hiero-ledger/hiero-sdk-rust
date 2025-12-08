@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     Status,
     TokenAssociateTransaction,
@@ -109,7 +109,7 @@ async fn unowned_nfts_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::SenderDoesNotOwnNftSerialNo, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::SenderDoesNotOwnNftSerialNo, .. })
     );
 
     token.burn(&client, serials).await?;

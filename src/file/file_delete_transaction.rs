@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::file_service_client::FileServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::file_service_client::FileServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
@@ -113,7 +113,7 @@ impl ToProtobuf for FileDeleteTransactionData {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
 
     use crate::file::FileDeleteTransactionData;
     use crate::protobuf::{

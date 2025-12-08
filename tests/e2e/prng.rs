@@ -1,4 +1,4 @@
-use hedera::PrngTransaction;
+use hiero_sdk::PrngTransaction;
 
 use crate::common::{
     setup_nonfree,

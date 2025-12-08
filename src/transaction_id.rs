@@ -8,7 +8,7 @@ use std::fmt::{
 };
 use std::str::FromStr;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use rand::{
     thread_rng,
     Rng,
