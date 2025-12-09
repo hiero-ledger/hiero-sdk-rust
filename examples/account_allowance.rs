@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use std::time::Duration;
+
 use clap::Parser;
 use hiero_sdk::{
     AccountAllowanceApproveTransaction, AccountBalanceQuery, AccountCreateTransaction, AccountDeleteTransaction, AccountId, Client, Hbar, PrivateKey, TransactionId, TransferTransaction
@@ -31,6 +33,7 @@ async fn create_account(client: &Client, name: &'static str) -> hiero_sdk::Resul
         .set_key_without_alias(key.public_key())
         .initial_balance(Hbar::new(5))
         .account_memo(format!("[sdk::rust::account_allowance_example::{name}]"))
+        .grpc_deadline(Duration::from_secs(10))
         .execute(client)
         .await?
         .get_receipt(client)
