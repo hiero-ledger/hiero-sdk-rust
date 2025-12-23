@@ -12,6 +12,11 @@ use hiero_sdk::{
     Transaction,
     TransactionId,
 };
+use hiero_sdk_proto::services::Key as ProtoKey;
+use hiero_sdk_proto::services::KeyList as ProtoKeyList;
+use hiero_sdk_proto::services::ThresholdKey as ProtoThresholdKey;
+use hiero_sdk_proto::services::key::Key as ProtoKeyEnum;
+use prost::Message;
 use jsonrpsee::types::error::INVALID_PARAMS_CODE;
 use jsonrpsee::types::{
     ErrorObject,
@@ -257,12 +262,53 @@ pub(crate) fn get_hedera_key(key: &str) -> Result<Key, ErrorObjectOwned> {
         Err(_) => match PublicKey::from_str_der(key).map(Key::Single) {
             Ok(key) => Ok(key),
             Err(_) => {
-                let public_key = PublicKey::from_str_ed25519(key).map_err(|_| {
-                    ErrorObject::borrowed(-32603, "generateKey: fromKey is invalid.", None)
-                })?;
+                // try plain ed25519 pub key string
+                if let Ok(public_key) = PublicKey::from_str_ed25519(key) {
+                    return Ok(public_key.into());
+                }
 
-                Ok(public_key.into())
+                // try hex-encoded serialized services::Key (used for keyList/threshold outputs)
+                if let Ok(bytes) = hex::decode(key) {
+                    if let Ok(pb_key) = ProtoKey::decode(bytes.as_slice()) {
+                        if let Some(k) = key_from_proto(pb_key) {
+                            return Ok(k);
+                        }
+                    }
+                }
+
+                Err(ErrorObject::borrowed(-32603, "generateKey: fromKey is invalid.", None))
             }
         },
     }
+}
+
+fn key_from_proto(pb_key: ProtoKey) -> Option<Key> {
+    match pb_key.key? {
+        ProtoKeyEnum::Ed25519(bytes) => PublicKey::from_bytes_ed25519(&bytes).ok().map(Key::Single),
+        ProtoKeyEnum::EcdsaSecp256k1(bytes) => {
+            PublicKey::from_bytes_ecdsa(&bytes).ok().map(Key::Single)
+        }
+        ProtoKeyEnum::KeyList(list) => keylist_from_proto(list).map(Key::KeyList),
+        ProtoKeyEnum::ThresholdKey(th) => keylist_from_threshold_proto(th).map(Key::KeyList),
+        _ => None,
+    }
+}
+
+fn keylist_from_proto(pb_list: ProtoKeyList) -> Option<KeyList> {
+    let mut keys = Vec::new();
+    for k in pb_list.keys {
+        if let Some(key) = key_from_proto(ProtoKey { key: k.key }) {
+            keys.push(key);
+        } else {
+            return None;
+        }
+    }
+    Some(KeyList::from(keys))
+}
+
+fn keylist_from_threshold_proto(pb_th: ProtoThresholdKey) -> Option<KeyList> {
+    let list = pb_th.keys?;
+    let mut key_list = keylist_from_proto(list)?;
+    key_list.threshold = Some(pb_th.threshold as u32);
+    Some(key_list)
 }
