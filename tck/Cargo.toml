@@ -14,7 +14,7 @@ tower = { version = "0.4.13", features = ["tracing"] }
 tracing = "0.1.41"
 async-trait = "0.1.89"
 hyper = "1.6.0"
-tower-http = { version = "0.6.6", features = ["full"] }
+tower-http = { version = "0.6.8", features = ["full"] }
 hiero-sdk = { path = "../." }
 hiero-sdk-proto = { path = "../protobufs", version = "0.20.0", features = ["time_0_3", "fraction"] }
 once_cell = "1.21.3"
