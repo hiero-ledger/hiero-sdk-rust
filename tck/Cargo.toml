@@ -11,7 +11,7 @@ tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 tokio = { version = "1.48.0", features = ["signal"] }
 anyhow = "1.0.99"
 tower = { version = "0.4.13", features = ["tracing"] }
-tracing = "0.1.41"
+tracing = "0.1.44"
 async-trait = "0.1.89"
 hyper = "1.6.0"
 tower-http = { version = "0.6.6", features = ["full"] }
