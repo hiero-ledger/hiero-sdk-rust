@@ -5,6 +5,10 @@ use futures_core::stream::BoxStream;
 use futures_util::TryStreamExt;
 
 use super::subscribe::MirrorQueryExecute;
+use crate::fee_estimate::{
+    FeeEstimateQueryData,
+    FeeEstimateResponse,
+};
 use crate::topic::TopicMessageQueryData;
 use crate::{
     MirrorQuery,
@@ -20,12 +24,14 @@ pub type AnyMirrorQuery = MirrorQuery<AnyMirrorQueryData>;
 pub enum AnyMirrorQueryData {
     NodeAddressBook(NodeAddressBookQueryData),
     TopicMessage(TopicMessageQueryData),
+    FeeEstimate(FeeEstimateQueryData),
 }
 
 #[derive(Debug, Clone)]
 pub enum AnyMirrorQueryMessage {
     NodeAddressBook(NodeAddress),
     TopicMessage(TopicMessage),
+    FeeEstimate(FeeEstimateResponse),
 }
 
 /// Represents the response of any possible query to the mirror network.
@@ -34,6 +40,8 @@ pub enum AnyMirrorQueryResponse {
     NodeAddressBook(<NodeAddressBookQueryData as MirrorQueryExecute>::Response),
     /// Response for `AnyMirrorQuery::TopicMessage`.
     TopicMessage(<TopicMessageQueryData as MirrorQueryExecute>::Response),
+    /// Response for `AnyMirrorQuery::FeeEstimate`.
+    FeeEstimate(<FeeEstimateQueryData as MirrorQueryExecute>::Response),
 }
 
 impl MirrorQueryExecute for AnyMirrorQueryData {
@@ -64,6 +72,10 @@ impl MirrorQueryExecute for AnyMirrorQueryData {
                 it.subscribe_with_optional_timeout(params, client, timeout)
                     .map_ok(Self::Item::from),
             ),
+            AnyMirrorQueryData::FeeEstimate(it) => Box::pin(
+                it.subscribe_with_optional_timeout(params, client, timeout)
+                    .map_ok(Self::Item::from),
+            ),
         }
     }
 
@@ -80,6 +92,11 @@ impl MirrorQueryExecute for AnyMirrorQueryData {
                     .map(Self::Response::from)
             }),
             AnyMirrorQueryData::TopicMessage(it) => Box::pin(async move {
+                it.execute_with_optional_timeout(params, client, timeout)
+                    .await
+                    .map(Self::Response::from)
+            }),
+            AnyMirrorQueryData::FeeEstimate(it) => Box::pin(async move {
                 it.execute_with_optional_timeout(params, client, timeout)
                     .await
                     .map(Self::Response::from)
