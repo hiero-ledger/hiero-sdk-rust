@@ -349,6 +349,23 @@ jobs:
           installMirrorNode: true
           hieroVersion: ${{ env.CONSENSUS_NODE_VERSION }}
 
+      - name: Create env file
+        run: |
+          touch .env
+          echo TEST_OPERATOR_ID="0.0.2" >> .env
+          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
+          echo TEST_NETWORK_NAME="localhost" >> .env
+          echo TEST_RUN_NONFREE="1" >> .env
+          cat .env
+
+      - name: Reset the workspace
+        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && !cancelled() && always() }}
+        run: |
+          echo "::group::Reset Workspace"
+          git reset --hard
+          git clean -fdx
+          echo "::endgroup::"
+
       - name: Generate Github Release
         uses: step-security/release-action@03a57407052f15d1537fd5469a6fbbc536aba326 # v1.20.0
         if: ${{ env.DRY_RUN_ENABLED != 'true' }}
