@@ -337,35 +337,6 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: cargo publish ${{ steps.sdk-publish-args.outputs.args }}
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Prepare Hiero Solo
-        id: solo
-        uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
-        with:
-          installMirrorNode: true
-          hieroVersion: ${{ env.CONSENSUS_NODE_VERSION }}
-
-      - name: Create env file
-        run: |
-          touch .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_NETWORK_NAME="localhost" >> .env
-          echo TEST_RUN_NONFREE="1" >> .env
-          cat .env
-
-      - name: Reset the workspace
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && !cancelled() && always() }}
-        run: |
-          echo "::group::Reset Workspace"
-          git reset --hard
-          git clean -fdx
-          echo "::endgroup::"
-
       - name: Generate Github Release
         uses: step-security/release-action@03a57407052f15d1537fd5469a6fbbc536aba326 # v1.20.0
         if: ${{ env.DRY_RUN_ENABLED != 'true' }}
