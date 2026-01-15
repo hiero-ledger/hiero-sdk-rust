@@ -322,7 +322,7 @@ jobs:
 
       # Publish the hiero-sdk-proto package
       - name: Publish proto to crates.io (hiero-sdk-proto)
-        if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
+        if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: |
@@ -332,7 +332,7 @@ jobs:
 
       # Publish the main SDK package (hiero-sdk)
       - name: Publish SDK to crates.io (hiero-sdk)
-        if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
+        if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: cargo publish ${{ steps.sdk-publish-args.outputs.args }}
