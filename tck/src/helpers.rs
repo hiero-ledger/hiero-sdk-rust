@@ -12,11 +12,13 @@ use hiero_sdk::{
     Transaction,
     TransactionId,
 };
+use hiero_sdk_proto::services;
 use jsonrpsee::types::error::INVALID_PARAMS_CODE;
 use jsonrpsee::types::{
     ErrorObject,
     ErrorObjectOwned,
 };
+use prost::Message;
 use serde_json::Value;
 use time::Duration;
 
@@ -156,7 +158,7 @@ pub(crate) fn generate_key_helper(
 
     match key_type {
         KeyType::Ed25519PrivateKeyType | KeyType::EcdsaSecp256k1PrivateKeyType => {
-            let key = if key_type == KeyType::Ed25519PublicKeyType {
+            let key = if key_type == KeyType::Ed25519PrivateKeyType {
                 PrivateKey::generate_ed25519().to_string_der()
             } else {
                 PrivateKey::generate_ecdsa().to_string_der()
@@ -170,15 +172,25 @@ pub(crate) fn generate_key_helper(
         }
         KeyType::Ed25519PublicKeyType | KeyType::EcdsaSecp256k1PublicKeyType => {
             if let Some(from_key) = from_key {
-                return PrivateKey::from_str_der(&from_key)
-                    .map(|key| key.public_key().to_string_der())
-                    .map_err(|_| {
-                        ErrorObject::borrowed(
+                // Try parsing as DER first, then try other formats
+                let private_key = PrivateKey::from_str_der(&from_key)
+                    .or_else(|_| {
+                        // Try parsing as Ed25519 raw key
+                        if key_type == KeyType::Ed25519PublicKeyType {
+                            PrivateKey::from_str_ed25519(&from_key)
+                        } else {
+                            PrivateKey::from_str_ecdsa(&from_key)
+                        }
+                    })
+                    .map_err(|e| {
+                        ErrorObject::owned(
                             INVALID_PARAMS_CODE,
-                            "generateKey: could not produce {key_type:?}",
-                            None,
+                            format!("generateKey: fromKey is invalid: {}", e),
+                            None::<()>,
                         )
-                    });
+                    })?;
+
+                return Ok(private_key.public_key().to_string_der());
             };
 
             let key = if key_type == KeyType::Ed25519PublicKeyType {
@@ -198,16 +210,188 @@ pub(crate) fn generate_key_helper(
 
             if let Value::Array(key_array) = keys.unwrap() {
                 for key in key_array {
+                    let key_from_key = key.get("fromKey").and_then(|v| {
+                        // Check if fromKey is an index (number or numeric string) into private_keys
+                        if let Some(idx) = v.as_u64() {
+                            private_keys
+                                .get(idx as usize)
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                        } else if let Some(idx_str) = v.as_str() {
+                            // Try parsing as index first
+                            if let Ok(idx) = idx_str.parse::<usize>() {
+                                private_keys
+                                    .get(idx)
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string())
+                            } else {
+                                // Not an index, treat as direct key string
+                                Some(idx_str.to_string())
+                            }
+                        } else {
+                            None
+                        }
+                    });
+
+                    let key_type_str = key["type"].as_str().unwrap().to_string();
+                    let is_nested_key_list =
+                        key_type_str == "keyList" || key_type_str == "thresholdKey";
+
                     let generate_key = &generate_key_helper(
-                        key["type"].as_str().unwrap().to_string(),
-                        None,
+                        key_type_str,
+                        key_from_key,
                         None,
                         key.get("keys").map(|value| value.clone()),
                         private_keys,
                         true,
                     )?;
 
-                    let get_key = get_hedera_key(&generate_key)?;
+                    let get_key = if is_nested_key_list {
+                        // For nested KeyLists, decode the hex-encoded protobuf bytes directly
+                        let bytes = hex::decode(generate_key).map_err(|e| {
+                            ErrorObject::owned(
+                                INVALID_PARAMS_CODE,
+                                format!("generateKey: failed to decode hex key: {}", e),
+                                None::<()>,
+                            )
+                        })?;
+                        // Decode protobuf bytes using prost
+                        let proto_key = services::Key::decode(bytes.as_slice()).map_err(|e| {
+                            ErrorObject::owned(
+                                INVALID_PARAMS_CODE,
+                                format!("generateKey: failed to decode protobuf key: {}", e),
+                                None::<()>,
+                            )
+                        })?;
+                        // Manually convert from protobuf Key to hiero_sdk::Key
+                        // (replicating FromProtobuf logic since trait is private)
+                        use services::key::Key::*;
+                        match proto_key.key {
+                            Some(Ed25519(key_bytes)) => Key::Single(
+                                PublicKey::from_bytes_ed25519(&key_bytes).map_err(|e| {
+                                    ErrorObject::owned(
+                                        INVALID_PARAMS_CODE,
+                                        format!("generateKey: failed to parse Ed25519 key: {}", e),
+                                        None::<()>,
+                                    )
+                                })?,
+                            ),
+                            Some(EcdsaSecp256k1(key_bytes)) => Key::Single(
+                                PublicKey::from_bytes_ecdsa(&key_bytes).map_err(|e| {
+                                    ErrorObject::owned(
+                                        INVALID_PARAMS_CODE,
+                                        format!("generateKey: failed to parse ECDSA key: {}", e),
+                                        None::<()>,
+                                    )
+                                })?,
+                            ),
+                            Some(KeyList(key_list_proto)) => {
+                                // For KeyList, we need to recursively process the keys
+                                let mut key_list = hiero_sdk::KeyList::new();
+                                for proto_key_inner in key_list_proto.keys {
+                                    // Decode each key in the list from protobuf
+                                    use services::key::Key::*;
+                                    let inner_key = match proto_key_inner.key {
+                                        Some(Ed25519(key_bytes)) => {
+                                            Key::Single(PublicKey::from_bytes_ed25519(&key_bytes).map_err(|e| {
+                                                ErrorObject::owned(
+                                                    INVALID_PARAMS_CODE,
+                                                    format!("generateKey: failed to parse Ed25519 key: {}", e),
+                                                    None::<()>,
+                                                )
+                                            })?)
+                                        }
+                                        Some(EcdsaSecp256k1(key_bytes)) => {
+                                            Key::Single(PublicKey::from_bytes_ecdsa(&key_bytes).map_err(|e| {
+                                                ErrorObject::owned(
+                                                    INVALID_PARAMS_CODE,
+                                                    format!("generateKey: failed to parse ECDSA key: {}", e),
+                                                    None::<()>,
+                                                )
+                                            })?)
+                                        }
+                                        Some(KeyList(_)) | Some(ThresholdKey(_)) => {
+                                            // Nested KeyList - this case should be handled at a higher level
+                                            // For now, return an error
+                                            return Err(ErrorObject::owned(
+                                                INVALID_PARAMS_CODE,
+                                                "generateKey: deeply nested KeyLists require special handling",
+                                                None::<()>,
+                                            ));
+                                        }
+                                        _ => {
+                                            return Err(ErrorObject::owned(
+                                                INVALID_PARAMS_CODE,
+                                                "generateKey: unsupported key type in KeyList",
+                                                None::<()>,
+                                            ));
+                                        }
+                                    };
+                                    key_list.keys.push(inner_key);
+                                }
+                                Key::KeyList(key_list)
+                            }
+                            Some(ThresholdKey(services::ThresholdKey {
+                                keys: Some(key_list_proto),
+                                threshold: threshold_val,
+                                ..
+                            })) => {
+                                // For ThresholdKey, process similarly but set threshold
+                                let mut key_list = hiero_sdk::KeyList::new();
+                                for proto_key_inner in key_list_proto.keys {
+                                    use services::key::Key::*;
+                                    let inner_key = match proto_key_inner.key {
+                                        Some(Ed25519(key_bytes)) => {
+                                            Key::Single(PublicKey::from_bytes_ed25519(&key_bytes).map_err(|e| {
+                                                ErrorObject::owned(
+                                                    INVALID_PARAMS_CODE,
+                                                    format!("generateKey: failed to parse Ed25519 key: {}", e),
+                                                    None::<()>,
+                                                )
+                                            })?)
+                                        }
+                                        Some(EcdsaSecp256k1(key_bytes)) => {
+                                            Key::Single(PublicKey::from_bytes_ecdsa(&key_bytes).map_err(|e| {
+                                                ErrorObject::owned(
+                                                    INVALID_PARAMS_CODE,
+                                                    format!("generateKey: failed to parse ECDSA key: {}", e),
+                                                    None::<()>,
+                                                )
+                                            })?)
+                                        }
+                                        Some(KeyList(_)) | Some(ThresholdKey(_)) => {
+                                            return Err(ErrorObject::owned(
+                                                INVALID_PARAMS_CODE,
+                                                "generateKey: deeply nested KeyLists require special handling",
+                                                None::<()>,
+                                            ));
+                                        }
+                                        _ => {
+                                            return Err(ErrorObject::owned(
+                                                INVALID_PARAMS_CODE,
+                                                "generateKey: unsupported key type in ThresholdKey",
+                                                None::<()>,
+                                            ));
+                                        }
+                                    };
+                                    key_list.keys.push(inner_key);
+                                }
+                                // Set threshold (convert from protobuf u32 to Option<u32>)
+                                key_list.threshold = Some(threshold_val);
+                                Key::KeyList(key_list)
+                            }
+                            _ => {
+                                return Err(ErrorObject::owned(
+                                    INVALID_PARAMS_CODE,
+                                    "generateKey: unsupported key type in nested KeyList",
+                                    None::<()>,
+                                ));
+                            }
+                        }
+                    } else {
+                        // For regular keys, use get_hedera_key to parse DER-encoded strings
+                        get_hedera_key(&generate_key)?
+                    };
 
                     key_list.keys.push(get_key);
                 }
@@ -252,17 +436,85 @@ pub(crate) fn generate_key_helper(
 }
 
 pub(crate) fn get_hedera_key(key: &str) -> Result<Key, ErrorObjectOwned> {
-    match PrivateKey::from_str_der(key).map(|pk| Key::Single(pk.public_key())) {
-        Ok(key) => Ok(key),
-        Err(_) => match PublicKey::from_str_der(key).map(Key::Single) {
-            Ok(key) => Ok(key),
-            Err(_) => {
-                let public_key = PublicKey::from_str_ed25519(key).map_err(|_| {
-                    ErrorObject::borrowed(-32603, "generateKey: fromKey is invalid.", None)
-                })?;
+    // First, try parsing as DER-encoded private key
+    if let Ok(pk) = PrivateKey::from_str_der(key) {
+        return Ok(Key::Single(pk.public_key()));
+    }
 
-                Ok(public_key.into())
+    // Try parsing as DER-encoded public key
+    if let Ok(pk) = PublicKey::from_str_der(key) {
+        return Ok(Key::Single(pk));
+    }
+
+    // Try parsing as hex-encoded protobuf Key (for KeyLists)
+    if let Ok(bytes) = hex::decode(key) {
+        if let Ok(proto_key) = services::Key::decode(bytes.as_slice()) {
+            return parse_proto_key_to_hedera_key(proto_key);
+        }
+    }
+
+    // Finally, try as raw ed25519 public key
+    let public_key = PublicKey::from_str_ed25519(key).map_err(|e| {
+        ErrorObject::owned(
+            -32603,
+            format!("generateKey: fromKey is invalid. Key: '{}', Error: {}", key, e),
+            None::<()>,
+        )
+    })?;
+
+    Ok(public_key.into())
+}
+
+/// Helper function to convert protobuf Key to hiero_sdk::Key
+fn parse_proto_key_to_hedera_key(proto_key: services::Key) -> Result<Key, ErrorObjectOwned> {
+    use services::key::Key::*;
+
+    match proto_key.key {
+        Some(Ed25519(key_bytes)) => {
+            let pk = PublicKey::from_bytes_ed25519(&key_bytes).map_err(|e| {
+                ErrorObject::owned(
+                    INVALID_PARAMS_CODE,
+                    format!("Failed to parse Ed25519 key: {}", e),
+                    None::<()>,
+                )
+            })?;
+            Ok(Key::Single(pk))
+        }
+        Some(EcdsaSecp256k1(key_bytes)) => {
+            let pk = PublicKey::from_bytes_ecdsa(&key_bytes).map_err(|e| {
+                ErrorObject::owned(
+                    INVALID_PARAMS_CODE,
+                    format!("Failed to parse ECDSA key: {}", e),
+                    None::<()>,
+                )
+            })?;
+            Ok(Key::Single(pk))
+        }
+        Some(KeyList(key_list_proto)) => {
+            let mut key_list = hiero_sdk::KeyList::new();
+            for proto_key_inner in key_list_proto.keys {
+                let inner_key = parse_proto_key_to_hedera_key(proto_key_inner)?;
+                key_list.keys.push(inner_key);
             }
-        },
+            Ok(Key::KeyList(key_list))
+        }
+        Some(ThresholdKey(services::ThresholdKey {
+            keys: Some(key_list_proto),
+            threshold,
+            ..
+        })) => {
+            let mut key_list = hiero_sdk::KeyList::new();
+            for proto_key_inner in key_list_proto.keys {
+                let inner_key = parse_proto_key_to_hedera_key(proto_key_inner)?;
+                key_list.keys.push(inner_key);
+            }
+            key_list.threshold = Some(threshold);
+            Ok(Key::KeyList(key_list))
+        }
+        _ => Err(ErrorObject::owned(
+            INVALID_PARAMS_CODE,
+            "Unsupported key type in protobuf",
+            None::<()>,
+        )),
     }
 }
