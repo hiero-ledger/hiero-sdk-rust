@@ -286,7 +286,10 @@ impl ToProtobuf for FractionalFeeData {
 
     fn to_protobuf(&self) -> Self::Protobuf {
         Self::Protobuf {
-            fractional_amount: Some(Fraction::new(self.numerator, self.denominator).into()),
+            fractional_amount: Some(services::Fraction {
+                numerator: self.numerator as i64,
+                denominator: self.denominator as i64,
+            }),
             minimum_amount: self.minimum_amount,
             maximum_amount: self.maximum_amount,
             net_of_transfers: matches!(self.assessment_method, FeeAssessmentMethod::Exclusive),
