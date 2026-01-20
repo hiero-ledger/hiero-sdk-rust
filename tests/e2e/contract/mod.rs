@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     ContractCreateTransaction,
     ContractFunctionParameters,
     ContractId,
@@ -59,9 +59,9 @@ const SMART_CONTRACT_BYTECODE: &str = concat!(
 ///
 /// This is intended as an optimization (cost wise & network resource wise).
 async fn bytecode_file_id(
-    client: &hedera::Client,
-    op_key: hedera::PublicKey,
-) -> hedera::Result<FileId> {
+    client: &hiero_sdk::Client,
+    op_key: hiero_sdk::PublicKey,
+) -> hiero_sdk::Result<FileId> {
     use time::{
         Duration,
         OffsetDateTime,
@@ -69,10 +69,10 @@ async fn bytecode_file_id(
     static BYTECODE_FILE: tokio::sync::OnceCell<FileId> = tokio::sync::OnceCell::const_new();
 
     async fn make_file(
-        client: &hedera::Client,
-        op_key: hedera::PublicKey,
-    ) -> hedera::Result<FileId> {
-        let file_id = hedera::FileCreateTransaction::new()
+        client: &hiero_sdk::Client,
+        op_key: hiero_sdk::PublicKey,
+    ) -> hiero_sdk::Result<FileId> {
+        let file_id = hiero_sdk::FileCreateTransaction::new()
             .keys([op_key])
             .contents(SMART_CONTRACT_BYTECODE)
             .expiration_time(OffsetDateTime::now_utc() + Duration::days(30))
@@ -92,15 +92,15 @@ async fn bytecode_file_id(
 }
 
 async fn create_contract(
-    client: &hedera::Client,
+    client: &hiero_sdk::Client,
     op_key: PublicKey,
     admin_key: impl Into<Option<ContractAdminKey>>,
-) -> hedera::Result<ContractId> {
+) -> hiero_sdk::Result<ContractId> {
     async fn inner(
-        client: &hedera::Client,
+        client: &hiero_sdk::Client,
         op_key: PublicKey,
         admin_key: Option<ContractAdminKey>,
-    ) -> hedera::Result<ContractId> {
+    ) -> hiero_sdk::Result<ContractId> {
         let file_id = bytecode_file_id(client, op_key).await?;
 
         let mut tx = ContractCreateTransaction::new();

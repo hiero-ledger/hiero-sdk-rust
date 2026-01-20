@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     ContractDeleteTransaction,
     ContractInfoQuery,
     Status,
@@ -64,7 +64,7 @@ async fn missing_admin_key_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::ModifyingImmutableContract, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::ModifyingImmutableContract, .. })
     );
 
     Ok(())
@@ -80,7 +80,7 @@ async fn missing_contract_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidContractId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidContractId, .. })
     );
 
     Ok(())

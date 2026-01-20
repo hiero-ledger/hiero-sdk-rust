@@ -50,7 +50,7 @@ impl From<u64> for StakedId {
 }
 
 mod proto {
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
 
     use super::StakedId;
     use crate::FromProtobuf;

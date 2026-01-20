@@ -3,7 +3,7 @@
 use std::io::Write;
 
 use clap::Parser;
-use hedera::{AccountBalanceQuery, AccountId, Client};
+use hiero_sdk::{AccountBalanceQuery, AccountId, Client};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -43,7 +43,7 @@ async fn manual_checksum_validation(client: &Client) -> anyhow::Result<Option<Ac
             Ok(()) => {}
             Err(e) => {
                 println!("{e}");
-                if let hedera::Error::BadEntityId {
+                if let hiero_sdk::Error::BadEntityId {
                     shard,
                     realm,
                     num,
@@ -111,7 +111,7 @@ fn parse_account_id() -> anyhow::Result<Option<AccountId>> {
 
         let account_id: AccountId = match line.parse() {
             Ok(account_id) => account_id,
-            Err(err @ hedera::Error::BasicParse(_)) => {
+            Err(err @ hiero_sdk::Error::BasicParse(_)) => {
                 println!("{err:?}");
                 continue;
             }

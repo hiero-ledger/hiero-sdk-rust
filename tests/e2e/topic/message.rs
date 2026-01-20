@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     Key,
     TopicInfoQuery,
     TopicMessageQuery,
@@ -64,7 +64,7 @@ async fn basic() -> anyhow::Result<()> {
             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
             // topic not found -> try again
-            if let Err(hedera::Error::GrpcStatus(status)) = &res {
+            if let Err(hiero_sdk::Error::GrpcStatus(status)) = &res {
                 if status.code() == tonic::Code::NotFound {
                     tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                     continue;
@@ -127,7 +127,7 @@ async fn large() -> anyhow::Result<()> {
                 .await;
 
             // topic not found -> try again
-            if let Err(hedera::Error::GrpcStatus(status)) = &res {
+            if let Err(hiero_sdk::Error::GrpcStatus(status)) = &res {
                 if status.code() == tonic::Code::NotFound {
                     tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                     continue;

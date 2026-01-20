@@ -71,6 +71,20 @@ pub(crate) trait Execute: ValidateChecksums {
         None
     }
 
+    /// Returns the gRPC deadline for this request.
+    ///
+    /// If set, this overrides the client's default grpc_deadline.
+    fn grpc_deadline(&self) -> Option<std::time::Duration> {
+        None
+    }
+
+    /// Returns the request timeout for this request (including retries).
+    ///
+    /// If set, this takes priority over the timeout passed to execute methods and the client's request_timeout.
+    fn request_timeout(&self) -> Option<std::time::Duration> {
+        None
+    }
+
     /// Check whether to retry an pre-check status.
     fn should_retry_pre_check(&self, _status: Status) -> bool {
         false
@@ -136,7 +150,7 @@ struct ExecuteContext<'a> {
     backoff_config: ExponentialBackoff,
     max_attempts: usize,
     // timeout for a single grpc request.
-    grpc_timeout: Option<Duration>,
+    grpc_deadline: Duration,
     // Reference to the client for triggering network updates
     client: &'a Client,
 }
@@ -180,9 +194,20 @@ where
         .with_initial_interval(backoff.initial_backoff)
         .with_max_interval(backoff.max_backoff);
 
-    if let Some(timeout) = timeout.or(backoff.request_timeout) {
-        backoff_builder.with_max_elapsed_time(Some(timeout));
-    }
+    // Timeout priority (matching JS SDK behavior):
+    // 1. Transaction's request_timeout field (if set)
+    // 2. Parameter timeout passed to execute
+    // 3. Client's request_timeout
+    // 4. Default DEFAULT_REQUEST_TIMEOUT
+    let request_timeout = executable
+        .request_timeout()
+        .or(timeout)
+        .or(backoff.request_timeout)
+        .unwrap_or(client::DEFAULT_REQUEST_TIMEOUT);
+    backoff_builder.with_max_elapsed_time(Some(request_timeout));
+
+    // Use transaction's grpc_deadline if set, otherwise use client's default
+    let grpc_deadline = executable.grpc_deadline().unwrap_or(backoff.grpc_deadline);
 
     execute_inner(
         &ExecuteContext {
@@ -190,7 +215,7 @@ where
             backoff_config: backoff_builder.build(),
             operator_account_id,
             network: client.net().0.load_full(),
-            grpc_timeout: backoff.grpc_timeout,
+            grpc_deadline,
             client,
         },
         executable,
@@ -212,8 +237,8 @@ where
                 network: Arc::clone(&ctx.network),
                 backoff_config: ctx.backoff_config.clone(),
                 max_attempts: ctx.max_attempts,
-                grpc_timeout: ctx.grpc_timeout,
                 client: ctx.client,
+                grpc_deadline: ctx.grpc_deadline,
             };
             let ping_query = PingQuery::new(ctx.network.node_ids()[index]);
 
@@ -282,7 +307,7 @@ where
                     },
                     "Execution of {} on node at index {node_index} / node id {} {}",
                     type_name::<E>(),
-                    ctx.network.channel(node_index).0,
+                    ctx.network.channel(node_index, ctx.grpc_deadline).0,
                     match &tmp {
                         Ok(ControlFlow::Break(_)) => Cow::Borrowed("succeeded"),
                         Ok(ControlFlow::Continue(err)) =>
@@ -365,7 +390,7 @@ async fn execute_single<'a, E: Execute + Sync>(
     node_index: usize,
     transaction_id: &mut Option<TransactionId>,
 ) -> retry::Result<ControlFlow<E::Response, Error>> {
-    let (node_account_id, channel) = ctx.network.channel(node_index);
+    let (node_account_id, channel) = ctx.network.channel(node_index, ctx.grpc_deadline);
 
     log::debug!(
         "Preparing {} on node at index {node_index} / node id {node_account_id}",
@@ -387,16 +412,13 @@ async fn execute_single<'a, E: Execute + Sync>(
 
     let fut = executable.execute(channel, req.into_inner());
 
-    let response = match ctx.grpc_timeout {
-        Some(it) => match tokio::time::timeout(it, fut).await {
-            Ok(it) => it,
-            Err(_) => {
-                return Ok(ControlFlow::Continue(crate::Error::GrpcStatus(
-                    tonic::Status::deadline_exceeded("explicitly given grpc timeout was exceeded"),
-                )))
-            }
-        },
-        None => fut.await,
+    let response = match tokio::time::timeout(ctx.grpc_deadline, fut).await {
+        Ok(it) => it,
+        Err(_) => {
+            return Ok(ControlFlow::Continue(crate::Error::GrpcStatus(
+                tonic::Status::deadline_exceeded("grpc deadline was exceeded"),
+            )))
+        }
     };
 
     let response = response.map(tonic::Response::into_inner).map_err(|status| {

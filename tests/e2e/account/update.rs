@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountInfoQuery,
     AccountUpdateTransaction,
@@ -78,8 +78,8 @@ async fn missing_account_id_fails() -> anyhow::Result<()> {
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
-            status: hedera::Status::AccountIdDoesNotExist,
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: hiero_sdk::Status::AccountIdDoesNotExist,
             ..
         })
     );
@@ -142,8 +142,8 @@ async fn cannot_update_max_token_association_to_lower_value_fails() -> anyhow::R
 
     assert_matches::assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
-            status: hedera::Status::ExistingAutomaticAssociationsExceedGivenLimit,
+        Err(hiero_sdk::Error::ReceiptStatus {
+            status: hiero_sdk::Status::ExistingAutomaticAssociationsExceedGivenLimit,
             ..
         })
     );

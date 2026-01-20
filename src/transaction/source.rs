@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::ops::Range;
 
-use hedera_proto::services::{
+use hiero_sdk_proto::services::{
     self,
     SignedTransaction,
 };

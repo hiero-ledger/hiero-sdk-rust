@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::smart_contract_service_client::SmartContractServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
 use time::Duration;
 use tonic::transport::Channel;
 
@@ -380,7 +380,7 @@ impl ToProtobuf for ContractCreateTransactionData {
 mod tests {
 
     use expect_test::expect;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
     use time::Duration;
 
     use crate::contract::ContractCreateTransactionData;

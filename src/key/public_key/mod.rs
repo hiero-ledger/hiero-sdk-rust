@@ -13,7 +13,7 @@ use std::hash::{
 use std::str::FromStr;
 
 use ed25519_dalek::Verifier as _;
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use hmac::digest::generic_array::sequence::Split;
 use hmac::digest::generic_array::GenericArray;
 use k256::ecdsa;
@@ -294,7 +294,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// use hedera::PublicKey;
+    /// use hiero_sdk::PublicKey;
     ///
     /// let key: PublicKey = "302d300706052b8104000a03220002703a9370b0443be6ae7c507b0aec81a55e94e4a863b9655360bd65358caa6588".parse().unwrap();
     ///

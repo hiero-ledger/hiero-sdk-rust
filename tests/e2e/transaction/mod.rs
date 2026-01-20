@@ -18,7 +18,7 @@
  * ‍
  */
 
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountId,
     AnyTransaction,
@@ -74,6 +74,7 @@ async fn frozen_serialized_transaction_can_be_deserialized() -> anyhow::Result<(
 
     let _ = tx
         .initial_balance(Hbar::from_tinybars(100))
+        .transaction_id(TransactionId::generate(AccountId::new(0, 0, 123)))
         .transaction_memo("HIP-745 test")
         .freeze_with(&client);
 

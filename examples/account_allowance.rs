@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use std::time::Duration;
+
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountAllowanceApproveTransaction, AccountBalanceQuery, AccountCreateTransaction, AccountDeleteTransaction, AccountId, Client, Hbar, PrivateKey, TransactionId, TransferTransaction
 };
 
@@ -24,13 +26,14 @@ struct Account {
     name: &'static str,
 }
 
-async fn create_account(client: &Client, name: &'static str) -> hedera::Result<Account> {
+async fn create_account(client: &Client, name: &'static str) -> hiero_sdk::Result<Account> {
     let key = PrivateKey::generate_ed25519();
 
     let reciept = AccountCreateTransaction::new()
         .set_key_without_alias(key.public_key())
         .initial_balance(Hbar::new(5))
         .account_memo(format!("[sdk::rust::account_allowance_example::{name}]"))
+        .grpc_deadline(Duration::from_secs(10))
         .execute(client)
         .await?
         .get_receipt(client)
@@ -67,7 +70,7 @@ async fn create_accounts(client: &Client) -> anyhow::Result<[Account; 3]> {
 
 // this needs to be a function because rust doesn't have try blocks.
 /// Transfer from `alice` (0) to `charlie` (2) via `bob`'s allowance (1).
-async fn transfer(client: &Client, accounts: &[Account; 3], value: Hbar) -> hedera::Result<()> {
+async fn transfer(client: &Client, accounts: &[Account; 3], value: Hbar) -> hiero_sdk::Result<()> {
     let [alice, bob, charlie] = accounts;
     // `approved_{hbar,token}_transfer()` means that the transfer has been approved by an allowance
     // The allowance spender must be pay the fee for the transaction.
@@ -237,7 +240,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn print_balances(client: &Client, accounts: &[Account; 3]) -> hedera::Result<()> {
+async fn print_balances(client: &Client, accounts: &[Account; 3]) -> hiero_sdk::Result<()> {
     for account in accounts {
         let balance = AccountBalanceQuery::new()
             .account_id(account.id)

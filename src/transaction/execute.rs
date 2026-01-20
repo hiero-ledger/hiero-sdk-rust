@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use prost::Message;
 use tonic::transport::Channel;
 
@@ -176,6 +176,14 @@ where
 
     fn regenerate_transaction_id(&self) -> Option<bool> {
         self.body.regenerate_transaction_id
+    }
+
+    fn grpc_deadline(&self) -> Option<std::time::Duration> {
+        self.grpc_deadline
+    }
+
+    fn request_timeout(&self) -> Option<std::time::Duration> {
+        self.request_timeout
     }
 
     fn make_request(

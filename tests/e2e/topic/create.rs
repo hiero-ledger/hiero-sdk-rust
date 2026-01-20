@@ -1,4 +1,4 @@
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery,
     AccountCreateTransaction,
     Client,
@@ -217,8 +217,8 @@ async fn create_revenue_generating_topic_with_invalid_fee_exempt_key_fails() -> 
 
     assert!(matches!(
         result,
-        Err(hedera::Error::TransactionPreCheckStatus {
-            status: hedera::Status::FeeExemptKeyListContainsDuplicatedKeys,
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: hiero_sdk::Status::FeeExemptKeyListContainsDuplicatedKeys,
             ..
         })
     ));
@@ -237,8 +237,8 @@ async fn create_revenue_generating_topic_with_invalid_fee_exempt_key_fails() -> 
 
     assert!(matches!(
         result.unwrap_err(),
-        hedera::Error::ReceiptStatus {
-            status: hedera::Status::MaxEntriesForFeeExemptKeyListExceeded,
+        hiero_sdk::Error::ReceiptStatus {
+            status: hiero_sdk::Status::MaxEntriesForFeeExemptKeyListExceeded,
             ..
         }
     ));
@@ -278,7 +278,10 @@ async fn update_fee_schedule_key_without_permission_fails() -> anyhow::Result<()
 
     assert!(matches!(
         result.unwrap_err(),
-        hedera::Error::ReceiptStatus { status: hedera::Status::FeeScheduleKeyCannotBeUpdated, .. }
+        hiero_sdk::Error::ReceiptStatus {
+            status: hiero_sdk::Status::FeeScheduleKeyCannotBeUpdated,
+            ..
+        }
     ));
 
     Ok(())
@@ -323,7 +326,7 @@ async fn update_custom_fees_without_fee_schedule_key_fails() -> anyhow::Result<(
 
     assert!(matches!(
         result.unwrap_err(),
-        hedera::Error::ReceiptStatus { status: hedera::Status::FeeScheduleKeyNotSet, .. }
+        hiero_sdk::Error::ReceiptStatus { status: hiero_sdk::Status::FeeScheduleKeyNotSet, .. }
     ));
 
     Ok(())

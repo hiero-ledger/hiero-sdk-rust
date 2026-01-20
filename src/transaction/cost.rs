@@ -1,4 +1,4 @@
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use tonic::transport::Channel;
 
 use super::{
@@ -43,6 +43,8 @@ impl<D: Clone> CostTransaction<D> {
             // cost transactions have no signers
             signers: Vec::new(),
             sources: transaction.sources,
+            grpc_deadline: transaction.grpc_deadline,
+            request_timeout: transaction.request_timeout,
         }
     }
 }
