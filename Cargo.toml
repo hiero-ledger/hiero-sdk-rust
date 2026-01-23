@@ -44,13 +44,13 @@ time = "0.3.43"
 tokio = { version = "1.48.0", features = ["time"] }
 tonic = "0.12.3"
 tinystr = { version = "0.7.0", default-features = false }
-arc-swap = "1.6.0"
+arc-swap = "1.8.0"
 rlp = "0.6.1"
 bytes = { version = "1.2.1", default-features = false }
 pin-project-lite = "0.2.16"
 unsize = "1.1.0"
 parking_lot = "0.12.5"
-serde_json = { version = "1.0.145", optional = true }
+serde_json = { version = "1.0.148", optional = true }
 serde = { version = "1.0.224", optional = true }
 serde_derive = { version = "1.0.163", optional = true }
 pem = "3.0.6"
@@ -99,7 +99,7 @@ clap = { version = "4.5.45", features = ["derive", "env"] }
 dotenvy = "0.15.5"
 expect-test = "1.5.1"
 hex-literal = "1.0.0"
-miniserde = "0.1.42"
+miniserde = "0.1.45"
 parking_lot = "0.12.5"
 
 [dev-dependencies.tokio]

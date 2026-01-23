@@ -6,11 +6,6 @@ on:
         description: "Existing Tag to Publish (eg: v3.7.0)"
         type: string
         required: true
-      dual-publish-enabled:
-        description: "Dual Publish Enabled"
-        type: boolean
-        required: false
-        default: true
       dry-run-enabled:
         description: "Dry Run Enabled"
         type: boolean
@@ -35,8 +30,6 @@ jobs:
   validate-release:
     name: Validate Release
     runs-on: hiero-client-sdk-linux-medium
-    env:
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || github.event_name == 'push' }}
     outputs:
       # Project tag
       tag: ${{ steps.sdk-tag.outputs.name }}
@@ -45,14 +38,12 @@ jobs:
       sdk-version: ${{ steps.sdk-tag.outputs.version }}
       sdk-prerelease: ${{ steps.sdk-tag.outputs.prerelease }}
       sdk-type: ${{ steps.sdk-tag.outputs.type }}
-      hedera-publish-required: ${{ steps.hedera-sdk-required.outputs.hedera-publish-required }}
       hiero-publish-required: ${{ steps.hiero-sdk-required.outputs.hiero-publish-required }}
 
       # proto subpackage
       proto-version: ${{ steps.cargo-versions.outputs.sdk-proto-version }}
       proto-prerelease: ${{ steps.proto-tag.outputs.prerelease }}
       proto-type: ${{ steps.proto-tag.outputs.type }}
-      hedera-proto-publish-required: ${{ steps.hedera-proto-required.outputs.hedera-proto-publish-required }}
       hiero-proto-publish-required: ${{ steps.hiero-sdk-proto-required.outputs.hiero-proto-publish-required }}
 
     steps:
@@ -100,7 +91,6 @@ jobs:
 
       - name: Hiero SDK Proto Subpackage Publish Required
         id: hiero-sdk-proto-required
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           HIERO_SDK_PROTO_PUBLISH_REQUIRED="false"
           if ! curl -sSLf "https://crates.io/api/v1/crates/hiero-sdk-proto/${{ steps.cargo-versions.outputs.sdk-proto-version }}" >/dev/null 2>&1; then
@@ -108,18 +98,8 @@ jobs:
           fi
           echo "hiero-proto-publish-required=${HIERO_SDK_PROTO_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
 
-      - name: Hedera Proto Subpackage Publish Required
-        id: hedera-proto-required
-        run: |
-          HEDERA_PROTO_PUBLISH_REQUIRED="false"
-          if ! curl -sSLf "https://crates.io/api/v1/crates/hedera-proto/${{ steps.cargo-versions.outputs.sdk-proto-version }}" >/dev/null 2>&1; then
-            HEDERA_PROTO_PUBLISH_REQUIRED="true"
-          fi
-          echo "hedera-proto-publish-required=${HEDERA_PROTO_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
-
       - name: Hiero SDK Publish Required
         id: hiero-sdk-required
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
         run: |
           HIERO_SDK_PUBLISH_REQUIRED="false"
           if ! curl -sSLf "https://crates.io/api/v1/crates/hiero-sdk/${{ steps.cargo-versions.outputs.sdk-version }}" >/dev/null 2>&1; then
@@ -127,24 +107,13 @@ jobs:
           fi
           echo "hiero-publish-required=${HIERO_SDK_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
 
-      - name: Hedera SDK Publish Required
-        id: hedera-sdk-required
-        run: |
-          HEDERA_SDK_PUBLISH_REQUIRED="false"
-          if ! curl -sSLf "https://crates.io/api/v1/crates/hedera/${{ steps.cargo-versions.outputs.sdk-version }}" >/dev/null 2>&1; then
-            HEDERA_SDK_PUBLISH_REQUIRED="true"
-          fi
-          echo "hedera-publish-required=${HEDERA_SDK_PUBLISH_REQUIRED}" >> "${GITHUB_OUTPUT}"
-
       - name: Package Version Summary
         run: |
           echo "## Package Version Summary" >> "${GITHUB_STEP_SUMMARY}"
           echo "| Package | Version | Publish Required |" >> "${GITHUB_STEP_SUMMARY}"
           echo "|---------|---------|------------------|" >> "${GITHUB_STEP_SUMMARY}"
           echo "| hiero-sdk-proto | ${{ steps.cargo-versions.outputs.sdk-proto-version }} | ${{ steps.hiero-sdk-proto-required.outputs.hiero-proto-publish-required }} |" >> "${GITHUB_STEP_SUMMARY}"
-          echo "| hedera-proto | ${{ steps.cargo-versions.outputs.sdk-proto-version }} | ${{ steps.hedera-proto-required.outputs.hedera-proto-publish-required }} |" >> "${GITHUB_STEP_SUMMARY}"
           echo "| hiero-sdk | ${{ steps.cargo-versions.outputs.sdk-version }} | ${{ steps.hiero-sdk-required.outputs.hiero-publish-required }} |" >> "${GITHUB_STEP_SUMMARY}"
-          echo "| hedera | ${{ steps.cargo-versions.outputs.sdk-version }} | ${{ steps.hedera-sdk-required.outputs.hedera-publish-required }} |" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Extract SDK Tag Information
         id: sdk-tag
@@ -264,7 +233,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup NodeJS
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -303,7 +272,6 @@ jobs:
       - run-safety-checks
     runs-on: hiero-client-sdk-linux-medium
     env:
-      DUAL_PUBLISH_ENABLED: ${{ inputs.dual-publish-enabled || github.event_name == 'push' }}
       DRY_RUN_ENABLED: ${{ inputs.dry-run-enabled || 'false' }}
     steps:
       - name: Harden Runner
@@ -335,8 +303,7 @@ jobs:
 
       - name: Calculate Proto Subpackage Publish Arguments
         id: proto-publish-args
-        if: ${{ needs.validate-release.outputs.hedera-proto-publish-required == 'true' || 
-              needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
+        if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
@@ -345,8 +312,7 @@ jobs:
         working-directory: protobufs
 
       - name: Calculate SDK Publish Arguments
-        if: ${{ needs.validate-release.outputs.hedera-publish-required == 'true' ||
-                needs.validate-release.outputs.hiero-publish-required == 'true' }}
+        if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' }}
         id: sdk-publish-args
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
@@ -356,7 +322,7 @@ jobs:
 
       # Publish the hiero-sdk-proto package
       - name: Publish proto to crates.io (hiero-sdk-proto)
-        if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
+        if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: |
@@ -366,132 +332,10 @@ jobs:
 
       # Publish the main SDK package (hiero-sdk)
       - name: Publish SDK to crates.io (hiero-sdk)
-        if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' && env.DUAL_PUBLISH_ENABLED == 'true' }}
+        if: ${{ needs.validate-release.outputs.hiero-publish-required == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HL_TOKEN }}
         run: cargo publish ${{ steps.sdk-publish-args.outputs.args }}
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Prepare Hiero Solo
-        id: solo
-        uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
-        with:
-          installMirrorNode: true
-          hieroVersion: ${{ env.CONSENSUS_NODE_VERSION }}
-
-      - name: Create env file
-        run: |
-          touch .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_NETWORK_NAME="localhost" >> .env
-          echo TEST_RUN_NONFREE="1" >> .env
-          cat .env
-
-      # Update the Cargo.toml files for the hedera-* packages
-      - name: Update Cargo.toml for hiero publishing
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' }}
-        run: |
-          echo "::group::Update protobufs/Cargo.toml with new name"       
-          # Update the dependencies in the protobugs/Cargo.toml
-          toml set protobufs/Cargo.toml package.name "hedera-proto" > protobufs/Cargo.toml.tmp && mv protobufs/Cargo.toml.tmp protobufs/Cargo.toml
-          echo "::endgroup::"
-          
-          echo "::group::Update main Cargo.toml with new name and dependencies"
-          toml set Cargo.toml package.name "hedera" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
-          # Update the dependencies in the main Cargo.toml
-          sed -i "s/hiero-sdk-proto/hedera-proto/g" Cargo.toml
-
-          echo "::endgroup::"
-          
-          echo "::group::Update TCK Cargo.toml with new dependencies"
-          # Update the dependencies in the tck/Cargo.toml for both protobufs and sdk
-          sed -i "s/hiero-sdk/hedera/g" tck/Cargo.toml
-          echo "::endgroup::"
-          
-          echo "::group::Update files with new names"
-          find . -type f -name "*.rs" -exec sed -i "s/\bhiero_sdk_proto\b/hedera_proto/g" {} +
-          find . -type f -name "*.rs" -exec sed -i "s/\buse hiero_sdk\b/use hedera/g" {} +
-          find . -type f -name "*.rs" -exec sed -i "s/\bhiero_sdk::\b/hedera::/g" {} +
-          echo "::endgroup::"
-          
-          echo "::group::Verify Cargo.toml changes"
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          . $HOME/.cargo/env
-          cargo check --examples --workspace
-          cargo test --workspace -- --skip node::update
-          cargo generate-lockfile
-          echo "::endgroup::"
-
-      # Publish the hedera-proto package
-      - name: Publish Proto Subpackage to crates.io (hedera-proto)
-        if: ${{ needs.validate-release.outputs.hedera-proto-publish-required == 'true'}}
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
-        run: cargo publish ${{ steps.proto-publish-args.outputs.args }}
-        working-directory: protobufs
-
-      # Test the hedera package if proto hasn't been published yet.
-      - name: Reset the workspace
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
-        run: |
-          echo "::group::Reset Workspace"
-          git reset --hard
-          git clean -fdx
-          echo "::endgroup::"
-
-      - name: Create env file
-        run: |
-          touch .env
-          echo TEST_OPERATOR_ID="0.0.2" >> .env
-          echo TEST_OPERATOR_KEY="302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137" >> .env
-          echo TEST_NETWORK_NAME="localhost" >> .env
-          echo TEST_RUN_NONFREE="1" >> .env
-          cat .env
-
-      - name: Set up Cargo files for SDK Dual publish
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && env.DRY_RUN_ENABLED == 'true' }}
-        run: |
-          echo "::group::Update main Cargo.toml with new name and dependencies"
-          toml set Cargo.toml package.name "hedera" > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
-          
-          echo "::group::Update TCK Cargo.toml with new dependencies"
-          # Update the dependencies in the tck/Cargo.toml
-          sed -i "s/hiero-sdk =/hedera =/g" tck/Cargo.toml
-          echo "::endgroup::"
-          
-          echo "::group::Update files with new names"
-          find . -type f -name "*.rs" -exec sed -i "s/\buse hiero_sdk\b/use hedera/g" {} +
-          find . -type f -name "*.rs" -exec sed -i "s/\bhiero_sdk::\b/hedera::/g" {} +
-          echo "::endgroup::"
-          
-          echo "::group::Verify Cargo.toml changes"
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          . $HOME/.cargo/env
-          cargo check --examples --workspace
-          cargo test --workspace -- --skip node::update
-          cargo generate-lockfile
-          echo "::endgroup::"
-
-      # Publish the main SDK package (hedera)
-      - name: Publish SDK to crates.io (hedera)
-        if: ${{ needs.validate-release.outputs.hedera-publish-required == 'true' }}
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_HG_TOKEN }}
-        run: cargo publish ${{ steps.sdk-publish-args.outputs.args }}
-
-      - name: Reset the workspace
-        if: ${{ env.DUAL_PUBLISH_ENABLED == 'true' && !cancelled() && always() }}
-        run: |
-          echo "::group::Reset Workspace"
-          git reset --hard
-          git clean -fdx
-          echo "::endgroup::"
 
       - name: Generate Github Release
         uses: step-security/release-action@03a57407052f15d1537fd5469a6fbbc536aba326 # v1.20.0
