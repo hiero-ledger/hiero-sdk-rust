@@ -359,10 +359,10 @@ impl ToProtobuf for TopicUpdateTransactionData {
             fees: fees.iter().map(|fee| fee.to_protobuf()).collect(),
         });
 
-        let fee_exempt_key_list = self.fee_exempt_keys.as_ref().map(|keys| services::FeeExemptKeyList {
-            keys: keys.iter().map(|key| key.to_protobuf()).collect(),
+        let fee_exempt_key_list = self.fee_exempt_keys.as_ref().map(|keys| {
+            services::FeeExemptKeyList { keys: keys.iter().map(|key| key.to_protobuf()).collect() }
         });
-        
+
         services::ConsensusUpdateTopicTransactionBody {
             auto_renew_account: auto_renew_account_id,
             memo: self.topic_memo.clone(),

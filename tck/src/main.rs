@@ -17,16 +17,22 @@ use jsonrpsee::server::{
 };
 use jsonrpsee::types::Request;
 use jsonrpsee::MethodResponse;
-use methods::{
-    RpcServer,
-    RpcServerImpl,
-};
+use methods::account::AccountRpcServer;
+use methods::contract::ContractRpcServer;
+use methods::file::FileRpcServer;
+use methods::schedule::ScheduleRpcServer;
+use methods::token::TokenRpcServer;
+use methods::topic::TopicRpcServer;
+use methods::utility::UtilityRpcServer;
+use server::RpcServerImpl;
 use tokio::signal;
 
+mod common;
 mod errors;
 mod helpers;
 pub(crate) mod methods;
 mod responses;
+mod server;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -62,7 +68,16 @@ async fn run_server() -> anyhow::Result<SocketAddr> {
     let server = Server::builder().set_rpc_middleware(m).build("127.0.0.1:8544").await?;
 
     let addr = server.local_addr()?;
-    let handle = server.start(RpcServerImpl.into_rpc());
+
+    let mut rpc_module = UtilityRpcServer::into_rpc(RpcServerImpl);
+    rpc_module.merge(AccountRpcServer::into_rpc(RpcServerImpl))?;
+    rpc_module.merge(ContractRpcServer::into_rpc(RpcServerImpl))?;
+    rpc_module.merge(FileRpcServer::into_rpc(RpcServerImpl))?;
+    rpc_module.merge(TokenRpcServer::into_rpc(RpcServerImpl))?;
+    rpc_module.merge(TopicRpcServer::into_rpc(RpcServerImpl))?;
+    rpc_module.merge(ScheduleRpcServer::into_rpc(RpcServerImpl))?;
+
+    let handle = server.start(rpc_module);
 
     tokio::spawn(handle.stopped());
 

@@ -4,6 +4,7 @@ use std::str::FromStr;
 use hex::ToHex;
 use hiero_sdk::{
     AccountId,
+    Client,
     Hbar,
     Key,
     KeyList,
@@ -12,11 +13,18 @@ use hiero_sdk::{
     Transaction,
     TransactionId,
 };
+use hiero_sdk_proto::services::key::Key as ProtoKeyEnum;
+use hiero_sdk_proto::services::{
+    Key as ProtoKey,
+    KeyList as ProtoKeyList,
+    ThresholdKey as ProtoThresholdKey,
+};
 use jsonrpsee::types::error::INVALID_PARAMS_CODE;
 use jsonrpsee::types::{
     ErrorObject,
     ErrorObjectOwned,
 };
+use prost::Message;
 use serde_json::Value;
 use time::Duration;
 
@@ -48,9 +56,10 @@ impl FromStr for KeyType {
     }
 }
 
-pub(crate) fn fill_common_transaction_params<D>(
+pub(crate) fn fill_common_transaction_params<D: hiero_sdk::ValidateChecksums>(
     transaction: &mut Transaction<D>,
     common_transaction_params: &HashMap<String, Value>,
+    client: &Client,
 ) {
     if let Some(transaction_id) = common_transaction_params.get("transactionId") {
         match transaction_id {
@@ -72,13 +81,14 @@ pub(crate) fn fill_common_transaction_params<D>(
     }
 
     if let Some(max_fee) = common_transaction_params.get("maxTransactionFee") {
-        match max_fee {
-            Value::String(max_fee) => {
-                transaction.max_transaction_fee(Hbar::from_tinybars(
-                    max_fee.as_str().parse::<i64>().unwrap(),
-                ));
-            }
-            _ => {}
+        let fee_tinybars = match max_fee {
+            Value::String(s) => s.as_str().parse::<i64>().ok(),
+            Value::Number(n) => n.as_i64(),
+            _ => None,
+        };
+
+        if let Some(tinybars) = fee_tinybars {
+            transaction.max_transaction_fee(Hbar::from_tinybars(tinybars));
         }
     }
 
@@ -103,8 +113,35 @@ pub(crate) fn fill_common_transaction_params<D>(
             _ => {}
         }
     }
-}
 
+    if let Some(signers) = common_transaction_params.get("signers") {
+        if let Err(err) = transaction.freeze_with(client) {
+            panic!("Failed to freeze transaction: {:?}", err);
+        }
+
+        // Get operator public key for comparison
+        let operator_public_key = client.get_operator_public_key();
+
+        match signers {
+            Value::Array(signers) => {
+                for signer in signers {
+                    if let Value::String(signer_str) = signer {
+                        // Skip if this signer's public key matches the operator key
+                        if let Some(ref op_key) = operator_public_key {
+                            if let Ok(private_key) = PrivateKey::from_str(signer_str.as_str()) {
+                                if &private_key.public_key() == op_key {
+                                    continue;
+                                }
+                            }
+                        }
+                        transaction.sign(PrivateKey::from_str(signer_str.as_str()).unwrap());
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
 pub(crate) fn generate_key_helper(
     _type: String,
     from_key: Option<String>,
@@ -257,12 +294,66 @@ pub(crate) fn get_hedera_key(key: &str) -> Result<Key, ErrorObjectOwned> {
         Err(_) => match PublicKey::from_str_der(key).map(Key::Single) {
             Ok(key) => Ok(key),
             Err(_) => {
-                let public_key = PublicKey::from_str_ed25519(key).map_err(|_| {
-                    ErrorObject::borrowed(-32603, "generateKey: fromKey is invalid.", None)
-                })?;
+                // try plain ed25519 pub key string
+                if let Ok(public_key) = PublicKey::from_str_ed25519(key) {
+                    return Ok(public_key.into());
+                }
 
-                Ok(public_key.into())
+                // try hex-encoded serialized services::Key (used for keyList/threshold outputs)
+                if let Ok(bytes) = hex::decode(key) {
+                    if let Ok(pb_key) = ProtoKey::decode(bytes.as_slice()) {
+                        if let Some(k) = key_from_proto(pb_key) {
+                            return Ok(k);
+                        }
+                    }
+                }
+
+                Err(ErrorObject::borrowed(-32603, "generateKey: fromKey is invalid.", None))
             }
         },
+    }
+}
+
+fn key_from_proto(pb_key: ProtoKey) -> Option<Key> {
+    match pb_key.key? {
+        ProtoKeyEnum::Ed25519(bytes) => PublicKey::from_bytes_ed25519(&bytes).ok().map(Key::Single),
+        ProtoKeyEnum::EcdsaSecp256k1(bytes) => {
+            PublicKey::from_bytes_ecdsa(&bytes).ok().map(Key::Single)
+        }
+        ProtoKeyEnum::KeyList(list) => keylist_from_proto(list).map(Key::KeyList),
+        ProtoKeyEnum::ThresholdKey(th) => keylist_from_threshold_proto(th).map(Key::KeyList),
+        _ => None,
+    }
+}
+
+fn keylist_from_proto(pb_list: ProtoKeyList) -> Option<KeyList> {
+    let mut keys = Vec::new();
+    for k in pb_list.keys {
+        if let Some(key) = key_from_proto(ProtoKey { key: k.key }) {
+            keys.push(key);
+        } else {
+            return None;
+        }
+    }
+    Some(KeyList::from(keys))
+}
+
+fn keylist_from_threshold_proto(pb_th: ProtoThresholdKey) -> Option<KeyList> {
+    let list = pb_th.keys?;
+    let mut key_list = keylist_from_proto(list)?;
+    key_list.threshold = Some(pb_th.threshold as u32);
+    Some(key_list)
+}
+
+/// Converts a `Key` to its DER string representation.
+/// For single keys, returns the DER-encoded hex string.
+/// For key lists, returns the hex-encoded protobuf representation.
+pub(crate) fn key_to_der_string(key: &Key) -> String {
+    match key {
+        Key::Single(public_key) => public_key.to_string_der(),
+        Key::KeyList(key_list) => Key::KeyList(key_list.clone()).to_bytes().encode_hex(),
+        Key::ContractId(contract_id) => contract_id.to_string(),
+        Key::DelegateContractId(delegate_id) => delegate_id.to_string(),
+        _ => format!("{:?}", key), // Fallback for any future key types
     }
 }

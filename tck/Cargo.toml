@@ -24,6 +24,7 @@ serde = { version = "1.0.224", features = ["derive"] }
 time = "0.3.43"
 hex = "0.4.3"
 hex-literal = "1.0.0"
+prost = "0.13.5"
 
 [dependencies.jsonrpsee]
 version = "0.24.9"
