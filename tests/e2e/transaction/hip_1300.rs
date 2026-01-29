@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountId,
     Error,
