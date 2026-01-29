@@ -24,3 +24,26 @@ pub struct GenerateKeyResponse {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub private_keys: Vec<Value>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBurnResponse {
+    pub status: String,
+    pub new_total_supply: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token_id: Option<String>,
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenMintResponse {
+    pub status: String,
+    pub new_total_supply: String,
+    pub serial_numbers: Vec<String>,
+}
