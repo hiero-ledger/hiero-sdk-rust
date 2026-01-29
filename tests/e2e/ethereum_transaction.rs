@@ -171,6 +171,7 @@ async fn signer_nonce_changed_on_ethereum_transaction() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[ignore = "Enable when pectra rolls out"]
 async fn eip7702_ethereum_transaction() -> anyhow::Result<()> {
     let Some(TestEnvironment { config, client }) = setup_nonfree() else {
         return Ok(());
@@ -226,12 +227,12 @@ async fn eip7702_ethereum_transaction() -> anyhow::Result<()> {
         .unwrap();
 
     let chain_id = hex::decode("012a").unwrap();
-    let nonce = hex::decode("00").unwrap();
-    let max_priority_gas = hex::decode("00").unwrap();
+    let nonce = hex::decode("").unwrap();
+    let max_priority_gas = hex::decode("").unwrap();
     let max_gas = hex::decode("d1385c7bf0").unwrap();
     let gas_limit = hex::decode("0249f0").unwrap();
     let to = hex::decode(contract_id.to_solidity_address().unwrap()).unwrap();
-    let value = hex::decode("00").unwrap();
+    let value = hex::decode("").unwrap();
     let call_data: Vec<u8> = ContractExecuteTransaction::new()
         .function_with_parameters(
             "setMessage",
