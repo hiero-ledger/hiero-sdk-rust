@@ -663,7 +663,8 @@ impl NodeConnection {
         // Check if we should use TLS (port 50212) - like JS SDK checks nodePort === "50212"
         if self.uses_tls() {
             // For TLS, we need to use round-robin across all channels
-            let channels = self.tls_channels.get_or_init(|| self.create_all_tls_channels(grpc_deadline));
+            let channels =
+                self.tls_channels.get_or_init(|| self.create_all_tls_channels(grpc_deadline));
 
             // Use round-robin to select a channel
             let index = self.tls_channel_index.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
