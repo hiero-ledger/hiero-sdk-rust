@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use hiero_sdk::{
     AccountCreateTransaction,
     AccountId,
