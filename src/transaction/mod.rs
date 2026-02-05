@@ -411,7 +411,9 @@ impl<D: ChunkedTransactionData> Transaction<D> {
     /// # Panics
     /// If `size` == 0
     pub fn chunk_size(&mut self, size: usize) -> &mut Self {
-        let Some(size) = NonZeroUsize::new(size) else { panic!("Cannot set chunk-size to zero") };
+        let Some(size) = NonZeroUsize::new(size) else {
+            panic!("Chunk size must be greater than zero")
+        };
 
         self.data_mut().chunk_data_mut().chunk_size = size;
 
@@ -835,7 +837,7 @@ impl<D: TransactionExecute> Transaction<D> {
                 .max_transaction_fee
                 .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
                 .to_tinybars() as u64,
-            max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
+            max_custom_fees: { self.body.custom_fee_limits.to_protobuf() },
             batch_key: self.body.batch_key.as_ref().map(|key| key.to_protobuf()),
         };
 
@@ -990,10 +992,12 @@ where
 
         let wait_for_receipts = self.data().wait_for_receipt();
 
-        // fixme: error with an actual error.
-        #[allow(clippy::manual_assert)]
         if chunk_data.data.len() > chunk_data.max_message_len() {
-            todo!("error: message too big")
+            return Err(Error::basic_parse(format!(
+                "Message with size {} too long for {} chunks",
+                chunk_data.data.len(),
+                chunk_data.max_chunks
+            )));
         }
 
         let used_chunks = chunk_data.used_chunks();

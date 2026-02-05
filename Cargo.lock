@@ -1076,6 +1076,7 @@ dependencies = [
  "hyper",
  "jsonrpsee",
  "once_cell",
+ "prost 0.13.5",
  "serde",
  "serde_json",
  "time",
