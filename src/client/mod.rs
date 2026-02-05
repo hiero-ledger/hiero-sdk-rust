@@ -362,6 +362,27 @@ impl Client {
         self.net().0.load().addresses()
     }
 
+    /// Returns whether TLS transport security is enabled.
+    ///
+    /// When enabled, connections will use port 50212 with TLS encryption.
+    /// When disabled, connections will use port 50211 with plaintext.
+    #[must_use]
+    pub fn transport_security(&self) -> bool {
+        self.net().0.load().transport_security()
+    }
+
+    /// Enable or disable TLS transport security.
+    ///
+    /// When enabled, addresses with port 50211 will be converted to port 50212 for TLS connections.
+    /// When disabled, connections will use plaintext on port 50211.
+    ///
+    /// # Note
+    /// This setting affects how addresses are converted when creating connections.
+    /// The actual TLS implementation uses dynamic certificate retrieval (like the JavaScript SDK).
+    pub fn set_transport_security(&self, enabled: bool) {
+        self.net().0.load().set_transport_security(enabled);
+    }
+
     /// Returns the max number of times a node can be retried before removing it from the network.
     pub fn max_node_attempts(&self) -> Option<NonZeroUsize> {
         self.net().0.load().max_node_attempts()
