@@ -18,8 +18,10 @@ use jsonrpsee::server::{
 use jsonrpsee::types::Request;
 use jsonrpsee::MethodResponse;
 use methods::{
-    RpcServer,
+    AccountRpcServer,
     RpcServerImpl,
+    TokenRpcServer,
+    UtilityRpcServer,
 };
 use tokio::signal;
 
@@ -62,7 +64,10 @@ async fn run_server() -> anyhow::Result<SocketAddr> {
     let server = Server::builder().set_rpc_middleware(m).build("127.0.0.1:8544").await?;
 
     let addr = server.local_addr()?;
-    let handle = server.start(RpcServerImpl.into_rpc());
+    let mut rpc_module = UtilityRpcServer::into_rpc(RpcServerImpl);
+    rpc_module.merge(AccountRpcServer::into_rpc(RpcServerImpl))?;
+    rpc_module.merge(TokenRpcServer::into_rpc(RpcServerImpl))?;
+    let handle = server.start(rpc_module);
 
     tokio::spawn(handle.stopped());
 
