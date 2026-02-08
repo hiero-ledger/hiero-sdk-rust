@@ -10,12 +10,15 @@ use crate::transaction::AnyTransactionData;
 use crate::{
     AnyTransaction,
     Client,
+    FileAppendTransaction,
+    FileId,
     Hbar,
     PrivateKey,
     TopicMessageSubmitTransaction,
     TransactionId,
     TransferTransaction,
 };
+use crate::transaction::test_helpers;
 
 #[test]
 fn to_bytes_from_bytes() -> crate::Result<()> {
@@ -248,4 +251,111 @@ fn test_grpc_deadline_preserved_through_clone() {
     assert_eq!(tx1.get_grpc_deadline(), Some(StdDuration::from_secs(5)));
     assert_eq!(tx2.get_grpc_deadline(), Some(StdDuration::from_secs(5)));
     assert_eq!(tx3.get_grpc_deadline(), Some(StdDuration::from_secs(8)));
+}
+
+// --- Chunked make_transaction_list (make_sources) ---
+
+#[tokio::test]
+async fn chunked_file_append_produces_used_chunks_times_node_count_transactions(
+) -> crate::Result<()> {
+    let client = Client::for_testnet();
+    client.set_operator(0.into(), PrivateKey::generate_ed25519());
+
+    let node_count = 2usize;
+    let contents_len = 9usize;
+    let chunk_size = 1usize;
+    let used_chunks = (contents_len + chunk_size) / chunk_size;
+
+    let mut tx = FileAppendTransaction::new();
+    tx.file_id(FileId::new(0, 0, 1))
+        .contents(vec![0u8; contents_len])
+        .chunk_size(chunk_size)
+        .node_account_ids([crate::AccountId::new(0, 0, 3), crate::AccountId::new(0, 0, 4)])
+        .freeze_with(&client)?;
+
+    let bodies = test_helpers::transaction_bodies(tx);
+    assert_eq!(
+        bodies.len(),
+        used_chunks * node_count,
+        "chunked FileAppend should produce used_chunks * node_count transactions"
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn chunked_file_append_uses_distinct_transaction_id_per_chunk() -> crate::Result<()> {
+    let client = Client::for_testnet();
+    client.set_operator(0.into(), PrivateKey::generate_ed25519());
+
+    let base_id = TransactionId {
+        account_id: 101.into(),
+        valid_start: OffsetDateTime::now_utc(),
+        nonce: None,
+        scheduled: false,
+    };
+    let mut tx = FileAppendTransaction::new();
+    tx.file_id(FileId::new(0, 0, 1))
+        .contents(vec![0u8; 5])
+        .chunk_size(1)
+        .transaction_id(base_id)
+        .node_account_ids([crate::AccountId::new(0, 0, 3), crate::AccountId::new(0, 0, 4)])
+        .freeze_with(&client)?;
+
+    let bodies = test_helpers::transaction_bodies(tx);
+    let node_count = 2;
+    let id0 = bodies[0]
+        .transaction_id
+        .as_ref()
+        .and_then(|id| id.transaction_valid_start.as_ref())
+        .map(|t| (t.seconds, t.nanos));
+    let id1 = bodies[node_count]
+        .transaction_id
+        .as_ref()
+        .and_then(|id| id.transaction_valid_start.as_ref())
+        .map(|t| (t.seconds, t.nanos));
+    assert!(id0.is_some() && id1.is_some(), "bodies should have transaction_id");
+    assert_ne!(id0, id1, "chunk 0 and chunk 1 should have different transaction IDs (FileAppend uses chunk_interval_nanos)");
+    Ok(())
+}
+
+#[tokio::test]
+async fn chunked_topic_message_submit_uses_distinct_transaction_id_per_chunk() -> crate::Result<()> {
+    let client = Client::for_testnet();
+    client.set_operator(0.into(), PrivateKey::generate_ed25519());
+
+    let base_id = TransactionId {
+        account_id: 101.into(),
+        valid_start: OffsetDateTime::now_utc(),
+        nonce: None,
+        scheduled: false,
+    };
+    let mut tx = TopicMessageSubmitTransaction::new();
+    tx.topic_id(314)
+        .message(vec![0u8; 10])
+        .chunk_size(5)
+        .max_chunks(3)
+        .transaction_id(base_id)
+        .node_account_ids([crate::AccountId::new(0, 0, 3), crate::AccountId::new(0, 0, 4)])
+        .freeze_with(&client)?;
+
+    let bodies = test_helpers::transaction_bodies(tx);
+    let node_count = 2;
+    assert!(bodies.len() >= node_count * 2, "at least 2 chunks * 2 nodes");
+    let id0 = bodies[0]
+        .transaction_id
+        .as_ref()
+        .and_then(|id| id.transaction_valid_start.as_ref())
+        .map(|t| (t.seconds, t.nanos));
+    let id1 = bodies[node_count]
+        .transaction_id
+        .as_ref()
+        .and_then(|id| id.transaction_valid_start.as_ref())
+        .map(|t| (t.seconds, t.nanos));
+    assert!(id0.is_some() && id1.is_some(), "bodies should have transaction_id");
+    assert_ne!(
+        id0, id1,
+        "TopicMessageSubmit chunks use distinct transaction IDs (same as FileAppend)"
+    );
+    Ok(())
 }
