@@ -49,6 +49,7 @@ impl Default for FileAppendTransactionData {
             file_id: None,
             chunk_data: ChunkData {
                 chunk_size: NonZeroUsize::new(4096).unwrap(),
+                chunk_interval_nanos: Some(10), // distinct transaction ID per chunk (matches JS SDK)
                 ..Default::default()
             },
         }
@@ -186,6 +187,7 @@ impl FromProtobuf<Vec<services::FileAppendTransactionBody>> for FileAppendTransa
                 chunk_size: NonZeroUsize::new(largest_chunk_size)
                     .unwrap_or_else(|| NonZeroUsize::new(1).unwrap()),
                 data: contents,
+                chunk_interval_nanos: Some(10),
             },
         })
     }
