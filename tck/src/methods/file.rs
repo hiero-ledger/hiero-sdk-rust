@@ -17,6 +17,7 @@ use jsonrpsee::types::{
 use serde_json::Value;
 use time::OffsetDateTime;
 
+use crate::common::internal_error;
 use crate::errors::from_hedera_error;
 use crate::helpers::{
     fill_common_transaction_params,
@@ -77,11 +78,8 @@ pub async fn create_file(
     }
 
     if let Some(expiration_time) = expiration_time {
-        let timestamp = expiration_time
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
-        let offset = OffsetDateTime::from_unix_timestamp(timestamp)
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let timestamp = expiration_time.parse::<i64>().map_err(internal_error)?;
+        let offset = OffsetDateTime::from_unix_timestamp(timestamp).map_err(internal_error)?;
         tx.expiration_time(offset);
     }
 
@@ -113,10 +111,7 @@ pub async fn append_file(
     let mut tx = FileAppendTransaction::new();
 
     if let Some(file_id) = file_id {
-        tx.file_id(
-            FileId::from_str(&file_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        tx.file_id(FileId::from_str(&file_id).map_err(internal_error)?);
     }
 
     if let Some(contents) = contents {
@@ -156,10 +151,7 @@ pub async fn delete_file(
     let mut tx = FileDeleteTransaction::new();
 
     if let Some(file_id) = file_id {
-        tx.file_id(
-            FileId::from_str(&file_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        tx.file_id(FileId::from_str(&file_id).map_err(internal_error)?);
     }
 
     if let Some(params) = common_transaction_params {

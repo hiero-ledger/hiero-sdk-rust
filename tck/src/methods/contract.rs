@@ -16,18 +16,17 @@ use hiero_sdk::{
     Hbar,
 };
 use jsonrpsee::proc_macros::rpc;
-use jsonrpsee::types::error::INTERNAL_ERROR_CODE;
-use jsonrpsee::types::{
-    ErrorObject,
-    ErrorObjectOwned,
-};
+use jsonrpsee::types::ErrorObjectOwned;
 use serde_json::Value;
 use time::{
     Duration,
     OffsetDateTime,
 };
 
-use crate::common::mock_consensus_error;
+use crate::common::{
+    internal_error,
+    mock_consensus_error,
+};
 use crate::errors::from_hedera_error;
 use crate::helpers::{
     fill_common_transaction_params,
@@ -172,58 +171,44 @@ pub async fn create_contract(
     }
 
     if let Some(auto_renew_period) = auto_renew_period {
-        let period = auto_renew_period
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let period = auto_renew_period.parse::<i64>().map_err(internal_error)?;
         contract_create_tx.auto_renew_period(Duration::seconds(period));
     }
 
     if let Some(gas) = gas {
-        let gas_value = gas
-            .parse::<u64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let gas_value = gas.parse::<u64>().map_err(internal_error)?;
         contract_create_tx.gas(gas_value);
     }
 
     if let Some(auto_renew_account_id) = auto_renew_account_id {
         contract_create_tx.auto_renew_account_id(
-            AccountId::from_str(&auto_renew_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
+            AccountId::from_str(&auto_renew_account_id).map_err(internal_error)?,
         );
     }
 
     if let Some(initial_balance) = initial_balance {
-        let balance = initial_balance
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let balance = initial_balance.parse::<i64>().map_err(internal_error)?;
         contract_create_tx.initial_balance(Hbar::from_tinybars(balance));
     }
 
     if let Some(initcode) = initcode {
-        let initcode_bytes = hex::decode(&initcode).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid hex: {e}"), None::<()>)
-        })?;
+        let initcode_bytes =
+            hex::decode(&initcode).map_err(|e| internal_error(format!("Invalid hex: {e}")))?;
         contract_create_tx.bytecode(initcode_bytes);
     }
 
     if let Some(bytecode_file_id) = bytecode_file_id {
-        contract_create_tx.bytecode_file_id(
-            FileId::from_str(&bytecode_file_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        contract_create_tx
+            .bytecode_file_id(FileId::from_str(&bytecode_file_id).map_err(internal_error)?);
     }
 
     if let Some(staked_account_id) = staked_account_id {
-        contract_create_tx.staked_account_id(
-            AccountId::from_str(&staked_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        contract_create_tx
+            .staked_account_id(AccountId::from_str(&staked_account_id).map_err(internal_error)?);
     }
 
     if let Some(staked_node_id) = staked_node_id {
-        let node_id = staked_node_id
-            .parse::<u64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let node_id = staked_node_id.parse::<u64>().map_err(internal_error)?;
         contract_create_tx.staked_node_id(node_id);
     }
 
@@ -240,9 +225,8 @@ pub async fn create_contract(
     }
 
     if let Some(constructor_parameters) = constructor_parameters {
-        let constructor_params = hex::decode(&constructor_parameters).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid hex: {e}"), None::<()>)
-        })?;
+        let constructor_params = hex::decode(&constructor_parameters)
+            .map_err(|e| internal_error(format!("Invalid hex: {e}")))?;
         contract_create_tx.constructor_parameters(constructor_params);
     }
 
@@ -277,10 +261,7 @@ pub async fn update_contract(
     let mut contract_update_tx = ContractUpdateTransaction::new();
 
     if let Some(contract_id) = contract_id {
-        contract_update_tx.contract_id(
-            ContractId::from_str(&contract_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        contract_update_tx.contract_id(ContractId::from_str(&contract_id).map_err(internal_error)?);
     }
 
     if let Some(admin_key) = admin_key {
@@ -289,16 +270,13 @@ pub async fn update_contract(
     }
 
     if let Some(auto_renew_period) = auto_renew_period {
-        let period = auto_renew_period
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let period = auto_renew_period.parse::<i64>().map_err(internal_error)?;
         contract_update_tx.auto_renew_period(Duration::seconds(period));
     }
 
     if let Some(auto_renew_account_id) = auto_renew_account_id {
         contract_update_tx.auto_renew_account_id(
-            AccountId::from_str(&auto_renew_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
+            AccountId::from_str(&auto_renew_account_id).map_err(internal_error)?,
         );
     }
 
@@ -376,10 +354,7 @@ pub async fn delete_contract(
     let mut contract_delete_tx = ContractDeleteTransaction::new();
 
     if let Some(contract_id) = contract_id {
-        contract_delete_tx.contract_id(
-            ContractId::from_str(&contract_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        contract_delete_tx.contract_id(ContractId::from_str(&contract_id).map_err(internal_error)?);
     }
 
     if let Some(permanent_removal) = permanent_removal {
@@ -389,15 +364,13 @@ pub async fn delete_contract(
     // Depend on how I order transferContractId and transferAccountId the last will stay if both are called
     if let Some(transfer_contract_id) = transfer_contract_id {
         contract_delete_tx.transfer_contract_id(
-            ContractId::from_str(&transfer_contract_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
+            ContractId::from_str(&transfer_contract_id).map_err(internal_error)?,
         );
     }
 
     if let Some(transfer_account_id) = transfer_account_id {
         contract_delete_tx.transfer_account_id(
-            AccountId::from_str(&transfer_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
+            AccountId::from_str(&transfer_account_id).map_err(internal_error)?,
         );
     }
 
@@ -423,30 +396,23 @@ pub async fn execute_contract(
     let mut contract_execute_tx = ContractExecuteTransaction::new();
 
     if let Some(contract_id) = contract_id {
-        contract_execute_tx.contract_id(
-            ContractId::from_str(&contract_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        contract_execute_tx
+            .contract_id(ContractId::from_str(&contract_id).map_err(internal_error)?);
     }
 
     if let Some(gas) = gas {
-        let gas_value = gas
-            .parse::<u64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let gas_value = gas.parse::<u64>().map_err(internal_error)?;
         contract_execute_tx.gas(gas_value);
     }
 
     if let Some(amount) = amount {
-        let amount_value = amount
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount_value = amount.parse::<i64>().map_err(internal_error)?;
         contract_execute_tx.payable_amount(Hbar::from_tinybars(amount_value));
     }
 
     if let Some(function_parameters) = function_parameters {
-        let function_params = hex::decode(&function_parameters).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid hex: {e}"), None::<()>)
-        })?;
+        let function_params = hex::decode(&function_parameters)
+            .map_err(|e| internal_error(format!("Invalid hex: {e}")))?;
         contract_execute_tx.function_parameters(function_params);
     }
 
@@ -478,23 +444,17 @@ pub async fn contract_call_query(
     let mut query = ContractCallQuery::new();
 
     if let Some(contract_id) = contract_id {
-        query.contract_id(
-            ContractId::from_str(&contract_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        query.contract_id(ContractId::from_str(&contract_id).map_err(internal_error)?);
     }
 
     if let Some(gas) = gas {
-        let gas_val = gas
-            .parse::<u64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let gas_val = gas.parse::<u64>().map_err(internal_error)?;
         query.gas(gas_val);
     }
 
     if let Some(function_parameters) = &function_parameters {
-        let bytes = hex::decode(function_parameters).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid hex: {e}"), None::<()>)
-        })?;
+        let bytes = hex::decode(function_parameters)
+            .map_err(|e| internal_error(format!("Invalid hex: {e}")))?;
         query.function_parameters(bytes);
     }
 
@@ -503,17 +463,12 @@ pub async fn contract_call_query(
     }
 
     if let Some(max_query_payment) = max_query_payment {
-        let amount = max_query_payment
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount = max_query_payment.parse::<i64>().map_err(internal_error)?;
         query.max_payment_amount(Hbar::from_tinybars(amount));
     }
 
     if let Some(sender_account_id) = &sender_account_id {
-        query.sender_account_id(
-            AccountId::from_str(sender_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        query.sender_account_id(AccountId::from_str(sender_account_id).map_err(internal_error)?);
     }
 
     let result = query.execute(client).await.map_err(|e| from_hedera_error(e))?;
@@ -575,23 +530,16 @@ pub async fn contract_bytecode_query(
     let mut query = ContractBytecodeQuery::new();
 
     if let Some(contract_id_str) = &contract_id {
-        query.contract_id(
-            ContractId::from_str(contract_id_str)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        query.contract_id(ContractId::from_str(contract_id_str).map_err(internal_error)?);
     }
 
     if let Some(query_payment) = query_payment {
-        let amount = query_payment
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount = query_payment.parse::<i64>().map_err(internal_error)?;
         query.payment_amount(Hbar::from_tinybars(amount));
     }
 
     if let Some(max_query_payment) = max_query_payment {
-        let amount = max_query_payment
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount = max_query_payment.parse::<i64>().map_err(internal_error)?;
         query.max_payment_amount(Hbar::from_tinybars(amount));
     }
     let result = query.execute(client).await.map_err(|e| from_hedera_error(e))?;
@@ -619,23 +567,16 @@ pub async fn contract_info_query(
     let mut query = ContractInfoQuery::new();
 
     if let Some(contract_id) = contract_id {
-        query.contract_id(
-            ContractId::from_str(&contract_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        query.contract_id(ContractId::from_str(&contract_id).map_err(internal_error)?);
     }
 
     if let Some(query_payment) = query_payment {
-        let amount = query_payment
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount = query_payment.parse::<i64>().map_err(internal_error)?;
         query.payment_amount(Hbar::from_tinybars(amount));
     }
 
     if let Some(max_query_payment) = max_query_payment {
-        let amount = max_query_payment
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount = max_query_payment.parse::<i64>().map_err(internal_error)?;
         query.max_payment_amount(Hbar::from_tinybars(amount));
     }
 

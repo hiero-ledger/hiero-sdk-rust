@@ -28,6 +28,7 @@ use time::{
     OffsetDateTime,
 };
 
+use crate::common::internal_error;
 use crate::errors::from_hedera_error;
 use crate::helpers::{
     fill_common_transaction_params,
@@ -132,9 +133,7 @@ pub async fn create_account(
     }
 
     if let Some(initial_balance) = initial_balance {
-        let initial_balance = initial_balance
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let initial_balance = initial_balance.parse::<i64>().map_err(internal_error)?;
         account_create_tx.initial_balance(Hbar::from_tinybars(initial_balance));
     }
 
@@ -143,9 +142,7 @@ pub async fn create_account(
     }
 
     if let Some(auto_renew_period) = auto_renew_period {
-        let auto_renew_period = auto_renew_period
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let auto_renew_period = auto_renew_period.parse::<i64>().map_err(internal_error)?;
         account_create_tx.auto_renew_period(Duration::seconds(auto_renew_period));
     }
 
@@ -158,25 +155,18 @@ pub async fn create_account(
     }
 
     if let Some(staked_account_id) = staked_account_id {
-        account_create_tx.staked_account_id(
-            AccountId::from_str(&staked_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        account_create_tx
+            .staked_account_id(AccountId::from_str(&staked_account_id).map_err(internal_error)?);
     }
 
     if let Some(alias) = alias {
-        account_create_tx.alias(
-            EvmAddress::from_str(&alias)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        account_create_tx.alias(EvmAddress::from_str(&alias).map_err(internal_error)?);
     }
 
     if let Some(staked_node_id) = staked_node_id {
-        let node_id = staked_node_id
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let node_id = staked_node_id.parse::<i64>().map_err(internal_error)?;
         if node_id < 0 {
-            return Err(ErrorObject::owned(INTERNAL_ERROR_CODE, "INVALID_STAKING_ID", None::<()>));
+            return Err(internal_error("INVALID_STAKING_ID"));
         }
         account_create_tx.staked_node_id(node_id as u64);
     }
@@ -235,8 +225,7 @@ pub async fn update_account(
 
     if let Some(expiration_time) = expiration_time {
         account_update_tx.expiration_time(
-            OffsetDateTime::from_unix_timestamp(expiration_time)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
+            OffsetDateTime::from_unix_timestamp(expiration_time).map_err(internal_error)?,
         );
     }
 
@@ -249,18 +238,14 @@ pub async fn update_account(
     }
 
     if let Some(staked_account_id) = staked_account_id {
-        account_update_tx.staked_account_id(
-            AccountId::from_str(&staked_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        account_update_tx
+            .staked_account_id(AccountId::from_str(&staked_account_id).map_err(internal_error)?);
     }
 
     if let Some(staked_node_id) = staked_node_id {
-        let node_id = staked_node_id
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let node_id = staked_node_id.parse::<i64>().map_err(internal_error)?;
         if node_id < 0 {
-            return Err(ErrorObject::owned(INTERNAL_ERROR_CODE, "INVALID_STAKING_ID", None::<()>));
+            return Err(internal_error("INVALID_STAKING_ID"));
         }
         account_update_tx.staked_node_id(node_id as u64);
     }
@@ -291,17 +276,11 @@ pub async fn get_account_balance(
     let mut query = AccountBalanceQuery::new();
 
     if let Some(account_id) = account_id {
-        query.account_id(
-            AccountId::from_str(&account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        query.account_id(AccountId::from_str(&account_id).map_err(internal_error)?);
     }
 
     if let Some(contract_id) = contract_id {
-        query.contract_id(
-            ContractId::from_str(&contract_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        query.contract_id(ContractId::from_str(&contract_id).map_err(internal_error)?);
     }
 
     let tx_response = query.execute(client).await.map_err(|e| from_hedera_error(e))?;
@@ -361,18 +340,13 @@ pub(crate) fn build_account_create_tx_from_value(
     }
 
     if let Some(staked_account_id) = params.get("stakedAccountId").and_then(Value::as_str) {
-        tx.staked_account_id(
-            AccountId::from_str(staked_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        tx.staked_account_id(AccountId::from_str(staked_account_id).map_err(internal_error)?);
     }
 
     if let Some(staked_node_id) = params.get("stakedNodeId").and_then(Value::as_str) {
-        let node_id = staked_node_id
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let node_id = staked_node_id.parse::<i64>().map_err(internal_error)?;
         if node_id < 0 {
-            return Err(ErrorObject::owned(INTERNAL_ERROR_CODE, "INVALID_STAKING_ID", None::<()>));
+            return Err(internal_error("INVALID_STAKING_ID"));
         }
         tx.staked_node_id(node_id as u64);
     }
@@ -384,10 +358,7 @@ pub(crate) fn build_account_create_tx_from_value(
     }
 
     if let Some(alias) = params.get("alias").and_then(Value::as_str) {
-        tx.alias(
-            EvmAddress::from_str(alias)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        tx.alias(EvmAddress::from_str(alias).map_err(internal_error)?);
     }
 
     Ok(tx)
@@ -557,17 +528,11 @@ pub async fn delete_account(
     let mut tx = AccountDeleteTransaction::new();
 
     if let Some(delete_account_id) = delete_account_id {
-        tx.account_id(
-            AccountId::from_str(&delete_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        tx.account_id(AccountId::from_str(&delete_account_id).map_err(internal_error)?);
     }
 
     if let Some(transfer_account_id) = transfer_account_id {
-        tx.transfer_account_id(
-            AccountId::from_str(&transfer_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        tx.transfer_account_id(AccountId::from_str(&transfer_account_id).map_err(internal_error)?);
     }
 
     if let Some(params) = common_transaction_params {
@@ -585,9 +550,7 @@ pub async fn transfer_crypto(
     transfers: Option<Vec<Value>>,
     common_transaction_params: Option<HashMap<String, Value>>,
 ) -> Result<AccountUpdateResponse, ErrorObjectOwned> {
-    let transfers = transfers.ok_or_else(|| {
-        ErrorObject::owned(INTERNAL_ERROR_CODE, "No transfers provided".to_string(), None::<()>)
-    })?;
+    let transfers = transfers.ok_or_else(|| internal_error("No transfers provided"))?;
 
     if transfers.is_empty() {
         return Err(ErrorObject::owned(
@@ -619,9 +582,11 @@ pub async fn transfer_crypto(
                     None::<()>,
                 )
             })?;
-            let amount = Hbar::from_tinybars(amount_str.parse::<i64>().map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid amount: {e}"), None::<()>)
-            })?);
+            let amount = Hbar::from_tinybars(
+                amount_str
+                    .parse::<i64>()
+                    .map_err(|e| internal_error(format!("Invalid amount: {e}")))?,
+            );
 
             if let Some(account_id_str) = hbar_obj.get("accountId").and_then(|v| v.as_str()) {
                 let account_id = AccountId::from_str(account_id_str).map_err(|e| {
@@ -697,9 +662,9 @@ pub async fn transfer_crypto(
                     None::<()>,
                 )
             })?;
-            let amount = amount_str.parse::<i64>().map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid amount: {e}"), None::<()>)
-            })?;
+            let amount = amount_str
+                .parse::<i64>()
+                .map_err(|e| internal_error(format!("Invalid amount: {e}")))?;
 
             let decimals = token_obj.get("decimals").and_then(|v| v.as_u64()).map(|d| d as u32);
 

@@ -29,7 +29,10 @@ use time::{
     OffsetDateTime,
 };
 
-use crate::common::mock_consensus_error;
+use crate::common::{
+    internal_error,
+    mock_consensus_error,
+};
 use crate::errors::from_hedera_error;
 use crate::helpers::{
     fill_common_transaction_params,
@@ -283,9 +286,9 @@ pub async fn create_token(
     }
 
     if let Some(max_supply) = max_supply {
-        let supply = max_supply.parse::<u64>().map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid max_supply: {e}"), None::<()>)
-        })?;
+        let supply = max_supply
+            .parse::<u64>()
+            .map_err(|e| internal_error(format!("Invalid max_supply: {e}")))?;
         tx.max_supply(supply);
     }
 
@@ -326,9 +329,8 @@ pub async fn delete_token(
     let mut tx = TokenDeleteTransaction::new();
 
     if let Some(token_id_str) = token_id {
-        let token_id = TokenId::from_str(&token_id_str).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid tokenId: {e}"), None::<()>)
-        })?;
+        let token_id = TokenId::from_str(&token_id_str)
+            .map_err(|e| internal_error(format!("Invalid tokenId: {e}")))?;
         tx.token_id(token_id);
     }
 
@@ -350,21 +352,17 @@ pub async fn token_claim(
     // Parse pending_airdrop_ids from HashMap<String, String> to PendingAirdropId
     let mut parsed_ids = Vec::new();
     for id_map in pending_airdrop_ids {
-        let sender_id = id_map.get("sender_id").ok_or_else(|| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>)
-        })?;
-        let receiver_id = id_map.get("receiver_id").ok_or_else(|| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>)
-        })?;
+        let sender_id =
+            id_map.get("sender_id").ok_or_else(|| internal_error("Missing sender_id"))?;
+        let receiver_id =
+            id_map.get("receiver_id").ok_or_else(|| internal_error("Missing receiver_id"))?;
         let token_id = id_map.get("token_id");
         let nft_id = id_map.get("nft_id");
 
-        let sender_id = AccountId::from_str(sender_id).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid sender_id: {e}"), None::<()>)
-        })?;
-        let receiver_id = AccountId::from_str(receiver_id).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid receiver_id: {e}"), None::<()>)
-        })?;
+        let sender_id = AccountId::from_str(sender_id)
+            .map_err(|e| internal_error(format!("Invalid sender_id: {e}")))?;
+        let receiver_id = AccountId::from_str(receiver_id)
+            .map_err(|e| internal_error(format!("Invalid receiver_id: {e}")))?;
 
         let pending_id = if let Some(token_id) = token_id {
             let token_id = TokenId::from_str(token_id).map_err(|e| {
@@ -376,9 +374,8 @@ pub async fn token_claim(
             })?;
             PendingAirdropId::new_token_id(sender_id, receiver_id, token_id)
         } else if let Some(nft_id) = nft_id {
-            let nft_id = NftId::from_str(nft_id).map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid nft_id: {e}"), None::<()>)
-            })?;
+            let nft_id = NftId::from_str(nft_id)
+                .map_err(|e| internal_error(format!("Invalid nft_id: {e}")))?;
             PendingAirdropId::new_nft_id(sender_id, receiver_id, nft_id)
         } else {
             return Err(ErrorObject::owned(
@@ -411,21 +408,17 @@ pub async fn token_cancel(
     // Parse pending_airdrop_ids from HashMap<String, String> to PendingAirdropId
     let mut parsed_ids = Vec::new();
     for id_map in pending_airdrop_ids {
-        let sender_id = id_map.get("sender_id").ok_or_else(|| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing sender_id", None::<()>)
-        })?;
-        let receiver_id = id_map.get("receiver_id").ok_or_else(|| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, "Missing receiver_id", None::<()>)
-        })?;
+        let sender_id =
+            id_map.get("sender_id").ok_or_else(|| internal_error("Missing sender_id"))?;
+        let receiver_id =
+            id_map.get("receiver_id").ok_or_else(|| internal_error("Missing receiver_id"))?;
         let token_id = id_map.get("token_id");
         let nft_id = id_map.get("nft_id");
 
-        let sender_id = AccountId::from_str(sender_id).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid sender_id: {e}"), None::<()>)
-        })?;
-        let receiver_id = AccountId::from_str(receiver_id).map_err(|e| {
-            ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid receiver_id: {e}"), None::<()>)
-        })?;
+        let sender_id = AccountId::from_str(sender_id)
+            .map_err(|e| internal_error(format!("Invalid sender_id: {e}")))?;
+        let receiver_id = AccountId::from_str(receiver_id)
+            .map_err(|e| internal_error(format!("Invalid receiver_id: {e}")))?;
 
         let pending_id = if let Some(token_id) = token_id {
             let token_id = TokenId::from_str(token_id).map_err(|e| {
@@ -437,9 +430,8 @@ pub async fn token_cancel(
             })?;
             PendingAirdropId::new_token_id(sender_id, receiver_id, token_id)
         } else if let Some(nft_id) = nft_id {
-            let nft_id = NftId::from_str(nft_id).map_err(|e| {
-                ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid nft_id: {e}"), None::<()>)
-            })?;
+            let nft_id = NftId::from_str(nft_id)
+                .map_err(|e| internal_error(format!("Invalid nft_id: {e}")))?;
             PendingAirdropId::new_nft_id(sender_id, receiver_id, nft_id)
         } else {
             return Err(ErrorObject::owned(
@@ -477,9 +469,8 @@ pub(crate) fn build_token_mint_tx_from_value(
             None::<()>,
         )
     })?;
-    let token_id = TokenId::from_str(token_id).map_err(|e| {
-        ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid tokenId: {e}"), None::<()>)
-    })?;
+    let token_id =
+        TokenId::from_str(token_id).map_err(|e| internal_error(format!("Invalid tokenId: {e}")))?;
     tx.token_id(token_id);
 
     if let Some(amount) =
@@ -525,9 +516,8 @@ pub(crate) fn build_token_burn_tx_from_value(
             None::<()>,
         )
     })?;
-    let token_id = TokenId::from_str(token_id).map_err(|e| {
-        ErrorObject::owned(INTERNAL_ERROR_CODE, format!("Invalid tokenId: {e}"), None::<()>)
-    })?;
+    let token_id =
+        TokenId::from_str(token_id).map_err(|e| internal_error(format!("Invalid tokenId: {e}")))?;
     tx.token_id(token_id);
 
     if let Some(amount) =

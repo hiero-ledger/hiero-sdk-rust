@@ -20,7 +20,10 @@ use jsonrpsee::types::{
 use serde_json::Value;
 use time::OffsetDateTime;
 
-use crate::common::mock_consensus_error;
+use crate::common::{
+    internal_error,
+    mock_consensus_error,
+};
 use crate::errors::from_hedera_error;
 use crate::helpers::{
     fill_common_transaction_params,
@@ -108,16 +111,12 @@ pub async fn create_schedule(
     }
 
     if let Some(payer_account_id) = payer_account_id {
-        schedule_create_tx.payer_account_id(
-            AccountId::from_str(&payer_account_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        schedule_create_tx
+            .payer_account_id(AccountId::from_str(&payer_account_id).map_err(internal_error)?);
     }
 
     if let Some(expiration_time) = expiration_time {
-        let ts = expiration_time
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let ts = expiration_time.parse::<i64>().map_err(internal_error)?;
 
         if ts < 0 {
             return Err(mock_consensus_error(
@@ -158,8 +157,7 @@ pub async fn sign_schedule(
     let mut schedule_sign_tx = ScheduleSignTransaction::new();
 
     if let Some(schedule_id) = schedule_id {
-        let sid = ScheduleId::from_str(&schedule_id)
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let sid = ScheduleId::from_str(&schedule_id).map_err(internal_error)?;
         schedule_sign_tx.schedule_id(sid);
     }
 
@@ -186,8 +184,7 @@ pub async fn delete_schedule(
     let mut schedule_delete_tx = ScheduleDeleteTransaction::new();
 
     if let Some(schedule_id) = schedule_id {
-        let sid = ScheduleId::from_str(&schedule_id)
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let sid = ScheduleId::from_str(&schedule_id).map_err(internal_error)?;
         schedule_delete_tx.schedule_id(sid);
     }
 
@@ -216,23 +213,16 @@ pub async fn get_schedule_info(
     let mut query = ScheduleInfoQuery::new();
 
     if let Some(schedule_id) = schedule_id {
-        query.schedule_id(
-            ScheduleId::from_str(&schedule_id)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?,
-        );
+        query.schedule_id(ScheduleId::from_str(&schedule_id).map_err(internal_error)?);
     }
 
     if let Some(query_payment) = query_payment {
-        let amount = query_payment
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount = query_payment.parse::<i64>().map_err(internal_error)?;
         query.payment_amount(Hbar::from_tinybars(amount));
     }
 
     if let Some(max_query_payment) = max_query_payment {
-        let amount = max_query_payment
-            .parse::<i64>()
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+        let amount = max_query_payment.parse::<i64>().map_err(internal_error)?;
         query.max_payment_amount(Hbar::from_tinybars(amount));
     }
 

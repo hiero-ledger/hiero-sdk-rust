@@ -19,6 +19,7 @@ use jsonrpsee::types::{
 use once_cell::sync::Lazy;
 use serde_json::Value;
 
+use crate::common::internal_error;
 use crate::helpers::generate_key_helper;
 use crate::responses::GenerateKeyResponse;
 
@@ -100,12 +101,11 @@ pub fn setup(
     // provided ips and account id.
     let client = match (node_ip, node_account_id, mirror_network_ip) {
         (Some(node_ip), Some(node_account_id), Some(mirror_network_ip)) => {
-            let account_id = AccountId::from_str(node_account_id.as_str())
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+            let account_id =
+                AccountId::from_str(node_account_id.as_str()).map_err(internal_error)?;
             network.insert(node_ip, account_id);
 
-            let client = Client::for_network(network)
-                .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+            let client = Client::for_network(network).map_err(internal_error)?;
             client.set_mirror_network([mirror_network_ip]);
             client
         }
@@ -116,8 +116,7 @@ pub fn setup(
     };
 
     let operator_id = if let Some(operator_account_id) = operator_account_id {
-        AccountId::from_str(operator_account_id.as_str())
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?
+        AccountId::from_str(operator_account_id.as_str()).map_err(internal_error)?
     } else {
         return Err(ErrorObject::borrowed(
             INTERNAL_ERROR_CODE,
@@ -127,8 +126,7 @@ pub fn setup(
     };
 
     let operator_key = if let Some(operator_private_key) = operator_private_key {
-        PrivateKey::from_str(operator_private_key.as_str())
-            .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?
+        PrivateKey::from_str(operator_private_key.as_str()).map_err(internal_error)?
     } else {
         return Err(ErrorObject::borrowed(
             INTERNAL_ERROR_CODE,
@@ -159,12 +157,10 @@ pub fn set_operator(
     let client = get_client()?;
 
     // Parse the operator account ID
-    let operator_id = AccountId::from_str(&operator_account_id)
-        .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+    let operator_id = AccountId::from_str(&operator_account_id).map_err(internal_error)?;
 
     // Parse the operator private key
-    let operator_key = PrivateKey::from_str(&operator_private_key)
-        .map_err(|e| ErrorObject::owned(INTERNAL_ERROR_CODE, e.to_string(), None::<()>))?;
+    let operator_key = PrivateKey::from_str(&operator_private_key).map_err(internal_error)?;
 
     // Update the operator on the client
     client.set_operator(operator_id, operator_key);
