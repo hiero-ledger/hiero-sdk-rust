@@ -38,6 +38,8 @@ pub struct ContractDeleteTransactionData {
     transfer_account_id: Option<AccountId>,
 
     transfer_contract_id: Option<ContractId>,
+
+    permanent_removal: bool,
 }
 
 impl ContractDeleteTransaction {
@@ -60,8 +62,12 @@ impl ContractDeleteTransaction {
     }
 
     /// Sets the ID of the account which will receive all remaining hbars.
+    ///
+    /// Note: Clears any previously set transfer_contract_id (oneOf field).
     pub fn transfer_account_id(&mut self, id: AccountId) -> &mut Self {
-        self.data_mut().transfer_account_id = Some(id);
+        let data = self.data_mut();
+        data.transfer_account_id = Some(id);
+        data.transfer_contract_id = None; // Clear the other (oneOf)
         self
     }
 
@@ -72,8 +78,26 @@ impl ContractDeleteTransaction {
     }
 
     /// Sets the the ID of the contract which will receive all remaining hbars.
+    ///
+    /// Note: Clears any previously set transfer_account_id (oneOf field).
     pub fn transfer_contract_id(&mut self, id: ContractId) -> &mut Self {
-        self.data_mut().transfer_contract_id = Some(id);
+        let data = self.data_mut();
+        data.transfer_contract_id = Some(id);
+        data.transfer_account_id = None; // Clear the other (oneOf)
+        self
+    }
+
+    /// Returns whether this is a permanent removal transaction.
+    #[must_use]
+    pub fn get_permanent_removal(&self) -> bool {
+        self.data().permanent_removal
+    }
+
+    /// Sets whether this is a permanent removal transaction.
+    ///
+    /// When true, the contract is permanently removed and cannot be recovered.
+    pub fn permanent_removal(&mut self, permanent: bool) -> &mut Self {
+        self.data_mut().permanent_removal = permanent;
         self
     }
 }
@@ -131,6 +155,7 @@ impl FromProtobuf<services::ContractDeleteTransactionBody> for ContractDeleteTra
             contract_id: Option::from_protobuf(pb.contract_id)?,
             transfer_account_id,
             transfer_contract_id,
+            permanent_removal: pb.permanent_removal,
         })
     }
 }
@@ -160,12 +185,18 @@ impl ToProtobuf for ContractDeleteTransactionData {
                 ))
             }
 
+            (Some(account_id), Some(_)) => {
+                Some(services::contract_delete_transaction_body::Obtainers::TransferAccountId(
+                    account_id.to_protobuf(),
+                ))
+            }
+
             _ => None,
         };
 
         services::ContractDeleteTransactionBody {
             contract_id: delete_contract_id,
-            permanent_removal: false,
+            permanent_removal: self.permanent_removal,
             obtainers,
         }
     }
@@ -231,7 +262,19 @@ mod tests {
                         },
                     ),
                     permanent_removal: false,
-                    obtainers: None,
+                    obtainers: Some(
+                        TransferContractId(
+                            ContractId {
+                                shard_num: 0,
+                                realm_num: 0,
+                                contract: Some(
+                                    ContractNum(
+                                        5008,
+                                    ),
+                                ),
+                            },
+                        ),
+                    ),
                 },
             )
         "#]]

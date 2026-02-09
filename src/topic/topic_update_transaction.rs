@@ -68,9 +68,13 @@ pub struct TopicUpdateTransactionData {
     fee_schedule_key: Option<Key>,
 
     /// If the transaction contains a signer from this list, no custom fees are applied.
-    fee_exempt_keys: Vec<Key>,
+    /// None means the field will not be updated.
+    /// Some(vec![]) means the field will be cleared.
+    fee_exempt_keys: Option<Vec<Key>>,
 
     /// The custom fee to be assessed during a message submission to this topic.
+    /// None means the field will not be updated.
+    /// Some(vec![]) means the field will be cleared.
     custom_fees: Option<Vec<CustomFixedFee>>,
 }
 
@@ -200,25 +204,31 @@ impl TopicUpdateTransaction {
 
     /// The keys that can be used to update the fee schedule for the topic.
     pub fn fee_exempt_keys(&mut self, keys: Vec<Key>) -> &mut Self {
-        self.data_mut().fee_exempt_keys = keys;
+        self.data_mut().fee_exempt_keys = Some(keys);
         self
     }
 
     /// The keys that can be used to update the fee schedule for the topic.
     #[must_use]
-    pub fn get_fee_exempt_keys(&self) -> &Vec<Key> {
-        &self.data().fee_exempt_keys
+    pub fn get_fee_exempt_keys(&self) -> Option<&Vec<Key>> {
+        self.data().fee_exempt_keys.as_ref()
     }
 
     /// Clears the keys that can be used to update the fee schedule for the topic.
+    /// This will send an empty list to consensus, clearing all keys.
     pub fn clear_fee_exempt_keys(&mut self) -> &mut Self {
-        self.data_mut().fee_exempt_keys = vec![];
+        self.data_mut().fee_exempt_keys = Some(vec![]);
         self
     }
 
     /// Adds a key to the list of keys that can be used to update the fee schedule for the topic.
     pub fn add_fee_exempt_key(&mut self, key: Key) -> &mut Self {
-        self.data_mut().fee_exempt_keys.push(key);
+        let data = self.data_mut();
+        if let Some(keys) = &mut data.fee_exempt_keys {
+            keys.push(key);
+        } else {
+            data.fee_exempt_keys = Some(vec![key]);
+        }
         self
     }
 
@@ -229,8 +239,9 @@ impl TopicUpdateTransaction {
     }
 
     /// Clears the custom fees for this topic.
+    /// This will send an empty list to consensus, clearing all custom fees.
     pub fn clear_custom_fees(&mut self) -> &mut Self {
-        self.data_mut().custom_fees = None;
+        self.data_mut().custom_fees = Some(vec![]);
         self
     }
 
@@ -306,13 +317,15 @@ impl FromProtobuf<services::ConsensusUpdateTopicTransactionBody> for TopicUpdate
         };
 
         let fee_exempt_keys = if let Some(fee_exempt_keys) = pb.fee_exempt_key_list {
-            fee_exempt_keys
-                .keys
-                .into_iter()
-                .map(|pb_key| Key::from_protobuf(pb_key))
-                .collect::<Result<Vec<_>, _>>()?
+            Some(
+                fee_exempt_keys
+                    .keys
+                    .into_iter()
+                    .map(|pb_key| Key::from_protobuf(pb_key))
+                    .collect::<Result<Vec<_>, _>>()?,
+            )
         } else {
-            Vec::new()
+            None
         };
 
         Ok(Self {
@@ -346,13 +359,9 @@ impl ToProtobuf for TopicUpdateTransactionData {
             fees: fees.iter().map(|fee| fee.to_protobuf()).collect(),
         });
 
-        let fee_exempt_key_list = if self.fee_exempt_keys.is_empty() {
-            None
-        } else {
-            Some(services::FeeExemptKeyList {
-                keys: self.fee_exempt_keys.iter().map(|key| key.to_protobuf()).collect(),
-            })
-        };
+        let fee_exempt_key_list = self.fee_exempt_keys.as_ref().map(|keys| {
+            services::FeeExemptKeyList { keys: keys.iter().map(|key| key.to_protobuf()).collect() }
+        });
 
         services::ConsensusUpdateTopicTransactionBody {
             auto_renew_account: auto_renew_account_id,
@@ -818,7 +827,7 @@ mod tests {
         let expected_keys =
             fee_exempt_keys.iter().map(|key| key.public_key().into()).collect::<Vec<_>>();
 
-        assert_eq!(tx.get_fee_exempt_keys(), &expected_keys);
+        assert_eq!(tx.get_fee_exempt_keys(), Some(&expected_keys));
     }
 
     #[test]
@@ -827,7 +836,7 @@ mod tests {
         let fee_exempt_key = PrivateKey::generate_ecdsa();
         tx.add_fee_exempt_key(fee_exempt_key.public_key().into());
 
-        assert_eq!(tx.get_fee_exempt_keys(), &vec![fee_exempt_key.public_key().into()]);
+        assert_eq!(tx.get_fee_exempt_keys(), Some(&vec![fee_exempt_key.public_key().into()]));
     }
 
     #[test]
@@ -842,7 +851,7 @@ mod tests {
         let expected_keys =
             vec![fee_exempt_key.public_key().into(), fee_exempt_key_to_add.public_key().into()];
 
-        assert_eq!(tx.get_fee_exempt_keys(), &expected_keys);
+        assert_eq!(tx.get_fee_exempt_keys(), Some(&expected_keys));
     }
 
     #[test]
@@ -852,7 +861,7 @@ mod tests {
         tx.fee_exempt_keys(vec![fee_exempt_key.public_key().into()]);
         tx.clear_fee_exempt_keys();
 
-        assert_eq!(tx.get_fee_exempt_keys(), &vec![]);
+        assert_eq!(tx.get_fee_exempt_keys(), Some(&vec![]));
     }
 
     #[test]
@@ -908,6 +917,6 @@ mod tests {
         tx.custom_fees(custom_fees);
         tx.clear_custom_fees();
 
-        assert_eq!(tx.get_custom_fees(), None);
+        assert_eq!(tx.get_custom_fees(), Some(&vec![]));
     }
 }
