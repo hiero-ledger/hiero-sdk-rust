@@ -143,6 +143,7 @@ impl ClientBuilder {
             ledger_id: ArcSwapOption::new(ledger_id.map(Arc::new)),
             auto_validate_checksums: AtomicBool::new(auto_validate_checksums),
             regenerate_transaction_ids: AtomicBool::new(regenerate_transaction_ids),
+            enable_receipt_record_query_failover: AtomicBool::new(false),
             network_update_tx,
             backoff: RwLock::new(backoff),
         }))
@@ -157,6 +158,7 @@ struct ClientInner {
     ledger_id: ArcSwapOption<LedgerId>,
     auto_validate_checksums: AtomicBool,
     regenerate_transaction_ids: AtomicBool,
+    enable_receipt_record_query_failover: AtomicBool,
     network_update_tx: watch::Sender<Option<Duration>>,
     backoff: RwLock<ClientBackoff>,
 }
@@ -448,6 +450,40 @@ impl Client {
     /// Enable or disable transaction ID regeneration.
     pub fn set_default_regenerate_transaction_id(&self, value: bool) {
         self.0.regenerate_transaction_ids.store(value, Ordering::Relaxed);
+    }
+
+    /// Returns whether receipt/record query failover is enabled.
+    ///
+    /// When enabled, receipt and record queries will fail over to other nodes
+    /// if the submitting node is unavailable, improving availability at the cost
+    /// of strict correctness guarantees.
+    ///
+    /// Default: `false` (queries pinned to submitting node only)
+    #[must_use]
+    pub fn get_enable_receipt_record_query_failover(&self) -> bool {
+        self.0.enable_receipt_record_query_failover.load(Ordering::Relaxed)
+    }
+
+    /// Enable or disable receipt/record query failover.
+    ///
+    /// When enabled, `get_receipt()` and `get_record()` queries will fail over to other nodes
+    /// if the submitting node is unavailable or times out. This improves availability under
+    /// high concurrency but trades strict correctness guarantees.
+    ///
+    /// When disabled (default), queries are strictly pinned to the submitting node.
+    ///
+    /// # Arguments
+    /// * `enable` - `true` to enable failover, `false` to disable (default)
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use hiero_sdk::Client;
+    /// let client = Client::for_testnet();
+    /// // Enable failover for better availability
+    /// client.set_enable_receipt_record_query_failover(true);
+    /// ```
+    pub fn set_enable_receipt_record_query_failover(&self, enable: bool) {
+        self.0.enable_receipt_record_query_failover.store(enable, Ordering::Relaxed);
     }
 
     /// Sets the account that will, by default, be paying for transactions and queries built with
