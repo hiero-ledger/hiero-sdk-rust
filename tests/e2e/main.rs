@@ -11,6 +11,7 @@ mod network_version_info;
 mod node;
 mod node_address_book;
 mod prng;
+mod receipt_record_query_failover;
 /// Resources for various tests.
 ///
 /// todo: somehow deduplicate this with the version in `examples/`.
