@@ -294,7 +294,17 @@ pub async fn get_file_info(
         size: Some(response.size.to_string()),
         expiration_time: response.expiration_time.map(|t| t.unix_timestamp().to_string()),
         is_deleted: Some(response.is_deleted),
-        keys: Some(response.keys.keys.iter().map(|key| hex::encode(key.to_bytes())).collect()),
+        keys: Some(
+            response
+                .keys
+                .keys
+                .iter()
+                .map(|key| match key {
+                    hiero_sdk::Key::Single(pk) => pk.to_string_der(),
+                    _ => hex::encode(key.to_bytes()),
+                })
+                .collect(),
+        ),
         memo: Some(response.file_memo),
         ledger_id: Some(response.ledger_id.to_string()),
         cost: None,
