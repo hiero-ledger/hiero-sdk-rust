@@ -112,18 +112,31 @@ impl TransferTransaction {
         approved: bool,
         expected_decimals: Option<u32>,
     ) -> &mut Self {
-        let transfer = Transfer { account_id, amount, is_approval: approved };
         let data = self.data_mut();
 
+        // First, try to find an existing TokenTransfer with matching token_id
         if let Some(tt) = data.token_transfers.iter_mut().find(|tt| tt.token_id == token_id) {
-            tt.expected_decimals = expected_decimals;
-            tt.transfers.push(transfer);
+            // Within that TokenTransfer, look for a transfer with matching account_id and is_approval
+            if let Some(existing_transfer) = tt
+                .transfers
+                .iter_mut()
+                .find(|t| t.account_id == account_id && t.is_approval == approved)
+            {
+                // Found matching transfer - add to the existing amount
+                existing_transfer.amount += amount;
+                tt.expected_decimals = expected_decimals;
+            } else {
+                // Found TokenTransfer but no matching account - push new transfer
+                tt.transfers.push(Transfer { account_id, amount, is_approval: approved });
+                tt.expected_decimals = expected_decimals;
+            }
         } else {
+            // No TokenTransfer found for this token_id - create a new one
             data.token_transfers.push(TokenTransfer {
                 token_id,
                 expected_decimals,
                 nft_transfers: Vec::new(),
-                transfers: vec![transfer],
+                transfers: vec![Transfer { account_id, amount, is_approval: approved }],
             });
         }
 
@@ -842,5 +855,142 @@ mod tests {
 
         tx.token_transfer_with_decimals(TOKEN, AccountId::new(0, 0, 7), -100, 5);
         assert_eq!(tx.get_token_decimals().get(&TOKEN), Some(&5));
+    }
+
+    #[test]
+    fn token_transfer_aggregation_same_token_and_account() {
+        // Test that multiple transfers for the same token + account aggregate amounts
+        let mut tx = TransferTransaction::new();
+        const TOKEN: TokenId = TokenId::new(0, 0, 5);
+        const ACCOUNT: AccountId = AccountId::new(0, 0, 100);
+
+        // Add multiple transfers for the same token and account
+        tx.token_transfer(TOKEN, ACCOUNT, 100);
+        tx.token_transfer(TOKEN, ACCOUNT, 200);
+        tx.token_transfer(TOKEN, ACCOUNT, 300);
+
+        let transfers = tx.get_token_transfers();
+        let account_transfers = transfers.get(&TOKEN).unwrap();
+
+        // Should have only one entry with aggregated amount
+        assert_eq!(account_transfers.len(), 1);
+        assert_eq!(account_transfers.get(&ACCOUNT), Some(&600));
+    }
+
+    #[test]
+    fn token_transfer_aggregation_different_accounts() {
+        // Test that different accounts create separate entries
+        let mut tx = TransferTransaction::new();
+        const TOKEN: TokenId = TokenId::new(0, 0, 5);
+        const ACCOUNT1: AccountId = AccountId::new(0, 0, 100);
+        const ACCOUNT2: AccountId = AccountId::new(0, 0, 200);
+
+        tx.token_transfer(TOKEN, ACCOUNT1, 100);
+        tx.token_transfer(TOKEN, ACCOUNT2, 200);
+        tx.token_transfer(TOKEN, ACCOUNT1, 300);
+
+        let transfers = tx.get_token_transfers();
+        let account_transfers = transfers.get(&TOKEN).unwrap();
+
+        // Should have two entries, one for each account
+        assert_eq!(account_transfers.len(), 2);
+        assert_eq!(account_transfers.get(&ACCOUNT1), Some(&400)); // 100 + 300
+        assert_eq!(account_transfers.get(&ACCOUNT2), Some(&200));
+    }
+
+    #[test]
+    fn token_transfer_aggregation_different_tokens() {
+        // Test that different tokens create separate entries
+        let mut tx = TransferTransaction::new();
+        const TOKEN1: TokenId = TokenId::new(0, 0, 5);
+        const TOKEN2: TokenId = TokenId::new(0, 0, 6);
+        const ACCOUNT: AccountId = AccountId::new(0, 0, 100);
+
+        tx.token_transfer(TOKEN1, ACCOUNT, 100);
+        tx.token_transfer(TOKEN2, ACCOUNT, 200);
+        tx.token_transfer(TOKEN1, ACCOUNT, 300);
+
+        let transfers = tx.get_token_transfers();
+
+        // Should have entries for both tokens
+        assert_eq!(transfers.len(), 2);
+        assert_eq!(transfers.get(&TOKEN1).unwrap().get(&ACCOUNT), Some(&400)); // 100 + 300
+        assert_eq!(transfers.get(&TOKEN2).unwrap().get(&ACCOUNT), Some(&200));
+    }
+
+    #[test]
+    fn token_transfer_aggregation_approved_vs_non_approved() {
+        // Test that approved and non-approved transfers are kept separate
+        let mut tx = TransferTransaction::new();
+        const TOKEN: TokenId = TokenId::new(0, 0, 5);
+        const ACCOUNT: AccountId = AccountId::new(0, 0, 100);
+
+        tx.token_transfer(TOKEN, ACCOUNT, 100);
+        tx.approved_token_transfer(TOKEN, ACCOUNT, 200);
+        tx.token_transfer(TOKEN, ACCOUNT, 300);
+        tx.approved_token_transfer(TOKEN, ACCOUNT, 400);
+
+        // Access internal data to verify both approved and non-approved transfers exist
+        let data = tx.data();
+        let token_transfer = data.token_transfers.iter().find(|tt| tt.token_id == TOKEN).unwrap();
+
+        // Should have 2 transfer entries: one non-approved (400) and one approved (600)
+        assert_eq!(token_transfer.transfers.len(), 2);
+
+        let non_approved = token_transfer
+            .transfers
+            .iter()
+            .find(|t| !t.is_approval && t.account_id == ACCOUNT)
+            .unwrap();
+        assert_eq!(non_approved.amount, 400); // 100 + 300
+
+        let approved = token_transfer
+            .transfers
+            .iter()
+            .find(|t| t.is_approval && t.account_id == ACCOUNT)
+            .unwrap();
+        assert_eq!(approved.amount, 600); // 200 + 400
+    }
+
+    #[test]
+    fn token_transfer_with_decimals_aggregation() {
+        // Test that transfers with decimals also aggregate properly
+        let mut tx = TransferTransaction::new();
+        const TOKEN: TokenId = TokenId::new(0, 0, 5);
+        const ACCOUNT: AccountId = AccountId::new(0, 0, 100);
+
+        tx.token_transfer_with_decimals(TOKEN, ACCOUNT, 100, 3);
+        tx.token_transfer_with_decimals(TOKEN, ACCOUNT, 200, 3);
+        tx.token_transfer_with_decimals(TOKEN, ACCOUNT, 300, 3);
+
+        let transfers = tx.get_token_transfers();
+        let account_transfers = transfers.get(&TOKEN).unwrap();
+
+        // Should have only one entry with aggregated amount
+        assert_eq!(account_transfers.len(), 1);
+        assert_eq!(account_transfers.get(&ACCOUNT), Some(&600));
+
+        // Decimals should be set
+        assert_eq!(tx.get_token_decimals().get(&TOKEN), Some(&3));
+    }
+
+    #[test]
+    fn token_transfer_negative_amounts_aggregate() {
+        // Test that negative amounts (withdrawals) also aggregate correctly
+        let mut tx = TransferTransaction::new();
+        const TOKEN: TokenId = TokenId::new(0, 0, 5);
+        const SENDER: AccountId = AccountId::new(0, 0, 100);
+        const RECEIVER: AccountId = AccountId::new(0, 0, 200);
+
+        tx.token_transfer(TOKEN, SENDER, -100);
+        tx.token_transfer(TOKEN, SENDER, -200);
+        tx.token_transfer(TOKEN, RECEIVER, 150);
+        tx.token_transfer(TOKEN, RECEIVER, 150);
+
+        let transfers = tx.get_token_transfers();
+        let account_transfers = transfers.get(&TOKEN).unwrap();
+
+        assert_eq!(account_transfers.get(&SENDER), Some(&-300)); // -100 + -200
+        assert_eq!(account_transfers.get(&RECEIVER), Some(&300)); // 150 + 150
     }
 }

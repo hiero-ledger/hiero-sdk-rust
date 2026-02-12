@@ -124,6 +124,39 @@ impl AccountAllowanceApproveTransaction {
         self
     }
 
+    /// Approve the NFT allowance with a delegating spender.
+    pub fn approve_token_nft_allowance_with_delegating_spender(
+        &mut self,
+        nft_id: impl Into<NftId>,
+        owner_account_id: AccountId,
+        spender_account_id: AccountId,
+        delegating_spender_account_id: AccountId,
+    ) -> &mut Self {
+        let nft_id = nft_id.into();
+        let data = self.data_mut();
+
+        if let Some(allowance) = data.nft_allowances.iter_mut().find(|allowance| {
+            allowance.token_id == nft_id.token_id
+                && allowance.owner_account_id == owner_account_id
+                && allowance.spender_account_id == spender_account_id
+                && allowance.delegating_spender_account_id == Some(delegating_spender_account_id)
+                && allowance.approved_for_all.is_none()
+        }) {
+            allowance.serials.push(nft_id.serial as i64);
+        } else {
+            data.nft_allowances.push(NftAllowance {
+                serials: vec![nft_id.serial as i64],
+                token_id: nft_id.token_id,
+                spender_account_id,
+                owner_account_id,
+                delegating_spender_account_id: Some(delegating_spender_account_id),
+                approved_for_all: None,
+            });
+        };
+
+        self
+    }
+
     /// Approve the NFT allowance on all serial numbers (present and future).
     pub fn approve_token_nft_allowance_all_serials(
         &mut self,
@@ -133,6 +166,25 @@ impl AccountAllowanceApproveTransaction {
     ) -> &mut Self {
         self.data_mut().nft_allowances.push(NftAllowance {
             approved_for_all: Some(true),
+            delegating_spender_account_id: None,
+            spender_account_id,
+            owner_account_id,
+            token_id,
+            serials: Vec::new(),
+        });
+
+        self
+    }
+
+    /// Delete the NFT allowance on all serial numbers.
+    pub fn delete_token_nft_allowance_all_serials(
+        &mut self,
+        token_id: TokenId,
+        owner_account_id: AccountId,
+        spender_account_id: AccountId,
+    ) -> &mut Self {
+        self.data_mut().nft_allowances.push(NftAllowance {
+            approved_for_all: Some(false),
             delegating_spender_account_id: None,
             spender_account_id,
             owner_account_id,

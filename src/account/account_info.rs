@@ -13,10 +13,12 @@ use crate::{
     FromProtobuf,
     Hbar,
     Key,
+    KeyList,
     LedgerId,
     PublicKey,
     StakingInfo,
     Tinybar,
+    TokenId,
 };
 
 /// Response from [`AccountInfoQuery`][crate::AccountInfoQuery].
@@ -94,6 +96,42 @@ pub struct AccountInfo {
 
     /// Staking metadata for this account.
     pub staking: Option<StakingInfo>,
+
+    /// All of the livehashes attached to the account.
+    pub live_hashes: Vec<LiveHash>,
+
+    /// All tokens associated with the account.
+    pub token_relationships: Vec<TokenRelationship>,
+}
+
+/// A live hash attached to an account.
+#[derive(Debug, Clone)]
+pub struct LiveHash {
+    /// The account with which this live hash is associated.
+    pub account_id: AccountId,
+    /// The SHA-384 hash of the content.
+    pub hash: Vec<u8>,
+    /// The keys that can delete this live hash.
+    pub keys: KeyList,
+    /// The duration for which this live hash is valid.
+    pub duration: Duration,
+}
+
+/// The relationship between an account and a token.
+#[derive(Debug, Clone)]
+pub struct TokenRelationship {
+    /// The token ID.
+    pub token_id: TokenId,
+    /// The token symbol.
+    pub symbol: Option<String>,
+    /// The account's balance of this token.
+    pub balance: u64,
+    /// Whether KYC is granted for this token.
+    pub is_kyc_granted: Option<bool>,
+    /// Whether the account is frozen for this token.
+    pub is_frozen: Option<bool>,
+    /// Whether this token was automatically associated.
+    pub automatic_association: Option<bool>,
 }
 
 impl AccountInfo {
@@ -133,9 +171,9 @@ impl AccountInfo {
             generate_receive_record_threshold: self.receive_record_threshold.to_tinybars() as u64,
             generate_send_record_threshold: self.send_record_threshold.to_tinybars() as u64,
 
-            // unimplemented fields
-            live_hashes: Vec::default(),
-            token_relationships: Vec::default(),
+            // additional fields
+            live_hashes: self.live_hashes.to_protobuf(),
+            token_relationships: self.token_relationships.to_protobuf(),
         }
         .encode_to_vec()
     }
@@ -162,11 +200,15 @@ impl FromProtobuf<services::crypto_get_info_response::AccountInfo> for AccountIn
         let alias_key = PublicKey::from_alias_bytes(&pb.alias)?;
         let ledger_id = LedgerId::from_bytes(pb.ledger_id);
         let staking = Option::from_protobuf(pb.staking_info)?;
+        let live_hashes = Vec::from_protobuf(pb.live_hashes)?;
+        let token_relationships = Vec::from_protobuf(pb.token_relationships)?;
 
         #[allow(deprecated)]
         Ok(Self {
             ledger_id,
             staking,
+            live_hashes,
+            token_relationships,
             account_id: AccountId::from_protobuf(account_id)?,
             contract_account_id: pb.contract_account_id,
             is_deleted: pb.deleted,
@@ -189,5 +231,92 @@ impl FromProtobuf<services::crypto_get_info_response::AccountInfo> for AccountIn
                 pb.generate_receive_record_threshold as i64,
             ),
         })
+    }
+}
+
+impl FromProtobuf<services::LiveHash> for LiveHash {
+    fn from_protobuf(pb: services::LiveHash) -> crate::Result<Self> {
+        Ok(Self {
+            account_id: AccountId::from_protobuf(pb_getf!(pb, account_id)?)?,
+            hash: pb.hash,
+            keys: KeyList::from_protobuf(pb_getf!(pb, keys)?)?,
+            duration: pb.duration.map(Into::into).unwrap_or(Duration::ZERO),
+        })
+    }
+}
+
+impl ToProtobuf for LiveHash {
+    type Protobuf = services::LiveHash;
+
+    fn to_protobuf(&self) -> Self::Protobuf {
+        Self::Protobuf {
+            account_id: Some(self.account_id.to_protobuf()),
+            hash: self.hash.clone(),
+            keys: Some(self.keys.to_protobuf()),
+            duration: Some(self.duration.into()),
+        }
+    }
+}
+
+impl FromProtobuf<services::TokenRelationship> for TokenRelationship {
+    fn from_protobuf(pb: services::TokenRelationship) -> crate::Result<Self> {
+        use services::{
+            TokenFreezeStatus,
+            TokenKycStatus,
+        };
+
+        let is_kyc_granted = match pb.kyc_status() {
+            TokenKycStatus::Granted => Some(true),
+            TokenKycStatus::Revoked => Some(false),
+            _ => None,
+        };
+
+        let is_frozen = match pb.freeze_status() {
+            TokenFreezeStatus::Frozen => Some(true),
+            TokenFreezeStatus::Unfrozen => Some(false),
+            _ => None,
+        };
+
+        Ok(Self {
+            token_id: TokenId::from_protobuf(pb_getf!(pb, token_id)?)?,
+            symbol: if pb.symbol.is_empty() { None } else { Some(pb.symbol) },
+            balance: pb.balance,
+            is_kyc_granted,
+            is_frozen,
+            automatic_association: if pb.automatic_association { Some(true) } else { None },
+        })
+    }
+}
+
+impl ToProtobuf for TokenRelationship {
+    type Protobuf = services::TokenRelationship;
+
+    fn to_protobuf(&self) -> Self::Protobuf {
+        use services::{
+            TokenFreezeStatus,
+            TokenKycStatus,
+        };
+
+        let kyc_status = match self.is_kyc_granted {
+            Some(true) => TokenKycStatus::Granted as i32,
+            Some(false) => TokenKycStatus::Revoked as i32,
+            None => TokenKycStatus::KycNotApplicable as i32,
+        };
+
+        let freeze_status = match self.is_frozen {
+            Some(true) => TokenFreezeStatus::Frozen as i32,
+            Some(false) => TokenFreezeStatus::Unfrozen as i32,
+            None => TokenFreezeStatus::FreezeNotApplicable as i32,
+        };
+
+        Self::Protobuf {
+            token_id: Some(self.token_id.to_protobuf()),
+            symbol: self.symbol.clone().unwrap_or_default(),
+            balance: self.balance,
+            kyc_status,
+            freeze_status,
+            decimals: 0, // Not stored in our structure
+            automatic_association: self.automatic_association.unwrap_or(false),
+        }
     }
 }

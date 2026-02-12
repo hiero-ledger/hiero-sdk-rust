@@ -169,7 +169,6 @@ pub struct StakingInfo {
     pub staked_to_me: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub staked_account_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub staked_node_id: Option<String>,
 }
 
@@ -248,4 +247,117 @@ pub struct FileResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
     pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FileInfoResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiration_time: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_deleted: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keys: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memo: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ledger_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cost: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FileContentsResponse {
+    pub contents: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct EthereumResponse {
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contract_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenMintResponse {
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub new_total_supply: Option<String>,
+    #[serde(default)]
+    pub serial_numbers: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenResponse {
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveHashInfo {
+    pub account_id: String,
+    pub hash: String,
+    pub keys: Vec<String>,
+    pub duration: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenRelationshipInfo {
+    pub token_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    pub balance: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_kyc_granted: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_frozen: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub automatic_association: Option<bool>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponseStakingInfo {
+    pub decline_staking_reward: bool,
+    pub stake_period_start: Option<String>,
+    pub pending_reward: Option<String>,
+    pub staked_to_me: Option<String>,
+    pub staked_account_id: Option<String>,
+    pub staked_node_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountInfoResponse {
+    pub account_id: String,
+    pub contract_account_id: String,
+    pub is_deleted: bool,
+    pub proxy_account_id: Option<String>,
+    pub proxy_received: String,
+    pub key: String,
+    pub balance: String,
+    pub send_record_threshold: String,
+    pub receive_record_threshold: String,
+    pub is_receiver_signature_required: bool,
+    pub expiration_time: String,
+    pub auto_renew_period: String,
+    pub live_hashes: Vec<LiveHashInfo>,
+    pub token_relationships: HashMap<String, TokenRelationshipInfo>,
+    pub account_memo: String,
+    pub owned_nfts: String,
+    pub max_automatic_token_associations: String,
+    pub alias_key: Option<String>,
+    pub ledger_id: String,
+    pub ethereum_nonce: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub staking_info: Option<ResponseStakingInfo>,
 }

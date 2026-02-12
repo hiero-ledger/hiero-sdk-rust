@@ -166,7 +166,13 @@ impl ToProtobuf for AccountId {
             realm_num: self.realm as i64,
             shard_num: self.shard as i64,
             account: Some(match &self.alias {
-                None => services::account_id::Account::AccountNum(self.num as i64),
+                None => {
+                    if let Some(evm_address) = &self.evm_address {
+                        services::account_id::Account::Alias(evm_address.0.to_vec())
+                    } else {
+                        services::account_id::Account::AccountNum(self.num as i64)
+                    }
+                }
                 Some(alias) => services::account_id::Account::Alias(ToProtobuf::to_bytes(alias)),
             }),
         }

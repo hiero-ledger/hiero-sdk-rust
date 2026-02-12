@@ -25,6 +25,7 @@ time = "0.3.47"
 hex = "0.4.3"
 hex-literal = "1.0.0"
 prost = "0.13.5"
+base64 = "0.22"
 
 [dependencies.jsonrpsee]
 version = "0.24.9"

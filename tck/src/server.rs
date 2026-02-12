@@ -19,6 +19,7 @@ use serde_json::Value;
 
 use crate::methods::account::AccountRpcServer;
 use crate::methods::contract::ContractRpcServer;
+use crate::methods::ethereum::EthereumRpcServer;
 use crate::methods::file::FileRpcServer;
 use crate::methods::schedule::ScheduleRpcServer;
 use crate::methods::token::TokenRpcServer;
@@ -32,10 +33,15 @@ use crate::responses::{
     ContractCallResponse,
     ContractInfoResponse,
     ContractResponse,
+    EthereumResponse,
+    FileContentsResponse,
+    FileInfoResponse,
     FileResponse,
     GenerateKeyResponse,
     ScheduleInfoResponse,
     ScheduleResponse,
+    TokenMintResponse,
+    TokenResponse,
     TopicInfoResponse,
     TopicResponse,
 };
@@ -190,6 +196,34 @@ impl AccountRpcServer for RpcServerImpl {
         let client = crate::methods::utility::get_client()?;
         crate::methods::account::transfer_crypto(&client, transfers, common_transaction_params)
             .await
+    }
+
+    async fn approve_allowance(
+        &self,
+        allowances: Option<Vec<Value>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<AccountUpdateResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::account::approve_allowance(&client, allowances, common_transaction_params)
+            .await
+    }
+
+    async fn delete_allowance(
+        &self,
+        allowances: Option<Vec<Value>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<AccountUpdateResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::account::delete_allowance(&client, allowances, common_transaction_params)
+            .await
+    }
+
+    async fn get_account_info(
+        &self,
+        account_id: Option<String>,
+    ) -> Result<crate::responses::AccountInfoResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::account::get_account_info(&client, account_id).await
     }
 }
 
@@ -386,8 +420,8 @@ impl FileRpcServer for RpcServerImpl {
         &self,
         file_id: Option<String>,
         contents: Option<String>,
-        max_chunks: Option<usize>,
-        chunk_size: Option<usize>,
+        max_chunks: Option<i64>,
+        chunk_size: Option<i64>,
         common_transaction_params: Option<HashMap<String, Value>>,
     ) -> Result<FileResponse, ErrorObjectOwned> {
         let client = crate::methods::utility::get_client()?;
@@ -402,6 +436,28 @@ impl FileRpcServer for RpcServerImpl {
         .await
     }
 
+    async fn update_file(
+        &self,
+        file_id: Option<String>,
+        keys: Option<Vec<String>>,
+        contents: Option<String>,
+        expiration_time: Option<String>,
+        memo: Option<String>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<FileResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::file::update_file(
+            &client,
+            file_id,
+            keys,
+            contents,
+            expiration_time,
+            memo,
+            common_transaction_params,
+        )
+        .await
+    }
+
     async fn delete_file(
         &self,
         file_id: Option<String>,
@@ -409,6 +465,56 @@ impl FileRpcServer for RpcServerImpl {
     ) -> Result<FileResponse, ErrorObjectOwned> {
         let client = crate::methods::utility::get_client()?;
         crate::methods::file::delete_file(&client, file_id, common_transaction_params).await
+    }
+
+    async fn get_file_info(
+        &self,
+        file_id: Option<String>,
+        query_payment: Option<String>,
+        max_query_payment: Option<String>,
+        get_cost: Option<bool>,
+    ) -> Result<FileInfoResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::file::get_file_info(
+            &client,
+            file_id,
+            query_payment,
+            max_query_payment,
+            get_cost,
+        )
+        .await
+    }
+
+    async fn get_file_contents(
+        &self,
+        file_id: Option<String>,
+        query_payment: Option<String>,
+        max_query_payment: Option<String>,
+    ) -> Result<FileContentsResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::file::get_file_contents(&client, file_id, query_payment, max_query_payment)
+            .await
+    }
+}
+
+#[async_trait]
+impl EthereumRpcServer for RpcServerImpl {
+    async fn create_ethereum_transaction(
+        &self,
+        ethereum_data: Option<String>,
+        call_data_file_id: Option<String>,
+        max_gas_allowance: Option<String>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<EthereumResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::ethereum::create_ethereum_transaction(
+            &client,
+            ethereum_data,
+            call_data_file_id,
+            max_gas_allowance,
+            common_transaction_params,
+        )
+        .await
     }
 }
 
@@ -512,6 +618,111 @@ impl TokenRpcServer for RpcServerImpl {
             &client,
             account_id,
             token_ids,
+            common_transaction_params,
+        )
+        .await
+    }
+
+    async fn mint_token(
+        &self,
+        token_id: Option<String>,
+        amount: Option<String>,
+        metadata: Option<Vec<String>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<TokenMintResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::token::mint_token(
+            &client,
+            token_id,
+            amount,
+            metadata,
+            common_transaction_params,
+        )
+        .await
+    }
+
+    async fn freeze_token(
+        &self,
+        token_id: Option<String>,
+        account_id: Option<String>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<TokenResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::token::freeze_token(
+            &client,
+            token_id,
+            account_id,
+            common_transaction_params,
+        )
+        .await
+    }
+
+    async fn pause_token(
+        &self,
+        token_id: Option<String>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<TokenResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::token::pause_token(&client, token_id, common_transaction_params).await
+    }
+
+    async fn update_token(
+        &self,
+        token_id: Option<String>,
+        symbol: Option<String>,
+        name: Option<String>,
+        treasury_account_id: Option<String>,
+        admin_key: Option<String>,
+        kyc_key: Option<String>,
+        freeze_key: Option<String>,
+        wipe_key: Option<String>,
+        supply_key: Option<String>,
+        auto_renew_account_id: Option<String>,
+        auto_renew_period: Option<String>,
+        expiration_time: Option<String>,
+        memo: Option<String>,
+        fee_schedule_key: Option<String>,
+        pause_key: Option<String>,
+        metadata: Option<String>,
+        metadata_key: Option<String>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<TokenResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::token::update_token(
+            &client,
+            token_id,
+            symbol,
+            name,
+            treasury_account_id,
+            admin_key,
+            kyc_key,
+            freeze_key,
+            wipe_key,
+            supply_key,
+            auto_renew_account_id,
+            auto_renew_period,
+            expiration_time,
+            memo,
+            fee_schedule_key,
+            pause_key,
+            metadata,
+            metadata_key,
+            common_transaction_params,
+        )
+        .await
+    }
+
+    async fn update_token_fee_schedule(
+        &self,
+        token_id: Option<String>,
+        custom_fees: Option<Value>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<TokenResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::token::update_token_fee_schedule(
+            &client,
+            token_id,
+            custom_fees,
             common_transaction_params,
         )
         .await

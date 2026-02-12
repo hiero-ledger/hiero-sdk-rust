@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use base64::Engine;
 use hiero_sdk::{
     AccountAllowanceApproveTransaction,
+    AccountAllowanceDeleteTransaction,
     AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountId,
+    AccountInfoQuery,
     AccountUpdateTransaction,
     Client,
     ContractId,
@@ -28,7 +31,10 @@ use time::{
     OffsetDateTime,
 };
 
-use crate::common::internal_error;
+use crate::common::{
+    internal_error,
+    mock_consensus_error,
+};
 use crate::errors::from_hedera_error;
 use crate::helpers::{
     fill_common_transaction_params,
@@ -37,6 +43,7 @@ use crate::helpers::{
 use crate::responses::{
     AccountBalanceResponse,
     AccountCreateResponse,
+    AccountInfoResponse,
     AccountUpdateResponse,
 };
 
@@ -108,6 +115,26 @@ pub trait AccountRpc {
         transfers: Option<Vec<Value>>,
         common_transaction_params: Option<HashMap<String, Value>>,
     ) -> Result<AccountUpdateResponse, ErrorObjectOwned>;
+
+    #[method(name = "approveAllowance")]
+    async fn approve_allowance(
+        &self,
+        allowances: Option<Vec<Value>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<AccountUpdateResponse, ErrorObjectOwned>;
+
+    #[method(name = "deleteAllowance")]
+    async fn delete_allowance(
+        &self,
+        allowances: Option<Vec<Value>>,
+        common_transaction_params: Option<HashMap<String, Value>>,
+    ) -> Result<AccountUpdateResponse, ErrorObjectOwned>;
+
+    #[method(name = "getAccountInfo")]
+    async fn get_account_info(
+        &self,
+        account_id: Option<String>,
+    ) -> Result<crate::responses::AccountInfoResponse, ErrorObjectOwned>;
 }
 
 pub async fn create_account(
@@ -761,4 +788,283 @@ pub async fn transfer_crypto(
     let tx_receipt = tx_response.get_receipt(client).await.map_err(|e| from_hedera_error(e))?;
 
     Ok(AccountUpdateResponse { status: tx_receipt.status.as_str_name().to_string() })
+}
+
+pub async fn approve_allowance(
+    client: &Client,
+    allowances: Option<Vec<Value>>,
+    common_transaction_params: Option<HashMap<String, Value>>,
+) -> Result<AccountUpdateResponse, ErrorObjectOwned> {
+    let allowances = allowances
+        .ok_or_else(|| mock_consensus_error("EMPTY_ALLOWANCES", "No allowances provided"))?;
+
+    if allowances.is_empty() {
+        return Err(mock_consensus_error("EMPTY_ALLOWANCES", "No allowances provided"));
+    }
+
+    let mut tx = AccountAllowanceApproveTransaction::new();
+
+    for allowance in allowances {
+        let allowance_obj =
+            allowance.as_object().ok_or_else(|| internal_error("Invalid allowance object"))?;
+
+        // Get owner and spender (required for all allowance types)
+        let owner_str = allowance_obj
+            .get("ownerAccountId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| internal_error("ownerAccountId is required in allowances"))?;
+        let spender_str = allowance_obj
+            .get("spenderAccountId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| internal_error("spenderAccountId is required in allowances"))?;
+
+        let owner = AccountId::from_str(owner_str)
+            .map_err(|e| internal_error(format!("Invalid ownerAccountId: {e}")))?;
+        let spender = AccountId::from_str(spender_str)
+            .map_err(|e| internal_error(format!("Invalid spenderAccountId: {e}")))?;
+
+        // Check which type of allowance
+        if let Some(hbar_obj) = allowance_obj.get("hbar").and_then(Value::as_object) {
+            let amount = hbar_obj
+                .get("amount")
+                .and_then(|v| v.as_i64().or_else(|| v.as_str()?.parse::<i64>().ok()))
+                .ok_or_else(|| internal_error("amount is required in hbar allowance"))?;
+
+            tx.approve_hbar_allowance(owner, spender, Hbar::from_tinybars(amount));
+        } else if let Some(token_obj) = allowance_obj.get("token").and_then(Value::as_object) {
+            let token_id_str = token_obj
+                .get("tokenId")
+                .and_then(Value::as_str)
+                .ok_or_else(|| internal_error("tokenId is required in token allowance"))?;
+            let token_id = TokenId::from_str(token_id_str)
+                .map_err(|e| internal_error(format!("Invalid tokenId: {e}")))?;
+
+            let amount = token_obj
+                .get("amount")
+                .and_then(|v| v.as_i64().or_else(|| v.as_str()?.parse::<i64>().ok()))
+                .ok_or_else(|| internal_error("amount is required in token allowance"))?;
+
+            tx.approve_token_allowance(token_id, owner, spender, amount as u64);
+        } else if let Some(nft_obj) = allowance_obj.get("nft").and_then(Value::as_object) {
+            // Handle NFT allowances
+            let token_id_str = nft_obj
+                .get("tokenId")
+                .and_then(Value::as_str)
+                .ok_or_else(|| internal_error("tokenId is required in nft allowance"))?;
+            let token_id = TokenId::from_str(token_id_str)
+                .map_err(|e| internal_error(format!("Invalid tokenId: {e}")))?;
+
+            // Check for delegate spender
+            let delegate_spender = if let Some(delegate_str) =
+                nft_obj.get("delegateSpenderAccountId").and_then(Value::as_str)
+            {
+                if delegate_str.is_empty() {
+                    return Err(internal_error(
+                        "delegateSpenderAccountId cannot be an empty string!",
+                    ));
+                }
+                Some(AccountId::from_str(delegate_str).map_err(|e| {
+                    internal_error(format!("Invalid delegateSpenderAccountId: {e}"))
+                })?)
+            } else {
+                None
+            };
+
+            // Check if this is an "approve all" or specific serial numbers
+            if let Some(serial_numbers) = nft_obj.get("serialNumbers").and_then(Value::as_array) {
+                for serial in serial_numbers {
+                    let serial_num = serial
+                        .as_i64()
+                        .or_else(|| serial.as_str()?.parse::<i64>().ok())
+                        .ok_or_else(|| internal_error("Invalid serial number in nft allowance"))?;
+
+                    let nft_id = NftId::from((token_id, serial_num as u64));
+
+                    if let Some(delegate) = delegate_spender {
+                        tx.approve_token_nft_allowance_with_delegating_spender(
+                            nft_id, owner, spender, delegate,
+                        );
+                    } else {
+                        tx.approve_token_nft_allowance(nft_id, owner, spender);
+                    }
+                }
+            } else if let Some(approved_for_all) =
+                nft_obj.get("approvedForAll").and_then(Value::as_bool)
+            {
+                if approved_for_all {
+                    tx.approve_token_nft_allowance_all_serials(token_id, owner, spender);
+                } else {
+                    tx.delete_token_nft_allowance_all_serials(token_id, owner, spender);
+                }
+            } else {
+                return Err(internal_error(
+                    "Either approvedForAll or serialNumbers is required in nft allowance",
+                ));
+            }
+        } else {
+            return Err(internal_error("No valid allowance type provided (hbar, token, or nft)"));
+        }
+    }
+
+    if let Some(params) = common_transaction_params {
+        fill_common_transaction_params(&mut tx, &params, client);
+    }
+
+    let tx_response = tx.execute(client).await.map_err(|e| from_hedera_error(e))?;
+    let tx_receipt = tx_response.get_receipt(client).await.map_err(|e| from_hedera_error(e))?;
+
+    Ok(AccountUpdateResponse { status: tx_receipt.status.as_str_name().to_string() })
+}
+
+pub async fn delete_allowance(
+    client: &Client,
+    allowances: Option<Vec<Value>>,
+    common_transaction_params: Option<HashMap<String, Value>>,
+) -> Result<AccountUpdateResponse, ErrorObjectOwned> {
+    let allowances = allowances
+        .ok_or_else(|| mock_consensus_error("EMPTY_ALLOWANCES", "No allowances provided"))?;
+
+    if allowances.is_empty() {
+        return Err(mock_consensus_error("EMPTY_ALLOWANCES", "No allowances provided"));
+    }
+
+    let mut tx = AccountAllowanceDeleteTransaction::new();
+
+    for allowance in allowances {
+        let allowance_obj =
+            allowance.as_object().ok_or_else(|| internal_error("Invalid allowance object"))?;
+
+        let owner_str = allowance_obj
+            .get("ownerAccountId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| internal_error("ownerAccountId is required in allowances"))?;
+        let owner = AccountId::from_str(owner_str)
+            .map_err(|e| internal_error(format!("Invalid ownerAccountId: {e}")))?;
+
+        let token_id_str = allowance_obj
+            .get("tokenId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| internal_error("tokenId is required in allowances"))?;
+        let token_id = TokenId::from_str(token_id_str)
+            .map_err(|e| internal_error(format!("Invalid tokenId: {e}")))?;
+
+        let serial_numbers = allowance_obj
+            .get("serialNumbers")
+            .and_then(Value::as_array)
+            .ok_or_else(|| internal_error("serialNumbers is required in allowances"))?;
+
+        for serial in serial_numbers {
+            let serial_num = serial
+                .as_i64()
+                .or_else(|| serial.as_str()?.parse::<i64>().ok())
+                .ok_or_else(|| internal_error("Invalid serial number"))?;
+
+            let nft_id = NftId::from((token_id, serial_num as u64));
+            tx.delete_all_token_nft_allowances(nft_id, owner);
+        }
+    }
+
+    if let Some(params) = common_transaction_params {
+        fill_common_transaction_params(&mut tx, &params, client);
+    }
+
+    let tx_response = tx.execute(client).await.map_err(|e| from_hedera_error(e))?;
+    let tx_receipt = tx_response.get_receipt(client).await.map_err(|e| from_hedera_error(e))?;
+
+    Ok(AccountUpdateResponse { status: tx_receipt.status.as_str_name().to_string() })
+}
+
+pub async fn get_account_info(
+    client: &Client,
+    account_id: Option<String>,
+) -> Result<AccountInfoResponse, ErrorObjectOwned> {
+    let mut query = AccountInfoQuery::new();
+
+    if let Some(account_id_str) = account_id {
+        let account_id = AccountId::from_str(&account_id_str)
+            .map_err(|e| internal_error(format!("Invalid accountId: {e}")))?;
+        query.account_id(account_id);
+    }
+
+    let response = query.execute(client).await.map_err(from_hedera_error)?;
+
+    // Map live hashes
+    let live_hashes = response
+        .live_hashes
+        .iter()
+        .map(|live_hash| crate::responses::LiveHashInfo {
+            account_id: live_hash.account_id.to_string(),
+            hash: base64::engine::general_purpose::STANDARD.encode(&live_hash.hash),
+            keys: live_hash
+                .keys
+                .keys
+                .iter()
+                .map(|key| match key {
+                    hiero_sdk::Key::Single(pk) => pk.to_string_der(),
+                    _ => hex::encode(key.to_bytes()),
+                })
+                .collect(),
+            duration: live_hash.duration.whole_seconds().to_string(),
+        })
+        .collect();
+
+    // Map token relationships
+    let mut token_relationships = std::collections::HashMap::new();
+    for relationship in &response.token_relationships {
+        token_relationships.insert(
+            relationship.token_id.to_string(),
+            crate::responses::TokenRelationshipInfo {
+                token_id: relationship.token_id.to_string(),
+                symbol: relationship.symbol.clone(),
+                balance: relationship.balance.to_string(),
+                is_kyc_granted: relationship.is_kyc_granted,
+                is_frozen: relationship.is_frozen,
+                automatic_association: relationship.automatic_association,
+            },
+        );
+    }
+
+    // Map staking info
+    let staking_info = response.staking.map(|info| crate::responses::ResponseStakingInfo {
+        decline_staking_reward: info.decline_staking_reward,
+        stake_period_start: info.stake_period_start.map(|d| d.to_string()),
+        pending_reward: Some(info.pending_reward.to_tinybars().to_string()),
+        staked_to_me: Some(info.staked_to_me.to_tinybars().to_string()),
+        staked_account_id: info.staked_account_id.map(|id| id.to_string()),
+        staked_node_id: info.staked_node_id.map(|id| id.to_string()),
+    });
+
+    #[allow(deprecated)]
+    Ok(AccountInfoResponse {
+        account_id: response.account_id.to_string(),
+        contract_account_id: response.contract_account_id,
+        is_deleted: response.is_deleted,
+        proxy_account_id: response.proxy_account_id.map(|id| id.to_string()),
+        proxy_received: response.proxy_received.to_tinybars().to_string(),
+        key: match &response.key {
+            hiero_sdk::Key::Single(pk) => pk.to_string_der(),
+            _ => hex::encode(response.key.to_bytes()),
+        },
+        balance: response.balance.to_tinybars().to_string(),
+        send_record_threshold: response.send_record_threshold.to_tinybars().to_string(),
+        receive_record_threshold: response.receive_record_threshold.to_tinybars().to_string(),
+        is_receiver_signature_required: response.is_receiver_signature_required,
+        expiration_time: response
+            .expiration_time
+            .map(|t| t.unix_timestamp().to_string())
+            .unwrap_or_default(),
+        auto_renew_period: response
+            .auto_renew_period
+            .map(|d| d.whole_seconds().to_string())
+            .unwrap_or_default(),
+        live_hashes,
+        token_relationships,
+        account_memo: response.account_memo,
+        owned_nfts: response.owned_nfts.to_string(),
+        max_automatic_token_associations: response.max_automatic_token_associations.to_string(),
+        alias_key: response.alias_key.map(|k| k.to_string_raw()),
+        ledger_id: response.ledger_id.to_string(),
+        ethereum_nonce: response.ethereum_nonce.to_string(),
+        staking_info,
+    })
 }

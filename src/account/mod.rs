@@ -28,7 +28,11 @@ pub(crate) use account_create_transaction::AccountCreateTransactionData;
 pub use account_delete_transaction::AccountDeleteTransaction;
 pub(crate) use account_delete_transaction::AccountDeleteTransactionData;
 pub use account_id::AccountId;
-pub use account_info::AccountInfo;
+pub use account_info::{
+    AccountInfo,
+    LiveHash,
+    TokenRelationship,
+};
 pub use account_info_query::AccountInfoQuery;
 pub(crate) use account_info_query::AccountInfoQueryData;
 pub use account_records_query::AccountRecordsQuery;
