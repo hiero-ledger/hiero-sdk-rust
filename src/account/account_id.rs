@@ -259,12 +259,15 @@ mod tests {
 
     use assert_matches::assert_matches;
     use hex_literal::hex;
+    use hiero_sdk_proto::services;
 
     use crate::ethereum::EvmAddress;
     use crate::ledger_id::RefLedgerId;
     use crate::{
         AccountId,
         Client,
+        FromProtobuf,
+        ToProtobuf,
         ValidateChecksums,
     };
 
@@ -468,6 +471,69 @@ mod tests {
             AccountId::from_str("0x302a300506032b6570032100114e6abc371b82da").unwrap().to_bytes();
         expect_test::expect!["0.0.0"]
             .assert_eq(&AccountId::from_bytes(&bytes).unwrap().to_string());
+    }
+
+    #[test]
+    fn to_protobuf_with_evm_address() {
+        // Test that evm_address is assigned to alias field in protobuf when alias is None
+        let evm_address =
+            EvmAddress::from_str("0x302a300506032b6570032100114e6abc371b82da").unwrap();
+
+        let account_id = AccountId {
+            shard: 1,
+            realm: 2,
+            num: 0,
+            alias: None,
+            evm_address: Some(evm_address),
+            checksum: None,
+        };
+
+        let protobuf = ToProtobuf::to_protobuf(&account_id);
+
+        // Verify the protobuf has the evm_address in the alias field
+        match &protobuf.account {
+            Some(services::account_id::Account::Alias(bytes)) => {
+                assert_eq!(bytes, &evm_address.0.to_vec());
+            }
+            _ => panic!("Expected Alias variant with evm_address bytes"),
+        }
+
+        // Verify roundtrip conversion
+        let decoded = AccountId::from_protobuf(protobuf).unwrap();
+        assert_eq!(
+            decoded,
+            AccountId {
+                shard: 1,
+                realm: 2,
+                num: 0,
+                alias: None,
+                evm_address: Some(evm_address),
+                checksum: None,
+            }
+        );
+    }
+
+    #[test]
+    fn to_protobuf_without_evm_address_or_alias() {
+        // Test that AccountNum is used when both alias and evm_address are None
+        let account_id = AccountId {
+            shard: 0,
+            realm: 0,
+            num: 123,
+            alias: None,
+            evm_address: None,
+            checksum: None,
+        };
+
+        let protobuf = ToProtobuf::to_protobuf(&account_id);
+
+        // Verify the protobuf has the account number
+        match protobuf.account {
+            Some(services::account_id::Account::AccountNum(num)) => {
+                assert_eq!(num, 123);
+            }
+            _ => panic!("Expected AccountNum variant"),
+        }
     }
 
     #[test]

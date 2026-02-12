@@ -736,4 +736,324 @@ mod tests {
         assert!(!tx.token_approvals().is_empty());
         assert!(!tx.token_approvals().is_empty());
     }
+
+    #[test]
+    fn approve_token_nft_allowance_with_delegating_spender_creates_new_allowance() {
+        let owner_id = AccountId::new(1, 2, 3);
+        let spender_id = AccountId::new(4, 5, 6);
+        let delegating_spender_id = AccountId::new(7, 8, 9);
+        let token_id = TokenId::new(10, 11, 12);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+        tx.approve_token_nft_allowance_with_delegating_spender(
+            token_id.nft(100),
+            owner_id,
+            spender_id,
+            delegating_spender_id,
+        );
+
+        let nft_approvals = tx.token_nft_approvals();
+        assert_eq!(nft_approvals.len(), 1);
+
+        let allowance = &nft_approvals[0];
+        assert_eq!(allowance.token_id, token_id);
+        assert_eq!(allowance.owner_account_id, owner_id);
+        assert_eq!(allowance.spender_account_id, spender_id);
+        assert_eq!(allowance.delegating_spender_account_id, Some(delegating_spender_id));
+        assert_eq!(allowance.serials, vec![100]);
+        assert_eq!(allowance.approved_for_all, None);
+    }
+
+    #[test]
+    fn approve_token_nft_allowance_with_delegating_spender_appends_to_existing_allowance() {
+        let owner_id = AccountId::new(1, 2, 3);
+        let spender_id = AccountId::new(4, 5, 6);
+        let delegating_spender_id = AccountId::new(7, 8, 9);
+        let token_id = TokenId::new(10, 11, 12);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+
+        // Add first NFT serial
+        tx.approve_token_nft_allowance_with_delegating_spender(
+            token_id.nft(100),
+            owner_id,
+            spender_id,
+            delegating_spender_id,
+        );
+
+        // Add second NFT serial with same parameters
+        tx.approve_token_nft_allowance_with_delegating_spender(
+            token_id.nft(200),
+            owner_id,
+            spender_id,
+            delegating_spender_id,
+        );
+
+        let nft_approvals = tx.token_nft_approvals();
+        assert_eq!(nft_approvals.len(), 1, "Should append to existing allowance");
+
+        let allowance = &nft_approvals[0];
+        assert_eq!(allowance.serials, vec![100, 200]);
+        assert_eq!(allowance.token_id, token_id);
+        assert_eq!(allowance.owner_account_id, owner_id);
+        assert_eq!(allowance.spender_account_id, spender_id);
+        assert_eq!(allowance.delegating_spender_account_id, Some(delegating_spender_id));
+    }
+
+    #[test]
+    fn approve_token_nft_allowance_with_delegating_spender_creates_separate_allowance_for_different_delegating_spender(
+    ) {
+        let owner_id = AccountId::new(1, 2, 3);
+        let spender_id = AccountId::new(4, 5, 6);
+        let delegating_spender_id_1 = AccountId::new(7, 8, 9);
+        let delegating_spender_id_2 = AccountId::new(10, 11, 12);
+        let token_id = TokenId::new(13, 14, 15);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+
+        // Add NFT with first delegating spender
+        tx.approve_token_nft_allowance_with_delegating_spender(
+            token_id.nft(100),
+            owner_id,
+            spender_id,
+            delegating_spender_id_1,
+        );
+
+        // Add NFT with different delegating spender
+        tx.approve_token_nft_allowance_with_delegating_spender(
+            token_id.nft(200),
+            owner_id,
+            spender_id,
+            delegating_spender_id_2,
+        );
+
+        let nft_approvals = tx.token_nft_approvals();
+        assert_eq!(nft_approvals.len(), 2, "Should create separate allowances");
+
+        assert_eq!(nft_approvals[0].serials, vec![100]);
+        assert_eq!(nft_approvals[0].delegating_spender_account_id, Some(delegating_spender_id_1));
+
+        assert_eq!(nft_approvals[1].serials, vec![200]);
+        assert_eq!(nft_approvals[1].delegating_spender_account_id, Some(delegating_spender_id_2));
+    }
+
+    #[test]
+    fn approve_token_nft_allowance_with_delegating_spender_multiple_serials() {
+        let owner_id = AccountId::new(1, 2, 3);
+        let spender_id = AccountId::new(4, 5, 6);
+        let delegating_spender_id = AccountId::new(7, 8, 9);
+        let token_id = TokenId::new(10, 11, 12);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+
+        // Add multiple serials
+        for serial in [100, 200, 300, 400, 500] {
+            tx.approve_token_nft_allowance_with_delegating_spender(
+                token_id.nft(serial),
+                owner_id,
+                spender_id,
+                delegating_spender_id,
+            );
+        }
+
+        let nft_approvals = tx.token_nft_approvals();
+        assert_eq!(nft_approvals.len(), 1);
+        assert_eq!(nft_approvals[0].serials, vec![100, 200, 300, 400, 500]);
+    }
+
+    #[test]
+    fn delete_token_nft_allowance_all_serials_creates_deletion_allowance() {
+        let owner_id = AccountId::new(1, 2, 3);
+        let spender_id = AccountId::new(4, 5, 6);
+        let token_id = TokenId::new(10, 11, 12);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+        tx.delete_token_nft_allowance_all_serials(token_id, owner_id, spender_id);
+
+        let nft_approvals = tx.token_nft_approvals();
+        assert_eq!(nft_approvals.len(), 1);
+
+        let allowance = &nft_approvals[0];
+        assert_eq!(allowance.token_id, token_id);
+        assert_eq!(allowance.owner_account_id, owner_id);
+        assert_eq!(allowance.spender_account_id, spender_id);
+        assert_eq!(allowance.approved_for_all, Some(false));
+        assert_eq!(allowance.delegating_spender_account_id, None);
+        assert!(allowance.serials.is_empty());
+    }
+
+    #[test]
+    fn delete_token_nft_allowance_all_serials_multiple_deletions() {
+        let owner_id = AccountId::new(1, 2, 3);
+        let spender_id_1 = AccountId::new(4, 5, 6);
+        let spender_id_2 = AccountId::new(7, 8, 9);
+        let token_id_1 = TokenId::new(10, 11, 12);
+        let token_id_2 = TokenId::new(13, 14, 15);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+
+        // Delete allowances for different tokens and spenders
+        tx.delete_token_nft_allowance_all_serials(token_id_1, owner_id, spender_id_1);
+        tx.delete_token_nft_allowance_all_serials(token_id_2, owner_id, spender_id_2);
+
+        let nft_approvals = tx.token_nft_approvals();
+        assert_eq!(nft_approvals.len(), 2);
+
+        // Verify first deletion
+        assert_eq!(nft_approvals[0].token_id, token_id_1);
+        assert_eq!(nft_approvals[0].spender_account_id, spender_id_1);
+        assert_eq!(nft_approvals[0].approved_for_all, Some(false));
+
+        // Verify second deletion
+        assert_eq!(nft_approvals[1].token_id, token_id_2);
+        assert_eq!(nft_approvals[1].spender_account_id, spender_id_2);
+        assert_eq!(nft_approvals[1].approved_for_all, Some(false));
+    }
+
+    #[test]
+    fn delete_token_nft_allowance_all_serials_serialization() {
+        let owner_id = AccountId::new(5, 6, 7);
+        let spender_id = AccountId::new(1, 1, 1);
+        let token_id = TokenId::new(2, 2, 2);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+        tx.delete_token_nft_allowance_all_serials(token_id, owner_id, spender_id).freeze().unwrap();
+
+        let tx_body = transaction_body(tx);
+        let tx_data = check_body(tx_body);
+
+        expect![[r#"
+            CryptoApproveAllowance(
+                CryptoApproveAllowanceTransactionBody {
+                    crypto_allowances: [],
+                    nft_allowances: [
+                        NftAllowance {
+                            token_id: Some(
+                                TokenId {
+                                    shard_num: 2,
+                                    realm_num: 2,
+                                    token_num: 2,
+                                },
+                            ),
+                            owner: Some(
+                                AccountId {
+                                    shard_num: 5,
+                                    realm_num: 6,
+                                    account: Some(
+                                        AccountNum(
+                                            7,
+                                        ),
+                                    ),
+                                },
+                            ),
+                            spender: Some(
+                                AccountId {
+                                    shard_num: 1,
+                                    realm_num: 1,
+                                    account: Some(
+                                        AccountNum(
+                                            1,
+                                        ),
+                                    ),
+                                },
+                            ),
+                            serial_numbers: [],
+                            approved_for_all: Some(
+                                false,
+                            ),
+                            delegating_spender: None,
+                        },
+                    ],
+                    token_allowances: [],
+                },
+            )
+        "#]]
+        .assert_debug_eq(&tx_data);
+    }
+
+    #[test]
+    fn approve_token_nft_allowance_with_delegating_spender_serialization() {
+        let owner_id = AccountId::new(5, 6, 7);
+        let spender_id = AccountId::new(1, 1, 1);
+        let delegating_spender_id = AccountId::new(2, 2, 2);
+        let token_id = TokenId::new(3, 3, 3);
+
+        let mut tx = AccountAllowanceApproveTransaction::new_for_tests();
+        tx.approve_token_nft_allowance_with_delegating_spender(
+            token_id.nft(100),
+            owner_id,
+            spender_id,
+            delegating_spender_id,
+        )
+        .approve_token_nft_allowance_with_delegating_spender(
+            token_id.nft(200),
+            owner_id,
+            spender_id,
+            delegating_spender_id,
+        )
+        .freeze()
+        .unwrap();
+
+        let tx_body = transaction_body(tx);
+        let tx_data = check_body(tx_body);
+
+        expect![[r#"
+            CryptoApproveAllowance(
+                CryptoApproveAllowanceTransactionBody {
+                    crypto_allowances: [],
+                    nft_allowances: [
+                        NftAllowance {
+                            token_id: Some(
+                                TokenId {
+                                    shard_num: 3,
+                                    realm_num: 3,
+                                    token_num: 3,
+                                },
+                            ),
+                            owner: Some(
+                                AccountId {
+                                    shard_num: 5,
+                                    realm_num: 6,
+                                    account: Some(
+                                        AccountNum(
+                                            7,
+                                        ),
+                                    ),
+                                },
+                            ),
+                            spender: Some(
+                                AccountId {
+                                    shard_num: 1,
+                                    realm_num: 1,
+                                    account: Some(
+                                        AccountNum(
+                                            1,
+                                        ),
+                                    ),
+                                },
+                            ),
+                            serial_numbers: [
+                                100,
+                                200,
+                            ],
+                            approved_for_all: None,
+                            delegating_spender: Some(
+                                AccountId {
+                                    shard_num: 2,
+                                    realm_num: 2,
+                                    account: Some(
+                                        AccountNum(
+                                            2,
+                                        ),
+                                    ),
+                                },
+                            ),
+                        },
+                    ],
+                    token_allowances: [],
+                },
+            )
+        "#]]
+        .assert_debug_eq(&tx_data);
+    }
 }

@@ -320,3 +320,311 @@ impl ToProtobuf for TokenRelationship {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use hiero_sdk_proto::services;
+    use time::Duration;
+
+    use super::{
+        LiveHash,
+        TokenRelationship,
+    };
+    use crate::protobuf::ToProtobuf;
+    use crate::{
+        AccountId,
+        FromProtobuf,
+        Key,
+        KeyList,
+        PublicKey,
+        TokenId,
+    };
+
+    #[test]
+    fn live_hash_to_from_protobuf() {
+        let account_id = AccountId::new(1, 2, 3);
+        let hash = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let public_key = PublicKey::from_str_ed25519(
+            "302a300506032b65700321001234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        )
+        .unwrap();
+        let key = Key::Single(public_key);
+        let keys = KeyList { keys: vec![key.clone()], threshold: None };
+        let duration = Duration::seconds(3600);
+
+        let live_hash = LiveHash { account_id, hash: hash.clone(), keys: keys.clone(), duration };
+
+        let protobuf = live_hash.to_protobuf();
+        let restored = LiveHash::from_protobuf(protobuf).unwrap();
+
+        assert_eq!(restored.account_id, account_id);
+        assert_eq!(restored.hash, hash);
+        assert_eq!(restored.keys.keys.len(), keys.keys.len());
+        assert_eq!(restored.duration, duration);
+    }
+
+    #[test]
+    fn live_hash_fields() {
+        let account_id = AccountId::new(5, 6, 7);
+        let hash = vec![0xff, 0xee, 0xdd, 0xcc];
+        let public_key = PublicKey::from_str_ed25519(
+            "302a300506032b65700321001234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        )
+        .unwrap();
+        let key = Key::Single(public_key);
+        let keys = KeyList { keys: vec![key], threshold: Some(1) };
+        let duration = Duration::hours(24);
+
+        let live_hash = LiveHash { account_id, hash: hash.clone(), keys: keys.clone(), duration };
+
+        assert_eq!(live_hash.account_id.shard, 5);
+        assert_eq!(live_hash.account_id.realm, 6);
+        assert_eq!(live_hash.account_id.num, 7);
+        assert_eq!(live_hash.hash, hash);
+        assert_eq!(live_hash.keys.keys.len(), 1);
+        assert_eq!(live_hash.keys.threshold, Some(1));
+        assert_eq!(live_hash.duration, duration);
+    }
+
+    #[test]
+    fn token_relationship_to_from_protobuf_with_kyc_granted() {
+        let token_id = TokenId::new(1, 2, 3);
+        let symbol = Some("TEST".to_string());
+        let balance = 1000u64;
+        let is_kyc_granted = Some(true);
+        let is_frozen = Some(false);
+        let automatic_association = Some(true);
+
+        let relationship = TokenRelationship {
+            token_id,
+            symbol: symbol.clone(),
+            balance,
+            is_kyc_granted,
+            is_frozen,
+            automatic_association,
+        };
+
+        let protobuf = relationship.to_protobuf();
+        assert_eq!(protobuf.kyc_status, services::TokenKycStatus::Granted as i32);
+        assert_eq!(protobuf.freeze_status, services::TokenFreezeStatus::Unfrozen as i32);
+        assert_eq!(protobuf.automatic_association, true);
+
+        let restored = TokenRelationship::from_protobuf(protobuf).unwrap();
+
+        assert_eq!(restored.token_id, token_id);
+        assert_eq!(restored.symbol, symbol);
+        assert_eq!(restored.balance, balance);
+        assert_eq!(restored.is_kyc_granted, is_kyc_granted);
+        assert_eq!(restored.is_frozen, is_frozen);
+        assert_eq!(restored.automatic_association, automatic_association);
+    }
+
+    #[test]
+    fn token_relationship_to_from_protobuf_with_kyc_revoked() {
+        let token_id = TokenId::new(4, 5, 6);
+        let relationship = TokenRelationship {
+            token_id,
+            symbol: Some("REVOKED".to_string()),
+            balance: 500,
+            is_kyc_granted: Some(false),
+            is_frozen: Some(true),
+            automatic_association: None,
+        };
+
+        let protobuf = relationship.to_protobuf();
+        assert_eq!(protobuf.kyc_status, services::TokenKycStatus::Revoked as i32);
+        assert_eq!(protobuf.freeze_status, services::TokenFreezeStatus::Frozen as i32);
+        assert_eq!(protobuf.automatic_association, false);
+
+        let restored = TokenRelationship::from_protobuf(protobuf).unwrap();
+        assert_eq!(restored.is_kyc_granted, Some(false));
+        assert_eq!(restored.is_frozen, Some(true));
+        assert_eq!(restored.automatic_association, None);
+    }
+
+    #[test]
+    fn token_relationship_to_from_protobuf_with_none_values() {
+        let token_id = TokenId::new(7, 8, 9);
+        let relationship = TokenRelationship {
+            token_id,
+            symbol: None,
+            balance: 0,
+            is_kyc_granted: None,
+            is_frozen: None,
+            automatic_association: None,
+        };
+
+        let protobuf = relationship.to_protobuf();
+        assert_eq!(protobuf.kyc_status, services::TokenKycStatus::KycNotApplicable as i32);
+        assert_eq!(protobuf.freeze_status, services::TokenFreezeStatus::FreezeNotApplicable as i32);
+        assert_eq!(protobuf.symbol, "");
+        assert_eq!(protobuf.automatic_association, false);
+
+        let restored = TokenRelationship::from_protobuf(protobuf).unwrap();
+        assert_eq!(restored.symbol, None);
+        assert_eq!(restored.is_kyc_granted, None);
+        assert_eq!(restored.is_frozen, None);
+        assert_eq!(restored.automatic_association, None);
+    }
+
+    #[test]
+    fn token_relationship_fields() {
+        let token_id = TokenId::new(10, 11, 12);
+        let symbol = Some("SYMBOL".to_string());
+        let balance = 5000u64;
+
+        let relationship = TokenRelationship {
+            token_id,
+            symbol: symbol.clone(),
+            balance,
+            is_kyc_granted: Some(true),
+            is_frozen: Some(false),
+            automatic_association: Some(true),
+        };
+
+        assert_eq!(relationship.token_id.shard, 10);
+        assert_eq!(relationship.token_id.realm, 11);
+        assert_eq!(relationship.token_id.num, 12);
+        assert_eq!(relationship.symbol, symbol);
+        assert_eq!(relationship.balance, balance);
+        assert_eq!(relationship.is_kyc_granted, Some(true));
+        assert_eq!(relationship.is_frozen, Some(false));
+        assert_eq!(relationship.automatic_association, Some(true));
+    }
+
+    #[test]
+    fn token_relationship_empty_symbol_converts_to_none() {
+        let protobuf = services::TokenRelationship {
+            token_id: Some(services::TokenId { shard_num: 1, realm_num: 2, token_num: 3 }),
+            symbol: "".to_string(),
+            balance: 100,
+            kyc_status: services::TokenKycStatus::KycNotApplicable as i32,
+            freeze_status: services::TokenFreezeStatus::FreezeNotApplicable as i32,
+            decimals: 0,
+            automatic_association: false,
+        };
+
+        let relationship = TokenRelationship::from_protobuf(protobuf).unwrap();
+        assert_eq!(relationship.symbol, None);
+    }
+
+    #[test]
+    fn token_relationship_automatic_association_false_converts_to_none() {
+        let protobuf = services::TokenRelationship {
+            token_id: Some(services::TokenId { shard_num: 1, realm_num: 2, token_num: 3 }),
+            symbol: "TEST".to_string(),
+            balance: 100,
+            kyc_status: services::TokenKycStatus::KycNotApplicable as i32,
+            freeze_status: services::TokenFreezeStatus::FreezeNotApplicable as i32,
+            decimals: 0,
+            automatic_association: false,
+        };
+
+        let relationship = TokenRelationship::from_protobuf(protobuf).unwrap();
+        assert_eq!(relationship.automatic_association, None);
+    }
+
+    #[test]
+    fn token_relationship_automatic_association_true_converts_to_some_true() {
+        let protobuf = services::TokenRelationship {
+            token_id: Some(services::TokenId { shard_num: 1, realm_num: 2, token_num: 3 }),
+            symbol: "TEST".to_string(),
+            balance: 100,
+            kyc_status: services::TokenKycStatus::KycNotApplicable as i32,
+            freeze_status: services::TokenFreezeStatus::FreezeNotApplicable as i32,
+            decimals: 0,
+            automatic_association: true,
+        };
+
+        let relationship = TokenRelationship::from_protobuf(protobuf).unwrap();
+        assert_eq!(relationship.automatic_association, Some(true));
+    }
+
+    #[test]
+    fn live_hash_zero_duration() {
+        let account_id = AccountId::new(1, 2, 3);
+        let hash = vec![1, 2, 3];
+        let public_key = PublicKey::from_str_ed25519(
+            "302a300506032b65700321001234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        )
+        .unwrap();
+        let key = Key::Single(public_key);
+        let keys = KeyList { keys: vec![key], threshold: None };
+
+        let protobuf = services::LiveHash {
+            account_id: Some(account_id.to_protobuf()),
+            hash: hash.clone(),
+            keys: Some(keys.to_protobuf()),
+            duration: None, // Test None duration
+        };
+
+        let live_hash = LiveHash::from_protobuf(protobuf).unwrap();
+        assert_eq!(live_hash.duration, Duration::ZERO);
+    }
+
+    #[test]
+    fn live_hash_empty_hash() {
+        let account_id = AccountId::new(1, 2, 3);
+        let hash = vec![]; // Empty hash
+        let public_key = PublicKey::from_str_ed25519(
+            "302a300506032b65700321001234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        )
+        .unwrap();
+        let key = Key::Single(public_key);
+        let keys = KeyList { keys: vec![key], threshold: None };
+        let duration = Duration::seconds(60);
+
+        let live_hash = LiveHash { account_id, hash: hash.clone(), keys, duration };
+
+        assert!(live_hash.hash.is_empty());
+
+        let protobuf = live_hash.to_protobuf();
+        assert!(protobuf.hash.is_empty());
+
+        let restored = LiveHash::from_protobuf(protobuf).unwrap();
+        assert!(restored.hash.is_empty());
+    }
+
+    #[test]
+    fn token_relationship_zero_balance() {
+        let token_id = TokenId::new(1, 2, 3);
+        let relationship = TokenRelationship {
+            token_id,
+            symbol: Some("ZERO".to_string()),
+            balance: 0,
+            is_kyc_granted: Some(true),
+            is_frozen: Some(false),
+            automatic_association: None,
+        };
+
+        assert_eq!(relationship.balance, 0);
+
+        let protobuf = relationship.to_protobuf();
+        assert_eq!(protobuf.balance, 0);
+
+        let restored = TokenRelationship::from_protobuf(protobuf).unwrap();
+        assert_eq!(restored.balance, 0);
+    }
+
+    #[test]
+    fn token_relationship_large_balance() {
+        let token_id = TokenId::new(1, 2, 3);
+        let large_balance = u64::MAX;
+        let relationship = TokenRelationship {
+            token_id,
+            symbol: Some("MAX".to_string()),
+            balance: large_balance,
+            is_kyc_granted: None,
+            is_frozen: None,
+            automatic_association: None,
+        };
+
+        assert_eq!(relationship.balance, large_balance);
+
+        let protobuf = relationship.to_protobuf();
+        assert_eq!(protobuf.balance, large_balance);
+
+        let restored = TokenRelationship::from_protobuf(protobuf).unwrap();
+        assert_eq!(restored.balance, large_balance);
+    }
+}
