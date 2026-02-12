@@ -33,7 +33,7 @@ exclude = [
 
 [dependencies]
 fraction = { version = "0.15.1", default-features = false, optional = true }
-prost-types = "0.14.1"
+prost-types = "0.14.2"
 time_0_3 = { version = "0.3.9", optional = true, package = "time" }
 
 [dependencies.prost]
