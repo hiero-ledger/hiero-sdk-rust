@@ -179,9 +179,7 @@ impl FromStr for EvmAddress {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut buf = [0; 20];
 
-        let address = s
-            .strip_prefix("0x")
-            .ok_or_else(|| Error::basic_parse("expected `0x` prefix in evm address"))?;
+        let address = s.strip_prefix("0x").unwrap_or(s);
 
         hex::decode_to_slice(address, &mut buf).map(|()| Self(buf)).map_err(|err| match err {
             FromHexError::InvalidStringLength => error_len(address.len() / 2),
@@ -252,10 +250,23 @@ mod tests {
     }
 
     #[test]
-    fn evm_address_missing_0x_fails() {
-        let res: Result<EvmAddress, _> = "131211100f0e0d0c0b0a09080706050403020100".parse();
+    fn evm_address_with_prefix() {
+        let addr: EvmAddress = "0x131211100f0e0d0c0b0a09080706050403020100".parse().unwrap();
 
-        assert_matches!(res, Err(crate::Error::BasicParse(_)))
+        assert_eq!(
+            &addr,
+            EvmAddress::from_ref(&hex_literal::hex!("131211100f0e0d0c0b0a09080706050403020100"))
+        );
+    }
+
+    #[test]
+    fn evm_address_without_prefix() {
+        let addr: EvmAddress = "131211100f0e0d0c0b0a09080706050403020100".parse().unwrap();
+
+        assert_eq!(
+            &addr,
+            EvmAddress::from_ref(&hex_literal::hex!("131211100f0e0d0c0b0a09080706050403020100"))
+        );
     }
 
     #[test]

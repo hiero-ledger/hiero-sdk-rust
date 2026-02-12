@@ -19,6 +19,7 @@ use jsonrpsee::types::Request;
 use jsonrpsee::MethodResponse;
 use methods::account::AccountRpcServer;
 use methods::contract::ContractRpcServer;
+use methods::ethereum::EthereumRpcServer;
 use methods::file::FileRpcServer;
 use methods::schedule::ScheduleRpcServer;
 use methods::token::TokenRpcServer;
@@ -72,6 +73,7 @@ async fn run_server() -> anyhow::Result<SocketAddr> {
     let mut rpc_module = UtilityRpcServer::into_rpc(RpcServerImpl);
     rpc_module.merge(AccountRpcServer::into_rpc(RpcServerImpl))?;
     rpc_module.merge(ContractRpcServer::into_rpc(RpcServerImpl))?;
+    rpc_module.merge(EthereumRpcServer::into_rpc(RpcServerImpl))?;
     rpc_module.merge(FileRpcServer::into_rpc(RpcServerImpl))?;
     rpc_module.merge(TokenRpcServer::into_rpc(RpcServerImpl))?;
     rpc_module.merge(TopicRpcServer::into_rpc(RpcServerImpl))?;
