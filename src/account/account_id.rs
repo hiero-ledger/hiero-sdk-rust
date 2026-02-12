@@ -469,7 +469,7 @@ mod tests {
     fn from_bytes_evm_address() {
         let bytes =
             AccountId::from_str("0x302a300506032b6570032100114e6abc371b82da").unwrap().to_bytes();
-        expect_test::expect!["0.0.0"]
+        expect_test::expect!["0x302a300506032b6570032100114e6abc371b82da"]
             .assert_eq(&AccountId::from_bytes(&bytes).unwrap().to_string());
     }
 
