@@ -5,6 +5,7 @@ mod client;
 mod common;
 mod contract;
 mod ethereum_transaction;
+mod fee_estimate_query;
 mod fee_schedules;
 mod file;
 mod network_version_info;

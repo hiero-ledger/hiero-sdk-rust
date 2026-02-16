@@ -62,6 +62,7 @@ tower = { version = "0.5.2", features = ["util"] }
 openssl = "0.10.72"
 hyper-util = "0.1.16"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
+reqwest = { version = "0.12", features = ["json"] }
 
 [dependencies.futures-util]
 version = "0.3.31"
