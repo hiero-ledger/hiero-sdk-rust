@@ -24,7 +24,7 @@ async-stream = "0.3.6"
 backoff = "0.4.0"
 ed25519-dalek = { version = "2.2.0", features = ["rand_core"] }
 fraction = { version = "0.15.1", default-features = false }
-futures-core = "0.3.31"
+futures-core = "0.3.32"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.12"
 hiero-sdk-proto = { path = "./protobufs", version = "0.20.0", features = ["time_0_3", "fraction"] }
@@ -93,7 +93,7 @@ default-features = false
 features = ["std", "arc-swap", "unsize"]
 
 [dev-dependencies]
-anyhow = "1.0.99"
+anyhow = "1.0.102"
 assert_matches = "1.5.0"
 clap = { version = "4.5.45", features = ["derive", "env"] }
 dotenvy = "0.15.5"

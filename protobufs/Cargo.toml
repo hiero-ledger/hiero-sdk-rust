@@ -46,7 +46,7 @@ features = ["std", "prost-derive"]
 version = "0.12.3"
 
 [build-dependencies]
-anyhow = "1.0.99"
+anyhow = "1.0.102"
 tonic-build = "0.12.3"
 regex = "1.12.3"
 fs_extra = "1.3.0"
