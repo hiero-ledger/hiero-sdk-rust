@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use futures_util::StreamExt;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, PrivateKey, TopicCreateTransaction, TopicMessageQuery, TopicMessageSubmitTransaction
 };
 
@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key);
 
     // generate a submit key to use with the topic.
-    let submit_key = PrivateKey::generate_ed25519();
+    let submit_key = PrivateKey::generate_ecdsa();
 
     let topic_id = TopicCreateTransaction::new()
         .topic_memo("sdk::rust::consensus_pub_sub_with_submit_key")
@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::time::sleep(Duration::from_secs(10)).await;
 
-    let _handle: tokio::task::JoinHandle<hedera::Result<()>> = tokio::spawn({
+    let _handle: tokio::task::JoinHandle<hiero_sdk::Result<()>> = tokio::spawn({
         let client = client.clone();
         async move {
             println!("sending 5 messages");

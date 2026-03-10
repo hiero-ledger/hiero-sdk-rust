@@ -2,7 +2,7 @@
 
 use std::fmt::Debug;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use tonic::transport::Channel;
 
 use crate::entity_id::ValidateChecksums;

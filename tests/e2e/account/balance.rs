@@ -5,7 +5,7 @@
 // - cannotConnectToPreviewnetWhenNetworkNameIsNullAndCertificateVerificationIsEnabled
 
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery,
     AccountId,
     Hbar,
@@ -139,7 +139,7 @@ async fn invalid_account_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryNoPaymentPreCheckStatus { status: Status::InvalidAccountId })
+        Err(hiero_sdk::Error::QueryNoPaymentPreCheckStatus { status: Status::InvalidAccountId })
     );
 
     Ok(())

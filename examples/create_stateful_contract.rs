@@ -3,7 +3,7 @@
 mod resources;
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, ContractCallQuery, ContractCreateTransaction, ContractExecuteTransaction, ContractFunctionParameters, FileCreateTransaction, PrivateKey
 };
 

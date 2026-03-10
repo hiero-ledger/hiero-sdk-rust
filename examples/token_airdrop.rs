@@ -3,7 +3,7 @@
 use std::iter::repeat;
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountBalanceQuery, AccountCreateTransaction, AccountId, Client, Hbar, PrivateKey, TokenAirdropTransaction, TokenCancelAirdropTransaction, TokenClaimAirdropTransaction, TokenCreateTransaction, TokenMintTransaction, TokenRejectTransaction
 };
 use time::{Duration, OffsetDateTime};
@@ -88,7 +88,7 @@ async fn main() -> anyhow::Result<()> {
         .initial_supply(100)
         .max_supply(100)
         .treasury_account_id(treasury_account_id)
-        .token_supply_type(hedera::TokenSupplyType::Finite)
+        .token_supply_type(hiero_sdk::TokenSupplyType::Finite)
         .admin_key(operator_key.clone().public_key())
         .freeze_key(operator_key.clone().public_key())
         .supply_key(operator_key.clone().public_key())
@@ -108,8 +108,8 @@ async fn main() -> anyhow::Result<()> {
         .symbol("F")
         .max_supply(10)
         .treasury_account_id(treasury_account_id)
-        .token_supply_type(hedera::TokenSupplyType::Finite)
-        .token_type(hedera::TokenType::NonFungibleUnique)
+        .token_supply_type(hiero_sdk::TokenSupplyType::Finite)
+        .token_type(hiero_sdk::TokenType::NonFungibleUnique)
         .admin_key(operator_key.clone().public_key())
         .freeze_key(operator_key.clone().public_key())
         .supply_key(operator_key.clone().public_key())

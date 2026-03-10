@@ -160,6 +160,7 @@ pub(crate) struct NetworkData {
     // Health stuff has to be in an Arc because it needs to stick around even if the map changes.
     health: Box<[Arc<parking_lot::RwLock<NodeHealth>>]>,
     connections: Box<[NodeConnection]>,
+    max_nodes_per_request: RwLock<Option<u32>>,
 }
 
 impl NetworkData {
@@ -188,6 +189,7 @@ impl NetworkData {
             health: health.into_boxed_slice(),
             connections: connections.into_boxed_slice(),
             backoff: NodeBackoff::default().into(),
+            max_nodes_per_request: None.into(),
         }
     }
 
@@ -247,6 +249,7 @@ impl NetworkData {
             health: health.into_boxed_slice(),
             connections: connections.into_boxed_slice(),
             backoff: NodeBackoff::default().into(),
+            max_nodes_per_request: None.into(),
         }
     }
 
@@ -287,6 +290,7 @@ impl NetworkData {
             health: health.into_boxed_slice(),
             connections: connections.into_boxed_slice(),
             backoff: NodeBackoff::default().into(),
+            max_nodes_per_request: None.into(),
         })
     }
 
@@ -367,6 +371,15 @@ impl NetworkData {
     pub(crate) fn healthy_node_ids(&self) -> impl Iterator<Item = AccountId> + '_ {
         self.healthy_node_indexes(Instant::now()).map(|it| self.node_ids[it])
     }
+
+    pub(crate) fn set_max_nodes_per_request(&self, max_nodes: Option<u32>) {
+        *self.max_nodes_per_request.write() = max_nodes;
+    }
+
+    pub(crate) fn max_nodes_per_request(&self) -> Option<u32> {
+        *self.max_nodes_per_request.read()
+    }
+
     pub(crate) fn random_node_ids(&self) -> Vec<AccountId> {
         let mut node_ids: Vec<_> = self.healthy_node_ids().collect();
         // self.remove_dead_nodes();
@@ -377,7 +390,10 @@ impl NetworkData {
             node_ids = self.node_ids.to_vec();
         }
 
-        let node_sample_amount = (node_ids.len() + 2) / 3;
+        // Use all healthy nodes unless a max is specified
+        let node_sample_amount = self
+            .max_nodes_per_request()
+            .map_or(node_ids.len(), |it| (it as usize).min(node_ids.len()));
 
         let node_id_indecies =
             rand::seq::index::sample(&mut thread_rng(), node_ids.len(), node_sample_amount);
@@ -385,10 +401,10 @@ impl NetworkData {
         node_id_indecies.into_iter().map(|index| node_ids[index]).collect()
     }
 
-    pub(crate) fn channel(&self, index: usize) -> (AccountId, Channel) {
+    pub(crate) fn channel(&self, index: usize, grpc_deadline: Duration) -> (AccountId, Channel) {
         let id = self.node_ids[index];
 
-        let channel = self.connections[index].channel();
+        let channel = self.connections[index].channel(grpc_deadline);
 
         (id, channel)
     }
@@ -536,7 +552,7 @@ impl NodeConnection {
         }
     }
 
-    pub(crate) fn channel(&self) -> Channel {
+    pub(crate) fn channel(&self, grpc_deadline: Duration) -> Channel {
         let channel = self
             .channel
             .get_or_init(|| {
@@ -546,7 +562,7 @@ impl NodeConnection {
                         .keep_alive_timeout(Duration::from_secs(10))
                         .keep_alive_while_idle(true)
                         .tcp_keepalive(Some(Duration::from_secs(10)))
-                        .connect_timeout(Duration::from_secs(10))
+                        .connect_timeout(grpc_deadline)
                 });
 
                 Channel::balance_list(addresses)
@@ -564,6 +580,25 @@ mod tests {
         NodeAddress,
         NodeAddressBook,
     };
+
+    #[test]
+    fn test_network_set_max_nodes_per_request() {
+        let network = NetworkData::from_static(TESTNET);
+
+        // Check default
+        let num_healthy_nodes = network.healthy_node_ids().count();
+        let num_random_nodes = network.random_node_ids().len();
+        assert!(num_random_nodes == num_healthy_nodes, "Default should get all healthy nodes");
+
+        // Check getter and setters
+        network.set_max_nodes_per_request(Some(2));
+        assert_eq!(network.max_nodes_per_request(), Some(2));
+
+        // Check that setter works properly
+        let num_random_nodes = network.random_node_ids().len();
+        println!("Number of random nodes: {}", num_random_nodes);
+        assert!(num_random_nodes == 2, "Should only get 2 random nodes");
+    }
 
     #[test]
     fn test_network_with_string_endpoints() {

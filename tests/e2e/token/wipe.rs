@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     Status,
     TokenAssociateTransaction,
@@ -172,7 +172,7 @@ async fn unowned_nft_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::AccountDoesNotOwnWipedNft, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::AccountDoesNotOwnWipedNft, .. })
     );
 
     token.burn(&client, serials).await?;
@@ -201,7 +201,7 @@ async fn missing_account_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidAccountId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidAccountId, .. })
     );
 
     token.delete(&client).await?;
@@ -222,7 +222,7 @@ async fn missing_token_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidTokenId, .. })
     );
 
     account.delete(&client).await?;

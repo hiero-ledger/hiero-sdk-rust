@@ -3,8 +3,8 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
-use hedera_proto::services::consensus_service_client::ConsensusServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::consensus_service_client::ConsensusServiceClient;
 use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;

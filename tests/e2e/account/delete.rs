@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountInfoQuery,
@@ -44,7 +44,7 @@ async fn create_then_delete() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryNoPaymentPreCheckStatus { status: Status::AccountDeleted })
+        Err(hiero_sdk::Error::QueryNoPaymentPreCheckStatus { status: Status::AccountDeleted })
     );
 
     Ok(())
@@ -63,7 +63,10 @@ async fn missing_account_id_fails() {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::AccountIdDoesNotExist, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: Status::AccountIdDoesNotExist,
+            ..
+        })
     );
 }
 
@@ -100,7 +103,7 @@ async fn missing_deletee_signature_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())

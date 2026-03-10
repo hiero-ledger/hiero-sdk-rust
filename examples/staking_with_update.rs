@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction, AccountId, AccountInfoQuery, AccountUpdateTransaction, Client, Hbar, PrivateKey
 };
 
@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
     // Create Alice account
-    let new_key = PrivateKey::generate_ed25519();
+    let new_key = PrivateKey::generate_ecdsa();
 
     println!("private key: {new_key}");
     println!("public key: {}", new_key.public_key());

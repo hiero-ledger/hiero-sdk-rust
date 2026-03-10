@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::util_service_client::UtilServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::util_service_client::UtilServiceClient;
 
 use crate::entity_id::ValidateChecksums;
 use crate::protobuf::{

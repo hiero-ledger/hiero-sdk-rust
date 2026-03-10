@@ -1,7 +1,7 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use tonic::transport::Channel;
 
 use super::{
@@ -55,7 +55,7 @@ impl ChunkData {
         }
 
         // div ceil algorithm, fun fact: the intrinsic `div_ceil` can't get rid of the panic (it's unstable anyway)
-        (self.data.len() + self.chunk_size.get()) / self.chunk_size
+        (self.data.len() + self.chunk_size.get() - 1) / self.chunk_size.get()
     }
 
     pub(crate) fn message_chunk(&self, chunk_info: &ChunkInfo) -> &[u8] {

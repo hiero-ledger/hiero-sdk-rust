@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::token_service_client::TokenServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::token_service_client::TokenServiceClient;
 use time::{
     Duration,
     OffsetDateTime,
@@ -610,7 +610,7 @@ mod tests {
     use std::str::FromStr;
 
     use expect_test::expect_file;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
     use time::OffsetDateTime;
 
     use crate::protobuf::{

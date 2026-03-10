@@ -6,7 +6,7 @@ use futures_util::stream::{
     TryStreamExt,
 };
 use futures_util::StreamExt;
-use hedera::{
+use hiero_sdk::{
     Client,
     NftId,
     PrivateKey,
@@ -148,7 +148,7 @@ async fn cannot_update_without_signed_metadata_key_error() -> anyhow::Result<()>
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())
@@ -213,7 +213,7 @@ async fn cannot_update_without_set_metadata_key_error() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     Ok(())

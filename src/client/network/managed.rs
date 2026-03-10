@@ -6,6 +6,7 @@ use triomphe::Arc;
 
 use super::mirror::MirrorNetwork;
 use super::Network;
+use crate::client::DEFAULT_GRPC_DEADLINE;
 use crate::NodeAddressBookQuery;
 
 #[derive(Clone)]
@@ -78,8 +79,9 @@ async fn update_network(
 
         // note: ideally we'd have a `select!` on the channel closing, but, we can't
         // since there's no `async fn closed()`, and honestly, I'm not 100% certain these futures are cancel safe.
+        // Background network update uses DEFAULT_GRPC_DEADLINE
         match NodeAddressBookQuery::new()
-            .execute_mirrornet(network.mirror.load().channel(), None)
+            .execute_mirrornet(network.mirror.load().channel(DEFAULT_GRPC_DEADLINE), None)
             .await
         {
             Ok(it) => network.primary.update_from_address_book(&it),

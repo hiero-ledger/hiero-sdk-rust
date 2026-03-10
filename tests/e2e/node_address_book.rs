@@ -1,4 +1,4 @@
-use hedera::NodeAddressBookQuery;
+use hiero_sdk::NodeAddressBookQuery;
 
 use crate::common::TestEnvironment;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, PrivateKey, TokenCreateTransaction, TokenInfoQuery, TokenType, TokenUpdateTransaction
 };
 use time::{Duration, OffsetDateTime};
@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
     // Generate a metadata key
-    let metadata_key = PrivateKey::generate_ed25519();
+    let metadata_key = PrivateKey::generate_ecdsa();
     // Initial metadata
     let metadata: Vec<u8> = vec![1];
     // New metadata

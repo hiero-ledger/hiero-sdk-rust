@@ -1,5 +1,5 @@
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction, AccountId, AccountInfoQuery, AccountUpdateTransaction, Hbar, PrivateKey
 };
 
@@ -21,14 +21,14 @@ async fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    let client = hedera::Client::for_name(&args.hedera_network)?;
+    let client = hiero_sdk::Client::for_name(&args.hedera_network)?;
 
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
     // First, we create a new account so we don't affect our account
 
-    let key1 = PrivateKey::generate_ed25519();
-    let key2 = PrivateKey::generate_ed25519();
+    let key1 = PrivateKey::generate_ecdsa();
+    let key2 = PrivateKey::generate_ecdsa();
 
     let response = AccountCreateTransaction::new()
         .set_key_without_alias(key1.public_key())

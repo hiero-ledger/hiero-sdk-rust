@@ -19,7 +19,7 @@ jobs:
     runs-on: hiero-client-sdk-linux-medium
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
@@ -45,7 +45,7 @@ jobs:
     runs-on: hiero-client-sdk-linux-medium
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
@@ -55,7 +55,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # v1
         with:
           toolchain: 1.88.0
 
@@ -65,7 +65,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        uses: step-security/setup-protoc@f6eb248a6510dbb851209febc1bd7981604a52e3 # v3.0.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -80,7 +80,7 @@ jobs:
     runs-on: hiero-client-sdk-linux-medium
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
@@ -90,7 +90,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # v1
         with:
           toolchain: 1.88.0
 
@@ -100,21 +100,21 @@ jobs:
           sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        uses: step-security/setup-protoc@f6eb248a6510dbb851209febc1bd7981604a52e3 # v3.0.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup NodeJS
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Prepare Hiero Solo
         id: solo
-        uses: hiero-ledger/hiero-solo-action@10ec96a107b8d2f5cd26b3e7ab47e65407b5c462 # v0.11.0
+        uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
         with:
+          hieroVersion: v0.69.1
           installMirrorNode: true
-          hieroVersion: v0.65.0
 
       - name: Create env file
         run: |
@@ -129,4 +129,61 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           . $HOME/.cargo/env
-          cargo test --workspace
+          cargo test --workspace -- --skip node::update
+  dab-tests:
+    needs: ['check']
+    runs-on: hiero-client-sdk-linux-medium
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          submodules: 'recursive'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # v1
+        with:
+          toolchain: 1.88.0
+
+      - name: Setup GCC and OpenSSL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc libc6-dev libc-dev libssl-dev pkg-config openssl
+
+      - name: Install Protoc
+        uses: step-security/setup-protoc@f6eb248a6510dbb851209febc1bd7981604a52e3 # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Prepare Hiero Solo for DAB Tests
+        id: solo-dab
+        uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
+        with:
+          hieroVersion: v0.69.1
+          installMirrorNode: true
+          mirrorNodeVersion: v0.142.0
+          dualMode: true
+
+      - name: Create env file for DAB Tests
+        run: |
+            touch .env
+            echo TEST_OPERATOR_KEY="${{ steps.solo-dab.outputs.privateKey }}" >> .env
+            echo TEST_OPERATOR_ID="${{ steps.solo-dab.outputs.accountId }}" >> .env
+            echo TEST_NETWORK_NAME="localhost" >> .env
+            echo TEST_RUN_NONFREE="1" >> .env
+            cat .env
+
+      - name: Run DAB Tests
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . $HOME/.cargo/env
+          cargo test --test e2e node::update --  --test-threads=1

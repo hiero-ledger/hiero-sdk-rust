@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     ContractDeleteTransaction,
     ContractExecuteTransaction,
     ContractFunctionParameters,
@@ -67,7 +67,7 @@ async fn missing_contract_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidContractId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidContractId, .. })
     );
 
     Ok(())
@@ -98,7 +98,7 @@ async fn missing_function_parameters_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::ContractRevertExecuted, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::ContractRevertExecuted, .. })
     );
 
     ContractDeleteTransaction::new()
@@ -138,7 +138,7 @@ async fn missing_gas_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InsufficientGas, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InsufficientGas, .. })
     );
 
     ContractDeleteTransaction::new()

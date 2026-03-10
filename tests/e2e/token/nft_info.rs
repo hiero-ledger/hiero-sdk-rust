@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     NftId,
     Status,
@@ -54,7 +54,7 @@ async fn invalid_nft_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryNoPaymentPreCheckStatus { status: Status::InvalidNftId })
+        Err(hiero_sdk::Error::QueryNoPaymentPreCheckStatus { status: Status::InvalidNftId })
     );
 
     Ok(())
@@ -73,7 +73,7 @@ async fn invalid_serial_number_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryNoPaymentPreCheckStatus {
+        Err(hiero_sdk::Error::QueryNoPaymentPreCheckStatus {
             status: Status::InvalidTokenNftSerialNumber
         })
     );

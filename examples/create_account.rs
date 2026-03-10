@@ -2,7 +2,7 @@
 
 use assert_matches::assert_matches;
 use clap::Parser;
-use hedera::{AccountCreateTransaction, AccountId, Client, PrivateKey};
+use hiero_sdk::{AccountCreateTransaction, AccountId, Client, PrivateKey};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
 
     client.set_operator(args.operator_account_id, args.operator_key);
 
-    let new_key = PrivateKey::generate_ed25519();
+    let new_key = PrivateKey::generate_ecdsa();
 
     println!("private key = {new_key}");
     println!("public key = {}", new_key.public_key());

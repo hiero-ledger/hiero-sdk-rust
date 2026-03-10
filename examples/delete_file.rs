@@ -3,7 +3,7 @@
 use std::iter;
 
 use clap::Parser;
-use hedera::{AccountId, Client, FileCreateTransaction, FileDeleteTransaction, PrivateKey};
+use hiero_sdk::{AccountId, Client, FileCreateTransaction, FileDeleteTransaction, PrivateKey};
 
 #[derive(Parser, Debug)]
 struct Args {

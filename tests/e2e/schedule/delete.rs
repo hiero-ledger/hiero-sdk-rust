@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     Hbar,
     ScheduleDeleteTransaction,
     Status,
@@ -78,7 +78,7 @@ async fn missing_admin_key_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::ScheduleIsImmutable, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::ScheduleIsImmutable, .. })
     );
 
     Ok(())
@@ -127,7 +127,7 @@ async fn double_delete_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::ScheduleAlreadyDeleted, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::ScheduleAlreadyDeleted, .. })
     );
 
     Ok(())
@@ -143,7 +143,7 @@ async fn missing_schedule_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus { status: Status::InvalidScheduleId, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidScheduleId, .. })
     );
 
     Ok(())

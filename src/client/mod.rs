@@ -46,6 +46,12 @@ mod config;
 mod network;
 mod operator;
 
+/// Default gRPC deadline for requests and channel connection timeouts
+pub(crate) const DEFAULT_GRPC_DEADLINE: Duration = Duration::from_secs(10);
+
+/// Default request timeout for the entire operation (including retries)
+pub(crate) const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
+
 #[derive(Copy, Clone)]
 pub(crate) struct ClientBackoff {
     pub(crate) max_backoff: Duration,
@@ -53,7 +59,7 @@ pub(crate) struct ClientBackoff {
     pub(crate) initial_backoff: Duration,
     pub(crate) max_attempts: usize,
     pub(crate) request_timeout: Option<Duration>,
-    pub(crate) grpc_timeout: Option<Duration>,
+    pub(crate) grpc_deadline: Duration,
 }
 
 impl Default for ClientBackoff {
@@ -62,8 +68,8 @@ impl Default for ClientBackoff {
             max_backoff: Duration::from_millis(backoff::default::MAX_INTERVAL_MILLIS),
             initial_backoff: Duration::from_millis(backoff::default::INITIAL_INTERVAL_MILLIS),
             max_attempts: 10,
-            request_timeout: None,
-            grpc_timeout: None,
+            request_timeout: Some(DEFAULT_REQUEST_TIMEOUT),
+            grpc_deadline: DEFAULT_GRPC_DEADLINE,
         }
     }
 }
@@ -137,6 +143,7 @@ impl ClientBuilder {
             ledger_id: ArcSwapOption::new(ledger_id.map(Arc::new)),
             auto_validate_checksums: AtomicBool::new(auto_validate_checksums),
             regenerate_transaction_ids: AtomicBool::new(regenerate_transaction_ids),
+            enable_receipt_record_query_failover: AtomicBool::new(false),
             network_update_tx,
             backoff: RwLock::new(backoff),
         }))
@@ -151,6 +158,7 @@ struct ClientInner {
     ledger_id: ArcSwapOption<LedgerId>,
     auto_validate_checksums: AtomicBool,
     regenerate_transaction_ids: AtomicBool,
+    enable_receipt_record_query_failover: AtomicBool,
     network_update_tx: watch::Sender<Option<Duration>>,
     backoff: RwLock<ClientBackoff>,
 }
@@ -232,7 +240,7 @@ impl Client {
     /// ```
     /// # #[tokio::main]
     /// # async fn main() {
-    /// use hedera::Client;
+    /// use hiero_sdk::Client;
     ///
     /// let client = Client::for_testnet();
     ///
@@ -386,6 +394,18 @@ impl Client {
         self.net().0.load().set_min_backoff(min_node_backoff)
     }
 
+    /// Returns the max number of nodes to attempt for a request/transaction before failing.
+    pub fn max_nodes_per_request(&self) -> Option<u32> {
+        self.net().0.load().max_nodes_per_request()
+    }
+
+    /// Sets the max number of nodes to attempt for a request/transaction before failing.
+    ///
+    /// If set to `None`, then the client will attempt to use all healthy nodes.
+    pub fn set_max_nodes_per_request(&self, max_nodes: Option<u32>) {
+        self.net().0.load().set_max_nodes_per_request(max_nodes)
+    }
+
     /// Construct a hedera client pre-configured for access to the given network.
     ///
     /// Currently supported network names are `"mainnet"`, `"testnet"`, and `"previewnet"`.
@@ -442,6 +462,40 @@ impl Client {
     /// Enable or disable transaction ID regeneration.
     pub fn set_default_regenerate_transaction_id(&self, value: bool) {
         self.0.regenerate_transaction_ids.store(value, Ordering::Relaxed);
+    }
+
+    /// Returns whether receipt/record query failover is enabled.
+    ///
+    /// When enabled, receipt and record queries will fail over to other nodes
+    /// if the submitting node is unavailable, improving availability at the cost
+    /// of strict correctness guarantees.
+    ///
+    /// Default: `false` (queries pinned to submitting node only)
+    #[must_use]
+    pub fn get_enable_receipt_record_query_failover(&self) -> bool {
+        self.0.enable_receipt_record_query_failover.load(Ordering::Relaxed)
+    }
+
+    /// Enable or disable receipt/record query failover.
+    ///
+    /// When enabled, `get_receipt()` and `get_record()` queries will fail over to other nodes
+    /// if the submitting node is unavailable or times out. This improves availability under
+    /// high concurrency but trades strict correctness guarantees.
+    ///
+    /// When disabled (default), queries are strictly pinned to the submitting node.
+    ///
+    /// # Arguments
+    /// * `enable` - `true` to enable failover, `false` to disable (default)
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use hiero_sdk::Client;
+    /// let client = Client::for_testnet();
+    /// // Enable failover for better availability
+    /// client.set_enable_receipt_record_query_failover(true);
+    /// ```
+    pub fn set_enable_receipt_record_query_failover(&self, enable: bool) {
+        self.0.enable_receipt_record_query_failover.store(enable, Ordering::Relaxed);
     }
 
     /// Sets the account that will, by default, be paying for transactions and queries built with
@@ -568,6 +622,19 @@ impl Client {
         self.0.backoff.write().max_backoff = max_backoff;
     }
 
+    /// Returns the gRPC deadline for individual requests.
+    #[must_use]
+    pub fn grpc_deadline(&self) -> Duration {
+        self.backoff().grpc_deadline
+    }
+
+    /// Sets the gRPC deadline for individual requests.
+    ///
+    /// This timeout is used both for establishing connections to nodes and for individual gRPC calls.
+    pub fn set_grpc_deadline(&self, grpc_deadline: Duration) {
+        self.0.backoff.write().grpc_deadline = grpc_deadline;
+    }
+
     #[must_use]
     pub(crate) fn backoff(&self) -> ClientBackoff {
         *self.0.backoff.read()
@@ -635,6 +702,23 @@ impl Client {
 
             changed
         });
+    }
+
+    /// Triggers an immediate network update from the address book.
+    /// Note: This method is not part of the public API and may be changed or removed in future versions.
+    pub(crate) async fn refresh_network(&self) {
+        match NodeAddressBookQuery::new()
+            .execute_mirrornet(self.mirrornet().load().channel(self.grpc_deadline()), None)
+            .await
+        {
+            Ok(address_book) => {
+                log::info!("Successfully updated network address book");
+                self.set_network_from_address_book(address_book);
+            }
+            Err(e) => {
+                log::warn!("Failed to update network address book: {e:?}");
+            }
+        }
     }
 
     /// Returns the Account ID for the operator.

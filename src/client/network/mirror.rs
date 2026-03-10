@@ -78,7 +78,7 @@ impl MirrorNetworkData {
         Self { addresses, channel: OnceCell::new() }
     }
 
-    pub(crate) fn channel(&self) -> Channel {
+    pub(crate) fn channel(&self, grpc_deadline: Duration) -> Channel {
         self.channel
             .get_or_init(|| {
                 let endpoint = self.addresses.iter().next().unwrap();
@@ -91,7 +91,7 @@ impl MirrorNetworkData {
 
                 let endpoint = Endpoint::from_shared(uri_parsed.to_string())
                     .unwrap()
-                    .connect_timeout(Duration::from_secs(10))
+                    .connect_timeout(grpc_deadline)
                     .keep_alive_timeout(Duration::from_secs(10))
                     .keep_alive_while_idle(true)
                     .tcp_keepalive(Some(Duration::from_secs(10)));

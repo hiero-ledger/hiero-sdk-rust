@@ -4,3 +4,4 @@
 target
 **/Cargo.toml.bak
 **/Cargo.lock.bak
+.DS_Store

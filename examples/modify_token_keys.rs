@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, KeyList, PrivateKey, PublicKey, TokenCreateTransaction, TokenInfoQuery, TokenKeyValidation, TokenUpdateTransaction
 };
 use time::{Duration, OffsetDateTime};
@@ -28,13 +28,13 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_id, args.operator_key.clone());
 
     // Generate a higher-privileged key.
-    let admin_key = PrivateKey::generate_ed25519();
+    let admin_key = PrivateKey::generate_ecdsa();
 
     // Generate the lower-privileged keys that will be modified.
     // Note: Lower-privileged keys are KYC, Freeze, Wipe, and Supply, Fee Schedule, Metadata key.
-    let supply_key = PrivateKey::generate_ed25519();
-    let wipe_key = PrivateKey::generate_ed25519();
-    let new_supply_key = PrivateKey::generate_ed25519();
+    let supply_key = PrivateKey::generate_ecdsa();
+    let wipe_key = PrivateKey::generate_ecdsa();
+    let new_supply_key = PrivateKey::generate_ecdsa();
 
     // Generate an invalid key to update the supply key.
     let unusable = PublicKey::from_str_ed25519(
@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
     let token_id = TokenCreateTransaction::new()
         .name("Example NFT")
         .symbol("ENFT")
-        .token_type(hedera::TokenType::NonFungibleUnique)
+        .token_type(hiero_sdk::TokenType::NonFungibleUnique)
         .treasury_account_id(client.get_operator_account_id().unwrap())
         .admin_key(admin_key.public_key())
         .wipe_key(wipe_key.public_key())

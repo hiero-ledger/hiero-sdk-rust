@@ -38,6 +38,13 @@ use crate::{
     ValidateChecksums,
 };
 
+/// Check if the executable is a receipt or record query.
+fn is_receipt_or_record_query<E: Execute>(_executable: &E) -> bool {
+    // Check if the type name contains "Receipt" or "Record" query
+    let type_name = std::any::type_name::<E>();
+    type_name.contains("TransactionReceiptQuery") || type_name.contains("TransactionRecordQuery")
+}
+
 pub(crate) trait Execute: ValidateChecksums {
     type GrpcRequest: Clone + Message;
 
@@ -68,6 +75,20 @@ pub(crate) trait Execute: ValidateChecksums {
     ///
     /// Transaction ID regeneration only can happen when `transaction_id` is None and `requires_transaction_id` is true.
     fn regenerate_transaction_id(&self) -> Option<bool> {
+        None
+    }
+
+    /// Returns the gRPC deadline for this request.
+    ///
+    /// If set, this overrides the client's default grpc_deadline.
+    fn grpc_deadline(&self) -> Option<std::time::Duration> {
+        None
+    }
+
+    /// Returns the request timeout for this request (including retries).
+    ///
+    /// If set, this takes priority over the timeout passed to execute methods and the client's request_timeout.
+    fn request_timeout(&self) -> Option<std::time::Duration> {
         None
     }
 
@@ -127,14 +148,20 @@ pub(crate) trait Execute: ValidateChecksums {
     fn response_pre_check_status(response: &Self::GrpcResponse) -> crate::Result<i32>;
 }
 
-struct ExecuteContext {
+/// The lifetime `'a` represents the lifetime of the borrowed `Client` reference.
+/// This ensures the context cannot outlive the client it references.
+struct ExecuteContext<'a> {
     // When `Some` the `transaction_id` will be regenerated when expired.
     operator_account_id: Option<AccountId>,
     network: Arc<NetworkData>,
     backoff_config: ExponentialBackoff,
     max_attempts: usize,
     // timeout for a single grpc request.
-    grpc_timeout: Option<Duration>,
+    grpc_deadline: Duration,
+    // Reference to the client for triggering network updates
+    client: &'a Client,
+    // Whether receipt/record query failover is enabled
+    enable_receipt_record_query_failover: bool,
 }
 
 pub(crate) async fn execute<E>(
@@ -176,9 +203,20 @@ where
         .with_initial_interval(backoff.initial_backoff)
         .with_max_interval(backoff.max_backoff);
 
-    if let Some(timeout) = timeout.or(backoff.request_timeout) {
-        backoff_builder.with_max_elapsed_time(Some(timeout));
-    }
+    // Timeout priority (matching JS SDK behavior):
+    // 1. Transaction's request_timeout field (if set)
+    // 2. Parameter timeout passed to execute
+    // 3. Client's request_timeout
+    // 4. Default DEFAULT_REQUEST_TIMEOUT
+    let request_timeout = executable
+        .request_timeout()
+        .or(timeout)
+        .or(backoff.request_timeout)
+        .unwrap_or(client::DEFAULT_REQUEST_TIMEOUT);
+    backoff_builder.with_max_elapsed_time(Some(request_timeout));
+
+    // Use transaction's grpc_deadline if set, otherwise use client's default
+    let grpc_deadline = executable.grpc_deadline().unwrap_or(backoff.grpc_deadline);
 
     execute_inner(
         &ExecuteContext {
@@ -186,25 +224,32 @@ where
             backoff_config: backoff_builder.build(),
             operator_account_id,
             network: client.net().0.load_full(),
-            grpc_timeout: backoff.grpc_timeout,
+            grpc_deadline,
+            client,
+            enable_receipt_record_query_failover: client.get_enable_receipt_record_query_failover(),
         },
         executable,
     )
     .await
 }
 
-async fn execute_inner<E>(ctx: &ExecuteContext, executable: &E) -> crate::Result<E::Response>
+async fn execute_inner<'a, E>(
+    ctx: &ExecuteContext<'a>,
+    executable: &E,
+) -> crate::Result<E::Response>
 where
     E: Execute + Sync,
 {
-    fn recurse_ping(ctx: &ExecuteContext, index: usize) -> BoxFuture<'_, bool> {
+    fn recurse_ping<'a, 'b: 'a>(ctx: &'b ExecuteContext<'a>, index: usize) -> BoxFuture<'b, bool> {
         Box::pin(async move {
             let ctx = ExecuteContext {
                 operator_account_id: None,
                 network: Arc::clone(&ctx.network),
                 backoff_config: ctx.backoff_config.clone(),
                 max_attempts: ctx.max_attempts,
-                grpc_timeout: ctx.grpc_timeout,
+                client: ctx.client,
+                grpc_deadline: ctx.grpc_deadline,
+                enable_receipt_record_query_failover: ctx.enable_receipt_record_query_failover,
             };
             let ping_query = PingQuery::new(ctx.network.node_ids()[index]);
 
@@ -232,13 +277,45 @@ where
         .map(|ids| ctx.network.node_indexes_for_ids(ids))
         .transpose()?;
 
-    let explicit_node_indexes = explicit_node_indexes.as_deref();
+    // Check if this is a receipt/record query with explicit node pinning
+    let is_pinned_receipt_record_query =
+        is_receipt_or_record_query(executable) && explicit_node_indexes.is_some();
+
+    // Determine node selection strategy:
+    // - If it's a pinned receipt/record query AND failover is disabled: use only explicit nodes
+    // - If it's a pinned receipt/record query AND failover is enabled: start with explicit, then allow others
+    // - Otherwise: use explicit nodes if provided, or all nodes
+    let (primary_node_indexes, allow_failover_to_other_nodes) =
+        if is_pinned_receipt_record_query && !ctx.enable_receipt_record_query_failover {
+            // Strict mode: only use pinned nodes
+            (explicit_node_indexes.as_deref(), false)
+        } else if is_pinned_receipt_record_query && ctx.enable_receipt_record_query_failover {
+            // Failover mode: start with pinned, then allow others
+            (explicit_node_indexes.as_deref(), true)
+        } else {
+            // Normal query: use explicit if provided
+            (explicit_node_indexes.as_deref(), false)
+        };
 
     let layer = move || async move {
+        let mut attempted_primary_nodes = false;
         loop {
             let mut last_error: Option<Error> = None;
 
-            let random_node_indexes = random_node_indexes(&ctx.network, explicit_node_indexes)
+            // Determine which nodes to try this iteration
+            let nodes_to_try = if !attempted_primary_nodes && primary_node_indexes.is_some() {
+                // First attempt: use primary (pinned) nodes only
+                attempted_primary_nodes = true;
+                primary_node_indexes
+            } else if attempted_primary_nodes && allow_failover_to_other_nodes {
+                // Failover enabled: try all other nodes after primary failed
+                None // This will select from all nodes
+            } else {
+                // Either no primary nodes, or failover not allowed
+                primary_node_indexes
+            };
+
+            let random_node_indexes = random_node_indexes(&ctx.network, nodes_to_try)
                 .ok_or(retry::Error::EmptyTransient)?;
 
             let random_node_indexes = {
@@ -248,7 +325,7 @@ where
                 futures_util::stream::iter(random_node_indexes.iter().copied()).filter(
                     move |&node_index| async move {
                         // NOTE: For pings we're relying on the fact that they have an explict node index.
-                        explicit_node_indexes.is_some()
+                        nodes_to_try.is_some()
                             || client.network.node_recently_pinged(node_index, now)
                             || recurse_ping(client, node_index).await
                     },
@@ -273,7 +350,7 @@ where
                     },
                     "Execution of {} on node at index {node_index} / node id {} {}",
                     type_name::<E>(),
-                    ctx.network.channel(node_index).0,
+                    ctx.network.channel(node_index, ctx.grpc_deadline).0,
                     match &tmp {
                         Ok(ControlFlow::Break(_)) => Cow::Borrowed("succeeded"),
                         Ok(ControlFlow::Continue(err)) =>
@@ -350,13 +427,13 @@ fn map_tonic_error(
     }
 }
 
-async fn execute_single<E: Execute + Sync>(
-    ctx: &ExecuteContext,
+async fn execute_single<'a, E: Execute + Sync>(
+    ctx: &ExecuteContext<'a>,
     executable: &E,
     node_index: usize,
     transaction_id: &mut Option<TransactionId>,
 ) -> retry::Result<ControlFlow<E::Response, Error>> {
-    let (node_account_id, channel) = ctx.network.channel(node_index);
+    let (node_account_id, channel) = ctx.network.channel(node_index, ctx.grpc_deadline);
 
     log::debug!(
         "Preparing {} on node at index {node_index} / node id {node_account_id}",
@@ -378,16 +455,13 @@ async fn execute_single<E: Execute + Sync>(
 
     let fut = executable.execute(channel, req.into_inner());
 
-    let response = match ctx.grpc_timeout {
-        Some(it) => match tokio::time::timeout(it, fut).await {
-            Ok(it) => it,
-            Err(_) => {
-                return Ok(ControlFlow::Continue(crate::Error::GrpcStatus(
-                    tonic::Status::deadline_exceeded("explicitly given grpc timeout was exceeded"),
-                )))
-            }
-        },
-        None => fut.await,
+    let response = match tokio::time::timeout(ctx.grpc_deadline, fut).await {
+        Ok(it) => it,
+        Err(_) => {
+            return Ok(ControlFlow::Continue(crate::Error::GrpcStatus(
+                tonic::Status::deadline_exceeded("grpc deadline was exceeded"),
+            )))
+        }
     };
 
     let response = response.map(tonic::Response::into_inner).map_err(|status| {
@@ -443,6 +517,34 @@ async fn execute_single<E: Execute + Sync>(
             *transaction_id = Some(new);
 
             Ok(ControlFlow::Continue(executable.make_error_pre_check(
+                status,
+                transaction_id.as_ref(),
+                response,
+            )))
+        }
+
+        Status::InvalidNodeAccount => {
+            // The node account is invalid or doesn't match the submitted node
+            // Mark the node as unhealthy and retry with backoff
+            // This typically indicates the address book is out of date
+            ctx.network.mark_node_unhealthy(node_index);
+
+            log::warn!(
+                "Node at index {node_index} / node id {node_account_id} returned {status:?}, marking unhealthy. Updating address book before retry."
+            );
+
+            // Update the network address book before retrying, but only if mirror network is configured
+            if !ctx.client.mirror_network().is_empty() {
+                ctx.client.refresh_network().await;
+                log::info!("Address book updated");
+                log::info!("network: {:?}", ctx.client.network());
+            } else {
+                log::warn!(
+                    "Cannot update address book: no mirror network configured. Retrying with existing network configuration."
+                );
+            }
+
+            Err(retry::Error::Transient(executable.make_error_pre_check(
                 status,
                 transaction_id.as_ref(),
                 response,

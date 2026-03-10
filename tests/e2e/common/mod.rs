@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 
 use anyhow::Context;
-use hedera::{
+use hiero_sdk::{
     AccountId,
     Client,
     PrivateKey,

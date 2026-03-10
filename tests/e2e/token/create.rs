@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountId,
     AnyCustomFee,
     FixedFee,
@@ -46,7 +46,7 @@ fn fractional_fee(fee_collector: AccountId) -> AnyCustomFee {
             numerator: 1,
             minimum_amount: 1,
             maximum_amount: 20,
-            assessment_method: hedera::FeeAssessmentMethod::Exclusive,
+            assessment_method: hiero_sdk::FeeAssessmentMethod::Exclusive,
         },
         fee_collector_account_id: Some(fee_collector),
         all_collectors_are_exempt: false,
@@ -134,7 +134,7 @@ async fn missing_name_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::MissingTokenName, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::MissingTokenName, .. })
     );
 
     account.delete(&client).await?;
@@ -161,7 +161,7 @@ async fn missing_symbol_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::MissingTokenSymbol, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::MissingTokenSymbol, .. })
     );
 
     account.delete(&client).await?;
@@ -183,7 +183,7 @@ async fn missing_treasury_account_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::TransactionPreCheckStatus {
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
             status: Status::InvalidTreasuryAccountForToken,
             ..
         })
@@ -212,7 +212,7 @@ async fn missing_treasury_account_id_sig_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     account.delete(&client).await?;
@@ -243,7 +243,7 @@ async fn missing_admin_key_sig_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
     );
 
     account.delete(&client).await?;
@@ -306,7 +306,7 @@ async fn too_many_custom_fees_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::CustomFeesListTooLong, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::CustomFeesListTooLong, .. })
     );
 
     account.delete(&client).await?;
@@ -387,7 +387,7 @@ async fn fractional_fee_min_bigger_than_max_fails() -> anyhow::Result<()> {
             numerator: 1,
             minimum_amount: 3,
             maximum_amount: 2,
-            assessment_method: hedera::FeeAssessmentMethod::Exclusive,
+            assessment_method: hiero_sdk::FeeAssessmentMethod::Exclusive,
         },
         fee_collector_account_id: Some(account.id),
         all_collectors_are_exempt: false,
@@ -409,7 +409,7 @@ async fn fractional_fee_min_bigger_than_max_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus {
+        Err(hiero_sdk::Error::ReceiptStatus {
             status: Status::FractionalFeeMaxAmountLessThanMinAmount,
             ..
         })
@@ -449,7 +449,7 @@ async fn invalid_fee_collector_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::InvalidCustomFeeCollector, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidCustomFeeCollector, .. })
     );
 
     account.delete(&client).await?;
@@ -486,7 +486,7 @@ async fn negative_fee_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::CustomFeeMustBePositive, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::CustomFeeMustBePositive, .. })
     );
 
     account.delete(&client).await?;
@@ -507,7 +507,7 @@ async fn zero_denominator_fails() -> anyhow::Result<()> {
             numerator: 1,
             minimum_amount: 1,
             maximum_amount: 10,
-            assessment_method: hedera::FeeAssessmentMethod::Exclusive,
+            assessment_method: hiero_sdk::FeeAssessmentMethod::Exclusive,
         },
         fee_collector_account_id: Some(account.id),
         all_collectors_are_exempt: false,
@@ -529,7 +529,7 @@ async fn zero_denominator_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::ReceiptStatus { status: Status::FractionDividesByZero, .. })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::FractionDividesByZero, .. })
     );
 
     account.delete(&client).await?;
@@ -580,7 +580,7 @@ async fn royalty_fee() -> anyhow::Result<()> {
     let account = Account::create(Hbar::new(0), &client).await?;
 
     let fee = RoyaltyFee {
-        fee: hedera::RoyaltyFeeData {
+        fee: hiero_sdk::RoyaltyFeeData {
             denominator: 10,
             numerator: 1,
             fallback_fee: Some(FixedFeeData::from_hbar(Hbar::new(1))),

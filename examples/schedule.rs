@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction, AccountId, Client, Hbar, KeyList, PrivateKey, ScheduleInfoQuery, ScheduleSignTransaction, TransferTransaction
 };
 use time::OffsetDateTime;
@@ -28,8 +28,8 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
     // Generate a Ed25519 private, public key pair
-    let key1 = PrivateKey::generate_ed25519();
-    let key2 = PrivateKey::generate_ed25519();
+    let key1 = PrivateKey::generate_ecdsa();
+    let key2 = PrivateKey::generate_ecdsa();
 
     println!("private key 1 = {key1}");
     println!("public key 1 = {}", key1.public_key());

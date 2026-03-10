@@ -18,7 +18,7 @@
  * ‍
  */
 
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     AccountId,
     AnyTransaction,
@@ -33,6 +33,8 @@ use crate::common::{
     setup_nonfree,
     TestEnvironment,
 };
+
+mod hip_1300;
 // HIP-745: Tests for serializing and deserializing incomplete non-frozen transactions
 #[tokio::test]
 async fn basic() -> anyhow::Result<()> {
@@ -74,6 +76,7 @@ async fn frozen_serialized_transaction_can_be_deserialized() -> anyhow::Result<(
 
     let _ = tx
         .initial_balance(Hbar::from_tinybars(100))
+        .transaction_id(TransactionId::generate(AccountId::new(0, 0, 123)))
         .transaction_memo("HIP-745 test")
         .freeze_with(&client);
 

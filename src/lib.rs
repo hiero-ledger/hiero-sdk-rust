@@ -195,8 +195,10 @@ pub use contract::{
 };
 pub use custom_fee_limit::CustomFeeLimit;
 pub use custom_fixed_fee::CustomFixedFee;
-pub use entity_id::EntityId;
-pub(crate) use entity_id::ValidateChecksums;
+pub use entity_id::{
+    EntityId,
+    ValidateChecksums,
+};
 pub use error::{
     Error,
     Result,
@@ -243,7 +245,7 @@ pub use hbar::{
     HbarUnit,
     Tinybar,
 };
-pub use hedera_proto::services::ResponseCodeEnum as Status;
+pub use hiero_sdk_proto::services::ResponseCodeEnum as Status;
 pub use key::{
     Key,
     KeyList,

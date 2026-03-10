@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
-use hedera_proto::services::smart_contract_service_client::SmartContractServiceClient;
+use hiero_sdk_proto::services;
+use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
 use time::{
     Duration,
     OffsetDateTime,
@@ -267,7 +267,22 @@ impl ToProtobuf for ContractUpdateTransactionData {
         let expiration_time = self.expiration_time.map(Into::into);
         let admin_key = self.admin_key.to_protobuf();
         let auto_renew_period = self.auto_renew_period.map(Into::into);
-        let auto_renew_account_id = self.auto_renew_account_id.to_protobuf();
+
+        // Special handling for 0.0.0: create an empty AccountID to clear the field
+        // This matches the behavior of the JavaScript SDK which calls AccountID.create()
+        let auto_renew_account_id = self.auto_renew_account_id.map(|account_id| {
+            if account_id.shard == 0
+                && account_id.realm == 0
+                && account_id.num == 0
+                && account_id.alias.is_none()
+                && account_id.evm_address.is_none()
+            {
+                // For 0.0.0, create an empty AccountID (no account field set)
+                services::AccountId { shard_num: 0, realm_num: 0, account: None }
+            } else {
+                account_id.to_protobuf()
+            }
+        });
 
         let staked_id = self.staked_id.map(|id| match id {
             StakedId::NodeId(id) => {
@@ -315,7 +330,7 @@ impl From<ContractUpdateTransactionData> for AnyTransactionData {
 mod tests {
 
     use expect_test::expect;
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
     use time::{
         Duration,
         OffsetDateTime,

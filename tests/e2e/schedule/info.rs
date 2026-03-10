@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction,
     Hbar,
     KeyList,
@@ -105,7 +105,7 @@ async fn missing_schedule_id_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryNoPaymentPreCheckStatus { status: Status::InvalidScheduleId })
+        Err(hiero_sdk::Error::QueryNoPaymentPreCheckStatus { status: Status::InvalidScheduleId })
     );
 
     Ok(())
@@ -207,7 +207,7 @@ async fn query_cost_small_max_fails() -> anyhow::Result<()> {
 
     let (max_query_payment, query_cost) = assert_matches!(
         res,
-        Err(hedera::Error::MaxQueryPaymentExceeded {
+        Err(hiero_sdk::Error::MaxQueryPaymentExceeded {
             max_query_payment,
             query_cost
         }) => (max_query_payment, query_cost)
@@ -254,7 +254,7 @@ async fn query_cost_insufficient_tx_fee_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hedera::Error::QueryPaymentPreCheckStatus { status: Status::InsufficientTxFee, .. })
+        Err(hiero_sdk::Error::QueryPaymentPreCheckStatus { status: Status::InsufficientTxFee, .. })
     );
 
     account.delete(&client).await?;

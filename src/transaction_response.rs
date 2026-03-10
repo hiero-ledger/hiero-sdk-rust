@@ -47,21 +47,39 @@ impl TransactionResponse {
     }
 
     /// Create a query that will get the receipt for this transaction.
+    ///
+    /// By default, the query is pinned to the node that submitted the transaction.
+    /// This ensures consistency but may timeout if that node is unavailable.
+    ///
+    /// If [`Client::set_enable_receipt_record_query_failover`] is enabled, the query
+    /// will fail over to other nodes if the submitting node is unavailable.
     #[must_use]
     pub fn get_receipt_query(&self) -> TransactionReceiptQuery {
         let mut query = TransactionReceiptQuery::new();
 
-        query.transaction_id(self.transaction_id).validate_status(self.validate_status);
+        query
+            .transaction_id(self.transaction_id)
+            .validate_status(self.validate_status)
+            .node_account_ids(vec![self.node_account_id]);
 
         query
     }
 
     /// Create a query that will get the record for this transaction.
+    ///
+    /// By default, the query is pinned to the node that submitted the transaction.
+    /// This ensures consistency but may timeout if that node is unavailable.
+    ///
+    /// If [`Client::set_enable_receipt_record_query_failover`] is enabled, the query
+    /// will fail over to other nodes if the submitting node is unavailable.
     #[must_use]
     pub fn get_record_query(&self) -> TransactionRecordQuery {
         let mut query = TransactionRecordQuery::new();
 
-        query.transaction_id(self.transaction_id).validate_status(self.validate_status);
+        query
+            .transaction_id(self.transaction_id)
+            .validate_status(self.validate_status)
+            .node_account_ids(vec![self.node_account_id]);
 
         query
     }

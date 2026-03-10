@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use tonic::transport::Channel;
 
 use super::chunked::ChunkInfo;
@@ -915,6 +915,8 @@ impl AnyTransaction {
             },
             signers: Vec::new(),
             sources: None,
+            grpc_deadline: None,
+            request_timeout: None,
         })
     }
 }
@@ -1180,6 +1182,8 @@ macro_rules! impl_cast_any {
                         },
                         signers: transaction.signers,
                         sources: transaction.sources,
+                        grpc_deadline: transaction.grpc_deadline,
+                        request_timeout: transaction.request_timeout,
                     }
                 }
             }

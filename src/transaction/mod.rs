@@ -9,7 +9,7 @@ use std::fmt::{
 };
 use std::num::NonZeroUsize;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use prost::Message;
 use time::Duration;
 use triomphe::Arc;
@@ -72,6 +72,14 @@ pub struct Transaction<D> {
     signers: Vec<AnySigner>,
 
     sources: Option<TransactionSources>,
+
+    /// The gRPC deadline for this transaction.
+    /// If set, this overrides the client's default grpc_deadline.
+    grpc_deadline: Option<std::time::Duration>,
+
+    /// The request timeout for this transaction (including retries).
+    /// If set, this overrides the client's request_timeout and any timeout passed to execute methods.
+    request_timeout: Option<std::time::Duration>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -124,6 +132,8 @@ where
             },
             signers: Vec::new(),
             sources: None,
+            grpc_deadline: None,
+            request_timeout: None,
         }
     }
 }
@@ -153,7 +163,7 @@ where
 
 impl<D> Transaction<D> {
     pub(crate) fn from_parts(body: TransactionBody<D>, signers: Vec<AnySigner>) -> Self {
-        Self { body, signers, sources: None }
+        Self { body, signers, sources: None, grpc_deadline: None, request_timeout: None }
     }
 
     pub(crate) fn is_frozen(&self) -> bool {
@@ -298,6 +308,40 @@ impl<D> Transaction<D> {
         self
     }
 
+    /// Returns the gRPC deadline for this transaction.
+    ///
+    /// If set, this overrides the client's default grpc_deadline.
+    #[must_use]
+    pub fn get_grpc_deadline(&self) -> Option<std::time::Duration> {
+        self.grpc_deadline
+    }
+
+    /// Sets the gRPC deadline for this transaction.
+    ///
+    /// This overrides the client's default grpc_deadline.
+    /// The deadline applies to both the channel connection timeout and the request execution timeout.
+    pub fn grpc_deadline(&mut self, deadline: std::time::Duration) -> &mut Self {
+        self.grpc_deadline = Some(deadline);
+        self
+    }
+
+    /// Returns the request timeout for this transaction (including retries).
+    ///
+    /// If set, this takes priority over the timeout passed to execute methods and the client's request_timeout.
+    #[must_use]
+    pub fn get_request_timeout(&self) -> Option<std::time::Duration> {
+        self.request_timeout
+    }
+
+    /// Sets the request timeout for this transaction (including retries).
+    ///
+    /// This takes priority over the timeout passed to execute methods and the client's request_timeout.
+    /// The timeout applies to the entire operation including all retry attempts.
+    pub fn request_timeout(&mut self, timeout: std::time::Duration) -> &mut Self {
+        self.request_timeout = Some(timeout);
+        self
+    }
+
     /// Returns the explicit transaction ID to use to identify this transaction.
     ///
     /// Overrides the payer account defined on this transaction or on the client.
@@ -367,7 +411,9 @@ impl<D: ChunkedTransactionData> Transaction<D> {
     /// # Panics
     /// If `size` == 0
     pub fn chunk_size(&mut self, size: usize) -> &mut Self {
-        let Some(size) = NonZeroUsize::new(size) else { panic!("Cannot set chunk-size to zero") };
+        let Some(size) = NonZeroUsize::new(size) else {
+            panic!("Chunk size must be greater than zero")
+        };
 
         self.data_mut().chunk_data_mut().chunk_size = size;
 
@@ -591,7 +637,7 @@ impl<D: TransactionExecute> Transaction<D> {
         let transaction_list = self
             .signed_sources()
             .map_or_else(|| self.make_transaction_list(), |it| Ok(it.transactions().to_vec()))?;
-        Ok(hedera_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
+        Ok(hiero_sdk_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
     }
 
     pub(crate) fn add_signature_signer(&mut self, signer: &AnySigner) -> Vec<u8> {
@@ -791,7 +837,7 @@ impl<D: TransactionExecute> Transaction<D> {
                 .max_transaction_fee
                 .unwrap_or_else(|| self.body.data.default_max_transaction_fee())
                 .to_tinybars() as u64,
-            max_custom_fees: self.body.custom_fee_limits.to_protobuf(),
+            max_custom_fees: { self.body.custom_fee_limits.to_protobuf() },
             batch_key: self.body.batch_key.as_ref().map(|key| key.to_protobuf()),
         };
 
@@ -835,6 +881,7 @@ impl<D: TransactionExecute> Transaction<D> {
         let signed_transaction = services::SignedTransaction {
             body_bytes,
             sig_map: Some(services::SignatureMap { sig_pair: signatures.clone() }),
+            use_serialized_tx_message_hash_algorithm: false,
         };
         services::Transaction {
             signed_transaction_bytes: signed_transaction.encode_to_vec(),
@@ -945,10 +992,12 @@ where
 
         let wait_for_receipts = self.data().wait_for_receipt();
 
-        // fixme: error with an actual error.
-        #[allow(clippy::manual_assert)]
         if chunk_data.data.len() > chunk_data.max_message_len() {
-            todo!("error: message too big")
+            return Err(Error::basic_parse(format!(
+                "Message with size {} too long for {} chunks",
+                chunk_data.data.len(),
+                chunk_data.max_chunks
+            )));
         }
 
         let used_chunks = chunk_data.used_chunks();
@@ -1067,8 +1116,8 @@ where
 impl AnyTransaction {
     /// # Examples
     /// ```
-    /// # fn main() -> hedera::Result<()> {
-    /// use hedera::AnyTransaction;
+    /// # fn main() -> hiero_sdk::Result<()> {
+    /// use hiero_sdk::AnyTransaction;
     /// let bytes = hex::decode(concat!(
     ///     "0a522a500a4c0a120a0c0885c8879e0610a8bdd9840312021865120218061880",
     ///     "94ebdc0322020877320c686920686173686772617068721a0a180a0a0a021802",
@@ -1086,8 +1135,8 @@ impl AnyTransaction {
     /// - [`Error::FromProtobuf`] if a valid transaction cannot be parsed from the bytes.
     #[allow(deprecated)]
     pub fn from_bytes(bytes: &[u8]) -> crate::Result<Self> {
-        let list: hedera_proto::sdk::TransactionList =
-            hedera_proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
+        let list: hiero_sdk_proto::sdk::TransactionList =
+            hiero_sdk_proto::sdk::TransactionList::decode(bytes).map_err(Error::from_protobuf)?;
 
         let list = if list.transaction_list.is_empty() {
             Vec::from([services::Transaction::decode(bytes).map_err(Error::from_protobuf)?])
@@ -1266,7 +1315,7 @@ where
     D: DowncastOwned<U>,
 {
     fn downcast_owned(self) -> Result<Transaction<U>, Self> {
-        let Self { body, signers, sources } = self;
+        let Self { body, signers, sources, grpc_deadline, request_timeout } = self;
         let TransactionBody {
             data,
             node_account_ids,
@@ -1299,6 +1348,8 @@ where
                 },
                 signers,
                 sources,
+                grpc_deadline,
+                request_timeout,
             }),
 
             Err(data) => Err(Self {
@@ -1317,6 +1368,8 @@ where
                 },
                 signers,
                 sources,
+                grpc_deadline,
+                request_timeout,
             }),
         }
     }
@@ -1324,7 +1377,7 @@ where
 
 #[cfg(test)]
 pub(crate) mod test_helpers {
-    use hedera_proto::services;
+    use hiero_sdk_proto::services;
     use prost::Message;
     use time::{
         Duration,

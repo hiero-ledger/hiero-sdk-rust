@@ -1,4 +1,4 @@
-use hedera::Error;
+use hiero_sdk::Error;
 use jsonrpsee::types::error::INTERNAL_ERROR_CODE;
 use jsonrpsee::types::{
     ErrorObject,
@@ -11,6 +11,8 @@ pub(crate) const HEDERA_ERROR: i32 = -32001;
 pub fn from_hedera_error(error: Error) -> ErrorObjectOwned {
     match error {
         Error::QueryPreCheckStatus { status, .. }
+        | Error::QueryPaymentPreCheckStatus { status, .. }
+        | Error::QueryNoPaymentPreCheckStatus { status, .. }
         | Error::ReceiptStatus { status, .. }
         | Error::TransactionPreCheckStatus { status, .. } => ErrorObject::owned(
             HEDERA_ERROR,

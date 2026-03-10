@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use clap::Parser;
 // `use futures::TryStreamExt`, this is better practice though.
 use futures_util::TryStreamExt;
-use hedera::{
+use hiero_sdk::{
     AccountId, Client, PrivateKey, TopicId, TopicMessageQuery, TopicMessageSubmitTransaction
 };
 use parking_lot::RwLock;

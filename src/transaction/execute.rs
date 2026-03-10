@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 use prost::Message;
 use tonic::transport::Channel;
 
@@ -94,6 +94,7 @@ where
         let signed_transaction = services::SignedTransaction {
             body_bytes,
             sig_map: Some(services::SignatureMap { sig_pair: signatures }),
+            use_serialized_tx_message_hash_algorithm: false,
         };
 
         let signed_transaction_bytes = signed_transaction.encode_to_vec();
@@ -175,6 +176,14 @@ where
 
     fn regenerate_transaction_id(&self) -> Option<bool> {
         self.body.regenerate_transaction_id
+    }
+
+    fn grpc_deadline(&self) -> Option<std::time::Duration> {
+        self.grpc_deadline
+    }
+
+    fn request_timeout(&self) -> Option<std::time::Duration> {
+        self.request_timeout
     }
 
     fn make_request(
@@ -278,7 +287,7 @@ where
             node_account_id: chunk_info.node_account_id.to_protobuf(),
             generate_record: false,
             transaction_fee,
-            max_custom_fees: vec![],
+            max_custom_fees: { self.body.custom_fee_limits.to_protobuf() },
             batch_key: None,
         }
     }
