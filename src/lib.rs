@@ -113,6 +113,7 @@ mod error;
 mod ethereum;
 mod exchange_rates;
 mod execute;
+mod fee_estimate_query;
 mod fee_schedules;
 mod file;
 mod hbar;
@@ -219,6 +220,14 @@ pub use ethereum::{
 pub use exchange_rates::{
     ExchangeRate,
     ExchangeRates,
+};
+pub use fee_estimate_query::{
+    FeeEstimate,
+    FeeEstimateMode,
+    FeeEstimateQuery,
+    FeeEstimateResponse,
+    FeeExtra,
+    NetworkFee,
 };
 pub use fee_schedules::{
     FeeComponents,

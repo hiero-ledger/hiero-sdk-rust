@@ -76,6 +76,16 @@ impl TransactionId {
     pub fn to_bytes(&self) -> Vec<u8> {
         ToProtobuf::to_bytes(self)
     }
+
+    /// Returns a new `TransactionId` with `valid_start` offset by the given duration.
+    /// Used for chunked transactions (e.g. FileAppend) where each chunk has a distinct ID.
+    #[must_use]
+    pub fn with_valid_start_offset(&self, offset: Duration) -> Self {
+        Self {
+            valid_start: self.valid_start + offset,
+            ..*self
+        }
+    }
 }
 
 impl ValidateChecksums for TransactionId {

@@ -771,19 +771,38 @@ impl<D: TransactionExecute> Transaction<D> {
 
     #[allow(deprecated)]
     fn make_transaction_list_chunked(&self) -> crate::Result<Vec<services::Transaction>> {
-        // todo: fix this with chunked transactions.
-        let used_chunks = self.data().maybe_chunk_data().map_or(1, ChunkData::used_chunks);
+        let chunk_data = self.data().maybe_chunk_data().expect("chunked path");
+        let used_chunks = chunk_data.used_chunks();
         let node_account_ids = self.body.node_account_ids.as_deref().unwrap();
+        let base_transaction_id = self
+            .get_transaction_id()
+            .unwrap_or_else(|| TransactionId::generate(AccountId::new(0, 0, 0)));
 
-        let mut transaction_list = Vec::with_capacity(used_chunks * node_account_ids.len());
-
-        if node_account_ids.is_empty() {
-            // Handle case with no node IDs
-            transaction_list.push(self.create_transaction_for_node(None));
+        let node_opts: Vec<Option<&AccountId>> = if node_account_ids.is_empty() {
+            vec![None]
         } else {
-            // Handle case with node IDs
-            for node_account_id in node_account_ids {
-                transaction_list.push(self.create_transaction_for_node(Some(node_account_id)));
+            node_account_ids.iter().map(Some).collect()
+        };
+
+        let mut transaction_list = Vec::with_capacity(used_chunks * node_opts.len());
+
+        for chunk_index in 0..used_chunks {
+            let current_transaction_id = match chunk_data.chunk_interval_nanos {
+                Some(interval_nanos) => base_transaction_id.with_valid_start_offset(
+                    Duration::nanoseconds((chunk_index as i64) * (interval_nanos as i64)),
+                ),
+                None => base_transaction_id,
+            };
+
+            for node_opt in &node_opts {
+                let chunk_info = ChunkInfo {
+                    current: chunk_index,
+                    total: used_chunks,
+                    initial_transaction_id: base_transaction_id,
+                    current_transaction_id,
+                    node_account_id: node_opt.copied(),
+                };
+                transaction_list.push(self.create_transaction_for_node_with_chunk(*node_opt, &chunk_info));
             }
         }
 
@@ -813,25 +832,38 @@ impl<D: TransactionExecute> Transaction<D> {
         Ok(transaction_list)
     }
 
-    /// Creates a transaction for a specific node and adds it to the transaction list
+    /// Creates a transaction for a specific node (single chunk).
     fn create_transaction_for_node(&self, node_opt: Option<&AccountId>) -> services::Transaction {
+        let transaction_id = self
+            .get_transaction_id()
+            .unwrap_or_else(|| TransactionId::generate(AccountId::new(0, 0, 0)));
+        let chunk_info = ChunkInfo {
+            current: 0,
+            total: 1,
+            initial_transaction_id: transaction_id,
+            current_transaction_id: transaction_id,
+            node_account_id: node_opt.cloned(),
+        };
+        self.create_transaction_for_node_with_chunk(node_opt, &chunk_info)
+    }
+
+    /// Creates a transaction for a specific node and chunk.
+    fn create_transaction_for_node_with_chunk(
+        &self,
+        _node_opt: Option<&AccountId>,
+        chunk_info: &ChunkInfo,
+    ) -> services::Transaction {
         let transaction_body = services::TransactionBody {
-            transaction_id: self.get_transaction_id().map(|id| id.to_protobuf()),
+            transaction_id: Some(chunk_info.current_transaction_id.to_protobuf()),
             generate_record: false,
             memo: self.body.transaction_memo.clone(),
-            data: Some(self.body.data.to_transaction_data_protobuf(&ChunkInfo {
-                current: 0,
-                total: 1,
-                initial_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
-                current_transaction_id: TransactionId::generate(AccountId::new(0, 0, 0)),
-                node_account_id: node_opt.cloned(),
-            })),
+            data: Some(self.body.data.to_transaction_data_protobuf(chunk_info)),
             transaction_valid_duration: Some(
                 self.get_transaction_valid_duration()
                     .unwrap_or_else(|| DEFAULT_TRANSACTION_VALID_DURATION)
                     .to_protobuf(),
             ),
-            node_account_id: node_opt.map(|id| id.to_protobuf()),
+            node_account_id: chunk_info.node_account_id.as_ref().map(|id| id.to_protobuf()),
             transaction_fee: self
                 .body
                 .max_transaction_fee

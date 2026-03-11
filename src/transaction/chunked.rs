@@ -28,6 +28,10 @@ pub struct ChunkData {
     pub(crate) max_chunks: usize,
     pub(crate) chunk_size: NonZeroUsize,
     pub(crate) data: Vec<u8>,
+    /// If set, each chunk uses a distinct transaction ID with valid_start offset by
+    /// `chunk_index * chunk_interval_nanos` (e.g. FileAppend). If None, all chunks
+    /// share the same transaction ID (e.g. TopicMessageSubmit with ConsensusMessageChunkInfo).
+    pub(crate) chunk_interval_nanos: Option<u64>,
 }
 
 impl Default for ChunkData {
@@ -36,6 +40,7 @@ impl Default for ChunkData {
             max_chunks: Self::DEFAULT_MAX_CHUNKS,
             chunk_size: Self::DEFAULT_CHUNK_SIZE,
             data: Vec::new(),
+            chunk_interval_nanos: None,
         }
     }
 }

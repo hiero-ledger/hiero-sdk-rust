@@ -43,12 +43,24 @@ use crate::{
 ///
 pub type TopicMessageSubmitTransaction = Transaction<TopicMessageSubmitTransactionData>;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct TopicMessageSubmitTransactionData {
     /// The topic ID to submit this message to.
     topic_id: Option<TopicId>,
 
     chunk_data: ChunkData,
+}
+
+impl Default for TopicMessageSubmitTransactionData {
+    fn default() -> Self {
+        Self {
+            topic_id: None,
+            chunk_data: ChunkData {
+                chunk_interval_nanos: Some(10), // distinct transaction ID per chunk (same as FileAppend)
+                ..Default::default()
+            },
+        }
+    }
 }
 
 impl TopicMessageSubmitTransaction {
@@ -196,6 +208,7 @@ impl FromProtobuf<Vec<services::ConsensusSubmitMessageTransactionBody>>
                 chunk_size: NonZeroUsize::new(largest_chunk_size)
                     .unwrap_or_else(|| NonZeroUsize::new(1).unwrap()),
                 data: message,
+                chunk_interval_nanos: Some(10),
             },
         })
     }
