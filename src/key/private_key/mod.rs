@@ -3,6 +3,7 @@
 #[cfg(test)]
 mod tests;
 
+use std::collections::HashMap;
 use std::fmt::{
     Debug,
     Display,
@@ -41,6 +42,7 @@ use crate::{
     Error,
     PublicKey,
     Transaction,
+    TransactionId,
 };
 
 // replace with `array::split_array_ref` when that's stable.
@@ -594,15 +596,58 @@ impl PrivateKey {
     /// # Errors
     /// This function will freeze the transaction if it is not frozen.
     /// As such, any error that can be occur during [`Transaction::freeze`] can also occur here.
+    ///
+    /// # Panic
+    /// - If `transaction` has multiple nodes (see `sign_transaction_map`)
+    /// - If `transaction` has multiple chunks (see `sign_transaction_map`)
     pub fn sign_transaction<D: crate::transaction::TransactionExecute>(
         &self,
         transaction: &mut Transaction<D>,
     ) -> crate::Result<Vec<u8>> {
         transaction.freeze()?;
 
+        // note: the following pair of checks are for more detailed panic messages
+        // IE, they should *hopefully* be tripped first
+        assert_eq!(
+            transaction.get_node_account_ids().map_or(0, <[AccountId]>::len),
+            1,
+            "cannot manually add a single signature to a transaction with multiple nodes. Maybe you meant to use `sign_signature_map`?"
+        );
+
+        if let Some(chunk_data) = transaction.data().maybe_chunk_data() {
+            assert!(
+                chunk_data.used_chunks() <= 1,
+                "cannot manually add a signature to a chunked transaction with multiple chunks. Maybe you meant to use `sign_signature_map`?",
+            );
+        }
+
+        let mut signature_map =
+            transaction.add_signature_signer(&AnySigner::PrivateKey(self.clone()));
+
+        Ok(
+            signature_map.remove(
+                transaction.get_node_account_ids().expect("We already asserted we have 1 node").first().expect("We already asserted we have 1 node"),
+                &transaction.get_transaction_id().expect("transaction ID should be set since transaction is frozen"),
+                &self.public_key(),
+            ).expect("transaction should have a signature for the single node and transaction ID provided")
+        )
+    }
+
+    /// Signs all the sub transactions for a transaction.
+    ///
+    /// # Errors
+    /// This function will freeze the transaction if it is not frozen.
+    /// As such, any error that can be occur during [`Transaction::freeze`] can also occur here.
+    pub fn sign_transaction_map<D: crate::transaction::TransactionExecute>(
+        &self,
+        transaction: &mut Transaction<D>,
+    ) -> crate::Result<HashMap<AccountId, HashMap<TransactionId, HashMap<PublicKey, Vec<u8>>>>>
+    {
+        transaction.freeze()?;
+
         let sig = transaction.add_signature_signer(&AnySigner::PrivateKey(self.clone()));
 
-        Ok(sig)
+        Ok(sig.0)
     }
 
     /// Returns true if calling [`derive`](Self::derive) on `self` would succeed.

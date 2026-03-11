@@ -54,7 +54,6 @@ async fn main() -> anyhow::Result<()> {
     let mut transfer_transaction = TransferTransaction::new();
 
     transfer_transaction
-        .node_account_ids([(AccountId::from(3))])
         .hbar_transfer(account_id, Hbar::new(-1))
         .hbar_transfer(AccountId::from(3), Hbar::new(1))
         .freeze_with(&client)?;
@@ -65,14 +64,14 @@ async fn main() -> anyhow::Result<()> {
 
     // ask users to sign and return signature
     let user1_signature =
-        user1_key.sign_transaction(&mut Transaction::from_bytes(&transaction_bytes)?)?;
+        user1_key.sign_transaction_map(&mut Transaction::from_bytes(&transaction_bytes)?)?;
     let user2_signature =
-        user2_key.sign_transaction(&mut Transaction::from_bytes(&transaction_bytes)?)?;
+        user2_key.sign_transaction_map(&mut Transaction::from_bytes(&transaction_bytes)?)?;
 
     // recreate the transaction from bytes
     transaction_to_execute.sign_with_operator(&client)?;
-    transaction_to_execute.add_signature(user1_key.public_key(), user1_signature);
-    transaction_to_execute.add_signature(user2_key.public_key(), user2_signature);
+    transaction_to_execute.add_signature_map(user1_signature);
+    transaction_to_execute.add_signature_map(user2_signature);
 
     let result = transaction_to_execute.execute(&client).await?;
     let receipt = result.get_receipt(&client).await?;
