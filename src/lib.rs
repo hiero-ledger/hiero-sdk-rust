@@ -130,6 +130,8 @@ mod pending_airdrop_id;
 mod pending_airdrop_record;
 mod ping_query;
 mod prng_transaction;
+mod registered_node;
+mod registered_service_endpoint;
 mod query;
 mod retry;
 mod schedule;
@@ -270,6 +272,17 @@ pub(crate) use node_address_book_query::NodeAddressBookQueryData;
 pub use pending_airdrop_id::PendingAirdropId;
 pub use pending_airdrop_record::PendingAirdropRecord;
 pub use prng_transaction::PrngTransaction;
+pub use registered_node::{
+    RegisteredNodeCreateTransaction,
+    RegisteredNodeDeleteTransaction,
+    RegisteredNodeUpdateTransaction,
+};
+pub use registered_service_endpoint::{
+    BlockNodeApi,
+    IpAddress,
+    RegisteredEndpointType,
+    RegisteredServiceEndpoint,
+};
 pub(crate) use protobuf::{
     FromProtobuf,
     ToProtobuf,

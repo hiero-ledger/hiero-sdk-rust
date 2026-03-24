@@ -21,6 +21,11 @@ mod data {
         NodeDeleteTransactionData as NodeDelete,
         NodeUpdateTransactionData as NodeUpdate,
     };
+    pub(super) use crate::registered_node::{
+        RegisteredNodeCreateTransactionData as RegisteredNodeCreate,
+        RegisteredNodeDeleteTransactionData as RegisteredNodeDelete,
+        RegisteredNodeUpdateTransactionData as RegisteredNodeUpdate,
+    };
     pub(super) use crate::contract::{
         ContractCreateTransactionData as ContractCreate,
         ContractDeleteTransactionData as ContractDelete,
@@ -152,6 +157,9 @@ pub(super) enum AnySchedulableTransactionData {
     NodeCreate(data::NodeCreate),
     NodeUpdate(data::NodeUpdate),
     NodeDelete(data::NodeDelete),
+    RegisteredNodeCreate(data::RegisteredNodeCreate),
+    RegisteredNodeUpdate(data::RegisteredNodeUpdate),
+    RegisteredNodeDelete(data::RegisteredNodeDelete),
     TokenAirdrop(data::TokenAirdrop),
     TokenClaimAirdrop(data::TokenClaimAirdrop),
     TokenCancelAirdrop(data::TokenCancelAirdrop),
@@ -211,6 +219,9 @@ impl AnySchedulableTransactionData {
             AnySchedulableTransactionData::NodeCreate(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::NodeUpdate(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::NodeDelete(it) => it.default_max_transaction_fee(),
+            AnySchedulableTransactionData::RegisteredNodeCreate(it) => it.default_max_transaction_fee(),
+            AnySchedulableTransactionData::RegisteredNodeUpdate(it) => it.default_max_transaction_fee(),
+            AnySchedulableTransactionData::RegisteredNodeDelete(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::TokenAirdrop(it) => it.default_max_transaction_fee(),
             AnySchedulableTransactionData::TokenClaimAirdrop(it) => {
                 it.default_max_transaction_fee()
@@ -319,6 +330,9 @@ impl FromProtobuf<services::schedulable_transaction_body::Data> for AnySchedulab
             Data::NodeCreate(it) => Ok(Self::NodeCreate(data::NodeCreate::from_protobuf(it)?)),
             Data::NodeUpdate(it) => Ok(Self::NodeUpdate(data::NodeUpdate::from_protobuf(it)?)),
             Data::NodeDelete(it) => Ok(Self::NodeDelete(data::NodeDelete::from_protobuf(it)?)),
+            Data::RegisteredNodeCreate(it) => Ok(Self::RegisteredNodeCreate(data::RegisteredNodeCreate::from_protobuf(it)?)),
+            Data::RegisteredNodeUpdate(it) => Ok(Self::RegisteredNodeUpdate(data::RegisteredNodeUpdate::from_protobuf(it)?)),
+            Data::RegisteredNodeDelete(it) => Ok(Self::RegisteredNodeDelete(data::RegisteredNodeDelete::from_protobuf(it)?)),
             Data::TokenAirdrop(it) => {
                 Ok(Self::TokenAirdrop(data::TokenAirdrop::from_protobuf(it)?))
             }
@@ -467,6 +481,15 @@ impl ToSchedulableTransactionDataProtobuf for AnySchedulableTransactionData {
             AnySchedulableTransactionData::NodeDelete(it) => {
                 it.to_schedulable_transaction_data_protobuf()
             }
+            AnySchedulableTransactionData::RegisteredNodeCreate(it) => {
+                it.to_schedulable_transaction_data_protobuf()
+            }
+            AnySchedulableTransactionData::RegisteredNodeUpdate(it) => {
+                it.to_schedulable_transaction_data_protobuf()
+            }
+            AnySchedulableTransactionData::RegisteredNodeDelete(it) => {
+                it.to_schedulable_transaction_data_protobuf()
+            }
             AnySchedulableTransactionData::TokenAirdrop(it) => {
                 it.to_schedulable_transaction_data_protobuf()
             }
@@ -530,6 +553,9 @@ impl TryFrom<AnyTransactionData> for AnySchedulableTransactionData {
             AnyTransactionData::NodeCreate(it) => Ok(Self::NodeCreate(it)),
             AnyTransactionData::NodeUpdate(it) => Ok(Self::NodeUpdate(it)),
             AnyTransactionData::NodeDelete(it) => Ok(Self::NodeDelete(it)),
+            AnyTransactionData::RegisteredNodeCreate(it) => Ok(Self::RegisteredNodeCreate(it)),
+            AnyTransactionData::RegisteredNodeUpdate(it) => Ok(Self::RegisteredNodeUpdate(it)),
+            AnyTransactionData::RegisteredNodeDelete(it) => Ok(Self::RegisteredNodeDelete(it)),
             AnyTransactionData::TokenAirdrop(it) => Ok(Self::TokenAirdrop(it)),
             AnyTransactionData::TokenClaimAirdrop(it) => Ok(Self::TokenClaimAirdrop(it)),
             AnyTransactionData::TokenCancelAirdrop(it) => Ok(Self::TokenCancelAirdrop(it)),
@@ -602,6 +628,9 @@ impl From<AnySchedulableTransactionData> for AnyTransactionData {
             AnySchedulableTransactionData::NodeCreate(it) => Self::NodeCreate(it),
             AnySchedulableTransactionData::NodeUpdate(it) => Self::NodeUpdate(it),
             AnySchedulableTransactionData::NodeDelete(it) => Self::NodeDelete(it),
+            AnySchedulableTransactionData::RegisteredNodeCreate(it) => Self::RegisteredNodeCreate(it),
+            AnySchedulableTransactionData::RegisteredNodeUpdate(it) => Self::RegisteredNodeUpdate(it),
+            AnySchedulableTransactionData::RegisteredNodeDelete(it) => Self::RegisteredNodeDelete(it),
             AnySchedulableTransactionData::TokenReject(it) => Self::TokenReject(it),
             AnySchedulableTransactionData::TokenAirdrop(it) => Self::TokenAirdrop(it),
             AnySchedulableTransactionData::TokenClaimAirdrop(it) => Self::TokenClaimAirdrop(it),

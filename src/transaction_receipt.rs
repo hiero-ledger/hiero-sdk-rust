@@ -93,6 +93,11 @@ pub struct TransactionReceipt {
     /// In the receipt of a NodeCreate, NodeUpdate, NodeDelete, the id of the newly created node.
     /// An affected node identifier.
     pub node_id: u64,
+
+    /// In the receipt of a RegisteredNodeCreate, the id of the newly created registered node.
+    ///
+    /// HIP-1137
+    pub registered_node_id: u64,
 }
 
 impl TransactionReceipt {
@@ -167,6 +172,7 @@ impl TransactionReceipt {
             children,
             transaction_id: transaction_id.copied(),
             node_id: receipt.node_id,
+            registered_node_id: receipt.registered_node_id,
         })
     }
 
@@ -224,6 +230,7 @@ impl ToProtobuf for TransactionReceipt {
             scheduled_transaction_id: self.scheduled_transaction_id.to_protobuf(),
             serial_numbers: self.serials.clone(),
             node_id: self.node_id,
+            registered_node_id: self.registered_node_id,
         }
     }
 }
@@ -287,6 +294,7 @@ mod tests {
             duplicates: Vec::new(),
             children: Vec::new(),
             node_id: 1,
+            registered_node_id: 0,
         }
     }
 
@@ -422,6 +430,7 @@ mod tests {
                     3,
                 ],
                 node_id: 1,
+                registered_node_id: 0,
             }
         "#]]
         .assert_debug_eq(&make_receipt().to_protobuf())
