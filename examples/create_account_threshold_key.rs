@@ -32,9 +32,9 @@ async fn main() -> anyhow::Result<()> {
     // you only need the public keys, and if you're doing things correctly,
     // you probably shouldn't have these private keys.
     let private_keys = [
-        PrivateKey::generate_ed25519(),
-        PrivateKey::generate_ed25519(),
-        PrivateKey::generate_ed25519(),
+        PrivateKey::generate_ecdsa(),
+        PrivateKey::generate_ecdsa(),
+        PrivateKey::generate_ecdsa(),
     ];
 
     println!("public keys:");

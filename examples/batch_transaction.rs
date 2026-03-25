@@ -34,15 +34,15 @@ async fn main() -> anyhow::Result<()> {
     // Step 1: Create a batch key
     // This key will be used to sign the batch transaction itself.
     // IMPORTANT: The BatchTransaction MUST be signed with this key before execution!
-    let batch_key = PrivateKey::generate_ed25519();
+    let batch_key = PrivateKey::generate_ecdsa();
     println!("Generated batch key: {}", batch_key.public_key());
 
     // Step 2: Create some accounts that will be involved in transfers
-    let alice_key = PrivateKey::generate_ed25519();
+    let alice_key = PrivateKey::generate_ecdsa();
     let alice = create_account(&client, alice_key.public_key(), Hbar::new(5)).await?;
     println!("Created Alice account: {}", alice);
 
-    let bob_key = PrivateKey::generate_ed25519();
+    let bob_key = PrivateKey::generate_ecdsa();
     let bob = create_account(&client, bob_key.public_key(), Hbar::new(3)).await?;
     println!("Created Bob account: {}", bob);
 

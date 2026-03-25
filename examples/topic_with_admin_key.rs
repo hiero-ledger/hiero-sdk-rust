@@ -37,7 +37,7 @@ async fn create_topic_with_admin_key(
 ) -> anyhow::Result<(Vec<PrivateKey>, TopicId)> {
     // Generate the initial keys that are part of the adminKey's thresholdKey.
     // 3 ED25519 keys part of a 2-of-3 threshold key.
-    let initial_admin_keys: Vec<_> = std::iter::repeat_with(PrivateKey::generate_ed25519)
+    let initial_admin_keys: Vec<_> = std::iter::repeat_with(PrivateKey::generate_ecdsa)
         .take(3)
         .collect();
 
@@ -82,7 +82,7 @@ async fn update_topic_admin_key_and_memo(
 ) -> anyhow::Result<()> {
     // Generate the new keys that are part of the adminKey's thresholdKey.
     // 4 ED25519 keys part of a 3-of-4 threshold key.
-    let new_admin_keys: Vec<_> = std::iter::repeat_with(PrivateKey::generate_ed25519)
+    let new_admin_keys: Vec<_> = std::iter::repeat_with(PrivateKey::generate_ecdsa)
         .take(4)
         .collect();
 

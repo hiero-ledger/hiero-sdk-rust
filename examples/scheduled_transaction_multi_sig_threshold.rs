@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key.clone());
     // Generate four new Ed25519 private, public key pairs.
 
-    let private_keys: [_; 4] = std::array::from_fn(|_| PrivateKey::generate_ed25519());
+    let private_keys: [_; 4] = std::array::from_fn(|_| PrivateKey::generate_ecdsa());
 
     for (i, key) in private_keys.iter().enumerate() {
         println!("public key {}: {}", i + 1, key.public_key());

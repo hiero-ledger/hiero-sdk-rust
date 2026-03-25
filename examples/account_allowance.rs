@@ -27,7 +27,7 @@ struct Account {
 }
 
 async fn create_account(client: &Client, name: &'static str) -> hiero_sdk::Result<Account> {
-    let key = PrivateKey::generate_ed25519();
+    let key = PrivateKey::generate_ecdsa();
 
     let reciept = AccountCreateTransaction::new()
         .set_key_without_alias(key.public_key())

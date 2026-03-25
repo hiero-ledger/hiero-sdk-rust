@@ -27,8 +27,8 @@ async fn main() -> anyhow::Result<()> {
 
     client.set_operator(args.operator_account_id, args.operator_key);
 
-    let user1_key = PrivateKey::generate_ed25519();
-    let user2_key = PrivateKey::generate_ed25519();
+    let user1_key = PrivateKey::generate_ecdsa();
+    let user2_key = PrivateKey::generate_ecdsa();
 
     let keylist = KeyList::from([user1_key.public_key(), user2_key.public_key()]);
 

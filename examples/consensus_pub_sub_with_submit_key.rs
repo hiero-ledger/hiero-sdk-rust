@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key);
 
     // generate a submit key to use with the topic.
-    let submit_key = PrivateKey::generate_ed25519();
+    let submit_key = PrivateKey::generate_ecdsa();
 
     let topic_id = TopicCreateTransaction::new()
         .topic_memo("sdk::rust::consensus_pub_sub_with_submit_key")
