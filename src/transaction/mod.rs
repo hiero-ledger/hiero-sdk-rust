@@ -1179,6 +1179,25 @@ impl AnyTransaction {
             }
         }
 
+        // Security: reject multi-group payloads for non-chunked transaction types.
+        // Only FileAppend and ConsensusSubmitMessage (TopicMessageSubmit) legitimately
+        // use multiple transaction ID groups (chunks). All other types must have exactly
+        // one group. This is a defense-in-depth measure against cross-group forgery
+        // attacks (Immunefi #70093).
+        if sources.chunks_len() > 1 {
+            let is_chunked = matches!(
+                &transaction_bodies[0].data,
+                Some(services::transaction_body::Data::FileAppend(_))
+                    | Some(services::transaction_body::Data::ConsensusSubmitMessage(_))
+            );
+
+            if !is_chunked {
+                return Err(Error::from_protobuf(
+                    "non-chunked transaction types must not have multiple transaction ID groups",
+                ));
+            }
+        }
+
         // todo: reuse work
         let transaction_data = {
             let data: Result<_, _> = sources

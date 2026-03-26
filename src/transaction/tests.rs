@@ -249,3 +249,243 @@ fn test_grpc_deadline_preserved_through_clone() {
     assert_eq!(tx2.get_grpc_deadline(), Some(StdDuration::from_secs(5)));
     assert_eq!(tx3.get_grpc_deadline(), Some(StdDuration::from_secs(8)));
 }
+
+mod cross_group_validation {
+    use hiero_sdk_proto::services;
+    use hiero_sdk_proto::sdk::TransactionList;
+    use prost::Message;
+
+    use crate::AnyTransaction;
+
+    fn make_account_id(num: i64) -> services::AccountId {
+        services::AccountId {
+            shard_num: 0,
+            realm_num: 0,
+            account: Some(services::account_id::Account::AccountNum(num)),
+        }
+    }
+
+    fn make_crypto_transfer(
+        from: &services::AccountId,
+        to: &services::AccountId,
+        amount: i64,
+    ) -> services::CryptoTransferTransactionBody {
+        services::CryptoTransferTransactionBody {
+            transfers: Some(services::TransferList {
+                account_amounts: vec![
+                    services::AccountAmount {
+                        account_id: Some(from.clone()),
+                        amount: -amount,
+                        is_approval: false,
+                        ..Default::default()
+                    },
+                    services::AccountAmount {
+                        account_id: Some(to.clone()),
+                        amount,
+                        is_approval: false,
+                        ..Default::default()
+                    },
+                ],
+            }),
+            token_transfers: vec![],
+        }
+    }
+
+    fn wrap_body(body: &services::TransactionBody) -> services::Transaction {
+        let signed_tx = services::SignedTransaction {
+            body_bytes: body.encode_to_vec(),
+            sig_map: Some(services::SignatureMap { sig_pair: vec![] }),
+            ..Default::default()
+        };
+        services::Transaction {
+            signed_transaction_bytes: signed_tx.encode_to_vec(),
+            ..Default::default()
+        }
+    }
+
+    fn build_multi_group_payload(
+        transfer1: &services::CryptoTransferTransactionBody,
+        transfer2: &services::CryptoTransferTransactionBody,
+    ) -> Vec<u8> {
+        let nodes = [make_account_id(3), make_account_id(4), make_account_id(5)];
+        let victim = make_account_id(100);
+
+        let tx_id_1 = services::TransactionId {
+            transaction_valid_start: Some(services::Timestamp { seconds: 1_234_567_890, nanos: 0 }),
+            account_id: Some(victim.clone()),
+            scheduled: false,
+            nonce: 0,
+        };
+        let tx_id_2 = services::TransactionId {
+            transaction_valid_start: Some(services::Timestamp { seconds: 1_234_567_891, nanos: 0 }),
+            account_id: Some(victim.clone()),
+            scheduled: false,
+            nonce: 0,
+        };
+
+        let duration = services::Duration { seconds: 120 };
+        let mut transactions = Vec::new();
+
+        // Group 1
+        for node in &nodes {
+            let body = services::TransactionBody {
+                transaction_id: Some(tx_id_1.clone()),
+                node_account_id: Some(node.clone()),
+                transaction_fee: 100_000_000,
+                transaction_valid_duration: Some(duration.clone()),
+                data: Some(services::transaction_body::Data::CryptoTransfer(transfer1.clone())),
+                ..Default::default()
+            };
+            transactions.push(wrap_body(&body));
+        }
+
+        // Group 2
+        for node in &nodes {
+            let body = services::TransactionBody {
+                transaction_id: Some(tx_id_2.clone()),
+                node_account_id: Some(node.clone()),
+                transaction_fee: 100_000_000,
+                transaction_valid_duration: Some(duration.clone()),
+                data: Some(services::transaction_body::Data::CryptoTransfer(transfer2.clone())),
+                ..Default::default()
+            };
+            transactions.push(wrap_body(&body));
+        }
+
+        TransactionList { transaction_list: transactions }.encode_to_vec()
+    }
+
+    const CHUNK_GUARD_ERR: &str =
+        "non-chunked transaction types must not have multiple transaction ID groups";
+
+    const EQUALITY_GUARD_ERR: &str = "transaction parts unexpectedly unequal";
+
+    /// Different bodies across groups are caught by `pb_transaction_body_eq()`
+    /// (defense layer 1) before the chunk-count guard even runs.
+    #[test]
+    fn different_amounts_rejected() {
+        let victim = make_account_id(100);
+        let attacker = make_account_id(200);
+
+        let benign = make_crypto_transfer(&victim, &attacker, 1);
+        let malicious = make_crypto_transfer(&victim, &attacker, 100_000_000_000);
+
+        let payload = build_multi_group_payload(&benign, &malicious);
+        let err = AnyTransaction::from_bytes(&payload)
+            .expect_err("multi-group non-chunked TransactionList with different bodies must be rejected");
+
+        assert!(
+            err.to_string().contains(EQUALITY_GUARD_ERR),
+            "expected equality guard, got: {err}"
+        );
+    }
+
+    #[test]
+    fn identical_bodies_rejected() {
+        let victim = make_account_id(100);
+        let attacker = make_account_id(200);
+
+        let transfer = make_crypto_transfer(&victim, &attacker, 1);
+
+        let payload = build_multi_group_payload(&transfer, &transfer);
+        let err = AnyTransaction::from_bytes(&payload)
+            .expect_err("multi-group non-chunked TransactionList must be rejected even with identical bodies");
+
+        assert!(
+            err.to_string().contains(CHUNK_GUARD_ERR),
+            "expected chunk-count guard, got: {err}"
+        );
+    }
+
+    #[test]
+    fn single_group_transfer_accepted() {
+        use crate::{Hbar, TransactionId, TransferTransaction};
+        use time::OffsetDateTime;
+
+        let bytes = TransferTransaction::new()
+            .hbar_transfer(2.into(), Hbar::new(2))
+            .hbar_transfer(101.into(), Hbar::new(-2))
+            .transaction_id(TransactionId {
+                account_id: 2.into(),
+                valid_start: OffsetDateTime::UNIX_EPOCH,
+                nonce: None,
+                scheduled: false,
+            })
+            .node_account_ids([6.into()])
+            .freeze()
+            .unwrap()
+            .to_bytes()
+            .unwrap();
+
+        let result = AnyTransaction::from_bytes(&bytes);
+        assert!(result.is_ok(), "single-group transfer transaction must be accepted");
+    }
+
+    #[tokio::test]
+    async fn legitimate_chunked_multi_group_accepted() {
+        use crate::{Client, PrivateKey, TopicMessageSubmitTransaction, TransactionId};
+        use time::OffsetDateTime;
+
+        let client = Client::for_testnet();
+        client.set_operator(0.into(), PrivateKey::generate_ed25519());
+
+        // Message large enough to require 2 chunks at chunk_size=8.
+        let bytes = TopicMessageSubmitTransaction::new()
+            .topic_id(314)
+            .message(b"Hello, world!".to_vec())
+            .chunk_size(8)
+            .max_chunks(2)
+            .transaction_id(TransactionId {
+                account_id: 101.into(),
+                valid_start: OffsetDateTime::now_utc(),
+                nonce: None,
+                scheduled: false,
+            })
+            .node_account_ids([6.into(), 7.into()])
+            .freeze_with(&client)
+            .unwrap()
+            .to_bytes()
+            .unwrap();
+
+        let result = AnyTransaction::from_bytes(&bytes);
+        assert!(
+            result.is_ok(),
+            "legitimate multi-chunk TopicMessageSubmitTransaction must be accepted: {:?}",
+            result.unwrap_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn legitimate_chunked_file_append_accepted() {
+        use crate::{Client, FileAppendTransaction, PrivateKey, TransactionId};
+        use time::OffsetDateTime;
+
+        let client = Client::for_testnet();
+        client.set_operator(0.into(), PrivateKey::generate_ed25519());
+
+        // Contents large enough to require 2 chunks at chunk_size=8.
+        let bytes = FileAppendTransaction::new()
+            .file_id(314)
+            .contents(b"Hello, world!".to_vec())
+            .chunk_size(8)
+            .max_chunks(2)
+            .transaction_id(TransactionId {
+                account_id: 101.into(),
+                valid_start: OffsetDateTime::now_utc(),
+                nonce: None,
+                scheduled: false,
+            })
+            .node_account_ids([6.into(), 7.into()])
+            .freeze_with(&client)
+            .unwrap()
+            .to_bytes()
+            .unwrap();
+
+        let result = AnyTransaction::from_bytes(&bytes);
+        assert!(
+            result.is_ok(),
+            "legitimate multi-chunk FileAppendTransaction must be accepted: {:?}",
+            result.unwrap_err()
+        );
+    }
+}
