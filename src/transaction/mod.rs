@@ -39,6 +39,7 @@ mod chunked;
 mod cost;
 mod execute;
 mod protobuf;
+mod signature_map;
 mod source;
 #[cfg(test)]
 mod tests;
@@ -640,42 +641,47 @@ impl<D: TransactionExecute> Transaction<D> {
         Ok(hiero_sdk_proto::sdk::TransactionList { transaction_list }.encode_to_vec())
     }
 
-    pub(crate) fn add_signature_signer(&mut self, signer: &AnySigner) -> Vec<u8> {
+    pub(crate) fn add_signature_signer(
+        &mut self,
+        signer: &AnySigner,
+    ) -> crate::transaction::signature_map::SignatureMap {
         assert!(self.is_frozen());
-
-        // note: the following pair of cheecks are for more detailed panic messages
-        // IE, they should *hopefully* be tripped first
-        assert_eq!(
-            self.body.node_account_ids.as_deref().map_or(0, <[AccountId]>::len),
-            1,
-            "cannot manually add a signature to a transaction with multiple nodes"
-        );
-
-        if let Some(chunk_data) = self.data().maybe_chunk_data() {
-            assert!(
-                chunk_data.used_chunks() <= 1,
-                "cannot manually add a signature to a chunked transaction with multiple chunks (message length `{}` > chunk size `{}`)",
-                chunk_data.data.len(),
-                chunk_data.chunk_size
-            );
-        }
 
         let sources = self.make_sources().unwrap();
 
-        // this is the only check that is for correctness rather than debugability.
-        assert!(sources.transactions().len() == 1);
-
         let sources = sources.sign_with(std::slice::from_ref(signer));
 
+        let mut sig_map = crate::transaction::signature_map::SignatureMap::new();
+
         // hack: I don't care about perf here.
-        let ret = signer.sign(&sources.signed_transactions()[0].body_bytes);
+        for (chunk, tx_id) in sources.chunks().into_iter().zip(sources._transaction_ids()) {
+            let tx_id = tx_id.expect("transaction ID should be set since transaction is frozen");
+            for (tx, node) in chunk.signed_transactions().iter().zip(chunk.node_ids()) {
+                let (tx, node) = (tx, node);
+                let (pk, sig) = signer.sign(&tx.body_bytes);
+                sig_map.insert_signature(node.clone(), tx_id, pk, sig);
+            }
+        }
 
         // if we have a `Cow::Borrowed` that'd mean there was no modification
         if let Cow::Owned(sources) = sources {
             self.sources = Some(sources);
         }
 
-        ret.1
+        sig_map
+    }
+
+    pub(crate) fn add_signature_map_obj(
+        &mut self,
+        signature: crate::transaction::signature_map::SignatureMap,
+    ) {
+        assert!(self.is_frozen());
+
+        let sources = self.make_sources().unwrap();
+
+        let sources = sources.add_signature_map(signature);
+
+        self.sources = Some(sources);
     }
 
     // todo: should this return `Result<&mut Self>`?
@@ -685,7 +691,54 @@ impl<D: TransactionExecute> Transaction<D> {
     ///
     /// This forcibly disables transaction ID regeneration.
     pub fn add_signature(&mut self, pk: PublicKey, signature: Vec<u8>) -> &mut Self {
-        self.add_signature_signer(&AnySigner::arbitrary(Box::new(pk), move |_| signature.clone()));
+        assert!(self.is_frozen());
+
+        // note: the following pair of checks are for more detailed panic messages
+        // IE, they should *hopefully* be tripped first
+        assert_eq!(
+            self.get_node_account_ids().map_or(0, <[AccountId]>::len),
+            1,
+            "cannot manually add a single signature to a transaction with multiple nodes. Maybe you meant to use `add_signature_map`?"
+        );
+
+        if let Some(chunk_data) = self.data().maybe_chunk_data() {
+            assert!(
+                chunk_data.used_chunks() <= 1,
+                "cannot manually add a signature to a chunked transaction with multiple chunks. Maybe you meant to use `add_signature_map`?",
+            );
+        }
+
+        let mut signature_map = crate::transaction::signature_map::SignatureMap::new();
+
+        signature_map.insert_signature(
+            self.get_node_account_ids()
+                .expect("We already asserted we have 1 node")
+                .first()
+                .expect("We already asserted we have 1 node")
+                .clone(),
+            self.get_transaction_id()
+                .expect("transaction ID should be set since transaction is frozen"),
+            pk,
+            signature,
+        );
+        self.add_signature_map_obj(signature_map);
+
+        self
+    }
+
+    /// Adds a signature directly to `self`.
+    ///
+    /// These signatures are for all the sub transactions in this transaction. A map of signatures
+    /// for each node and transaction chunk is required.
+    ///
+    /// Only use this as a last resort.
+    ///
+    /// This forcibly disables transaction ID regeneration.
+    pub fn add_signature_map(
+        &mut self,
+        signature: HashMap<AccountId, HashMap<TransactionId, HashMap<PublicKey, Vec<u8>>>>,
+    ) -> &mut Self {
+        self.add_signature_map_obj(crate::transaction::signature_map::SignatureMap(signature));
 
         self
     }

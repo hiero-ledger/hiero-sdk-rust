@@ -252,6 +252,47 @@ impl TransactionSources {
         }
     }
 
+    pub(crate) fn add_signature_map(
+        &self,
+        mut signatures: crate::transaction::signature_map::SignatureMap,
+    ) -> Self {
+        let mut signed_transactions = self.signed_transactions.clone();
+
+        for (chunk, tx_id) in self.chunks.iter().zip(self.transaction_ids.iter()) {
+            let tx_id = tx_id.expect("transaction ID should be set since transaction is frozen");
+            for (tx, node) in
+                signed_transactions[chunk.clone()].iter_mut().zip(self.node_ids.iter())
+            {
+                for (pk, sig) in signatures
+                    .remove_transaction(node, &tx_id)
+                    .expect("signature map should contain signature for all transactions")
+                {
+                    // If the source already contains the signature skip it
+                    if tx.sig_map.as_ref().map_or(false, |it| {
+                        it.sig_pair
+                            .iter()
+                            .any(|it| pk.to_bytes_raw().starts_with(&it.pub_key_prefix))
+                    }) {
+                        continue;
+                    }
+
+                    let sig_map = tx.sig_map.get_or_insert_with(services::SignatureMap::default);
+                    let sig_pair = super::execute::SignaturePair::from((pk, sig));
+                    sig_map.sig_pair.push(sig_pair.into_protobuf());
+                }
+            }
+        }
+
+        Self {
+            signed_transactions,
+            transactions: OnceCell::new(),
+            chunks: self.chunks.clone(),
+            transaction_ids: self.transaction_ids.clone(),
+            node_ids: self.node_ids.clone(),
+            transaction_hashes: self.transaction_hashes.clone(),
+        }
+    }
+
     pub(crate) fn transactions(&self) -> &[services::Transaction] {
         self.transactions.get_or_init(|| {
             self.signed_transactions
