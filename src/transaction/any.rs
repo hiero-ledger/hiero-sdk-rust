@@ -40,6 +40,11 @@ mod data {
         NodeDeleteTransactionData as NodeDelete,
         NodeUpdateTransactionData as NodeUpdate,
     };
+    pub(super) use crate::registered_node::{
+        RegisteredNodeCreateTransactionData as RegisteredNodeCreate,
+        RegisteredNodeDeleteTransactionData as RegisteredNodeDelete,
+        RegisteredNodeUpdateTransactionData as RegisteredNodeUpdate,
+    };
     pub(super) use crate::batch_transaction::BatchTransactionData as Batch;
     pub(super) use crate::contract::{
         ContractCreateTransactionData as ContractCreate,
@@ -147,6 +152,9 @@ pub enum AnyTransactionData {
     NodeCreate(data::NodeCreate),
     NodeUpdate(data::NodeUpdate),
     NodeDelete(data::NodeDelete),
+    RegisteredNodeCreate(data::RegisteredNodeCreate),
+    RegisteredNodeUpdate(data::RegisteredNodeUpdate),
+    RegisteredNodeDelete(data::RegisteredNodeDelete),
     TokenReject(data::TokenReject),
     TokenAirdrop(data::TokenAirdrop),
     TokenClaimAirdrop(data::TokenClaimAirdrop),
@@ -258,8 +266,6 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
 
             Self::TopicDelete(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
-            Self::TokenReject(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
-
             Self::TopicMessageSubmit(transaction) => {
                 transaction.to_transaction_data_protobuf(chunk_info)
             }
@@ -293,6 +299,12 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
             Self::NodeUpdate(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
             Self::NodeDelete(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
+
+            Self::RegisteredNodeCreate(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
+
+            Self::RegisteredNodeUpdate(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
+
+            Self::RegisteredNodeDelete(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
             Self::TokenReject(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
@@ -357,6 +369,9 @@ impl TransactionData for AnyTransactionData {
             Self::NodeCreate(transaction) => transaction.default_max_transaction_fee(),
             Self::NodeUpdate(transaction) => transaction.default_max_transaction_fee(),
             Self::NodeDelete(transaction) => transaction.default_max_transaction_fee(),
+            Self::RegisteredNodeCreate(transaction) => transaction.default_max_transaction_fee(),
+            Self::RegisteredNodeUpdate(transaction) => transaction.default_max_transaction_fee(),
+            Self::RegisteredNodeDelete(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenReject(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenClaimAirdrop(transaction) => transaction.default_max_transaction_fee(),
@@ -412,6 +427,9 @@ impl TransactionData for AnyTransactionData {
             Self::NodeCreate(it) => it.maybe_chunk_data(),
             Self::NodeUpdate(it) => it.maybe_chunk_data(),
             Self::NodeDelete(it) => it.maybe_chunk_data(),
+            Self::RegisteredNodeCreate(it) => it.maybe_chunk_data(),
+            Self::RegisteredNodeUpdate(it) => it.maybe_chunk_data(),
+            Self::RegisteredNodeDelete(it) => it.maybe_chunk_data(),
             Self::TokenReject(it) => it.maybe_chunk_data(),
             Self::TokenAirdrop(it) => it.maybe_chunk_data(),
             Self::TokenClaimAirdrop(it) => it.maybe_chunk_data(),
@@ -467,6 +485,9 @@ impl TransactionData for AnyTransactionData {
             Self::NodeCreate(it) => it.wait_for_receipt(),
             Self::NodeUpdate(it) => it.wait_for_receipt(),
             Self::NodeDelete(it) => it.wait_for_receipt(),
+            Self::RegisteredNodeCreate(it) => it.wait_for_receipt(),
+            Self::RegisteredNodeUpdate(it) => it.wait_for_receipt(),
+            Self::RegisteredNodeDelete(it) => it.wait_for_receipt(),
             Self::TokenReject(it) => it.wait_for_receipt(),
             Self::TokenAirdrop(it) => it.wait_for_receipt(),
             Self::TokenClaimAirdrop(it) => it.wait_for_receipt(),
@@ -528,6 +549,9 @@ impl TransactionExecute for AnyTransactionData {
             Self::NodeCreate(transaction) => transaction.execute(channel, request),
             Self::NodeUpdate(transaction) => transaction.execute(channel, request),
             Self::NodeDelete(transaction) => transaction.execute(channel, request),
+            Self::RegisteredNodeCreate(transaction) => transaction.execute(channel, request),
+            Self::RegisteredNodeUpdate(transaction) => transaction.execute(channel, request),
+            Self::RegisteredNodeDelete(transaction) => transaction.execute(channel, request),
             Self::TokenReject(transaction) => transaction.execute(channel, request),
             Self::TokenAirdrop(transaction) => transaction.execute(channel, request),
             Self::TokenClaimAirdrop(transaction) => transaction.execute(channel, request),
@@ -587,6 +611,9 @@ impl ValidateChecksums for AnyTransactionData {
             Self::NodeCreate(transaction) => transaction.validate_checksums(ledger_id),
             Self::NodeUpdate(transaction) => transaction.validate_checksums(ledger_id),
             Self::NodeDelete(transaction) => transaction.validate_checksums(ledger_id),
+            Self::RegisteredNodeCreate(transaction) => transaction.validate_checksums(ledger_id),
+            Self::RegisteredNodeUpdate(transaction) => transaction.validate_checksums(ledger_id),
+            Self::RegisteredNodeDelete(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenReject(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenClaimAirdrop(transaction) => transaction.validate_checksums(ledger_id),
@@ -655,6 +682,9 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
             Data::NodeCreate(pb) => data::NodeCreate::from_protobuf(pb)?.into(),
             Data::NodeUpdate(pb) => data::NodeUpdate::from_protobuf(pb)?.into(),
             Data::NodeDelete(pb) => data::NodeDelete::from_protobuf(pb)?.into(),
+            Data::RegisteredNodeCreate(pb) => data::RegisteredNodeCreate::from_protobuf(pb)?.into(),
+            Data::RegisteredNodeUpdate(pb) => data::RegisteredNodeUpdate::from_protobuf(pb)?.into(),
+            Data::RegisteredNodeDelete(pb) => data::RegisteredNodeDelete::from_protobuf(pb)?.into(),
             Data::TokenAirdrop(pb) => data::TokenAirdrop::from_protobuf(pb)?.into(),
             Data::TokenClaimAirdrop(pb) => data::TokenClaimAirdrop::from_protobuf(pb)?.into(),
             Data::TokenCancelAirdrop(pb) => data::TokenCancelAirdrop::from_protobuf(pb)?.into(),
@@ -839,6 +869,15 @@ impl AnyTransactionData {
             ServicesTransactionDataList::NodeDelete(v) => {
                 data::NodeDelete::from_protobuf(try_into_only_element(v)?)?.into()
             }
+            ServicesTransactionDataList::RegisteredNodeCreate(v) => {
+                data::RegisteredNodeCreate::from_protobuf(try_into_only_element(v)?)?.into()
+            }
+            ServicesTransactionDataList::RegisteredNodeUpdate(v) => {
+                data::RegisteredNodeUpdate::from_protobuf(try_into_only_element(v)?)?.into()
+            }
+            ServicesTransactionDataList::RegisteredNodeDelete(v) => {
+                data::RegisteredNodeDelete::from_protobuf(try_into_only_element(v)?)?.into()
+            }
             ServicesTransactionDataList::TokenAirdrop(v) => {
                 data::TokenAirdrop::from_protobuf(try_into_only_element(v)?)?.into()
             }
@@ -970,6 +1009,9 @@ enum ServicesTransactionDataList {
     NodeCreate(Vec<services::NodeCreateTransactionBody>),
     NodeUpdate(Vec<services::NodeUpdateTransactionBody>),
     NodeDelete(Vec<services::NodeDeleteTransactionBody>),
+    RegisteredNodeCreate(Vec<services::RegisteredNodeCreateTransactionBody>),
+    RegisteredNodeUpdate(Vec<services::RegisteredNodeUpdateTransactionBody>),
+    RegisteredNodeDelete(Vec<services::RegisteredNodeDeleteTransactionBody>),
     TokenAirdrop(Vec<services::TokenAirdropTransactionBody>),
     TokenClaimAirdrop(Vec<services::TokenClaimAirdropTransactionBody>),
     TokenCancelAirdrop(Vec<services::TokenCancelAirdropTransactionBody>),
@@ -1042,6 +1084,9 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
             Data::NodeCreate(it) => Self::NodeCreate(make_vec(it, len)),
             Data::NodeUpdate(it) => Self::NodeUpdate(make_vec(it, len)),
             Data::NodeDelete(it) => Self::NodeDelete(make_vec(it, len)),
+            Data::RegisteredNodeCreate(it) => Self::RegisteredNodeCreate(make_vec(it, len)),
+            Data::RegisteredNodeUpdate(it) => Self::RegisteredNodeUpdate(make_vec(it, len)),
+            Data::RegisteredNodeDelete(it) => Self::RegisteredNodeDelete(make_vec(it, len)),
             Data::TokenAirdrop(it) => Self::TokenAirdrop(make_vec(it, len)),
             Data::TokenClaimAirdrop(it) => Self::TokenClaimAirdrop(make_vec(it, len)),
             Data::TokenCancelAirdrop(it) => Self::TokenCancelAirdrop(make_vec(it, len)),
@@ -1125,6 +1170,9 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                 (Self::TokenAirdrop(v), Data::TokenAirdrop(element)) => v.push(element),
                 (Self::TokenClaimAirdrop(v), Data::TokenClaimAirdrop(element)) => v.push(element),
                 (Self::TokenCancelAirdrop(v), Data::TokenCancelAirdrop(element)) => v.push(element),
+                (Self::RegisteredNodeCreate(v), Data::RegisteredNodeCreate(element)) => v.push(element),
+                (Self::RegisteredNodeUpdate(v), Data::RegisteredNodeUpdate(element)) => v.push(element),
+                (Self::RegisteredNodeDelete(v), Data::RegisteredNodeDelete(element)) => v.push(element),
                 (Self::AtomicBatch(v), Data::AtomicBatch(element)) => v.push(element),
                 _ => return Err(Error::from_protobuf("mismatched transaction types")),
             }
@@ -1249,6 +1297,9 @@ impl_cast_any! {
     NodeCreate,
     NodeUpdate,
     NodeDelete,
+    RegisteredNodeCreate,
+    RegisteredNodeUpdate,
+    RegisteredNodeDelete,
     TokenReject,
              TokenAirdrop,
     TokenClaimAirdrop,
