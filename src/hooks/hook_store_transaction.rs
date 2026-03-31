@@ -3,8 +3,8 @@ use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServi
 use tonic::transport::Channel;
 
 use crate::hooks::{
-    HookId,
     EvmHookStorageUpdate,
+    HookId,
 };
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::ToProtobuf;
@@ -151,9 +151,9 @@ impl From<HookStoreTransactionData> for crate::transaction::AnyTransactionData {
 mod tests {
     use super::*;
     use crate::hooks::{
-        HookId,
         EvmHookStorageSlot,
         EvmHookStorageUpdate,
+        HookId,
     };
 
     #[test]

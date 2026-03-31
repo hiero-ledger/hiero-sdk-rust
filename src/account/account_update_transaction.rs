@@ -460,10 +460,10 @@ mod tests {
         AccountUpdateTransaction,
         AnyTransaction,
         ContractId,
+        EvmHook,
         EvmHookSpec,
         HookCreationDetails,
         HookExtensionPoint,
-        EvmHook,
         PublicKey,
     };
 

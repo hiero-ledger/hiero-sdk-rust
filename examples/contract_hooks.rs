@@ -7,7 +7,7 @@ use std::path::Path;
 
 use clap::Parser;
 use hiero_sdk::{
-    AccountId, Client, ContractCreateTransaction, ContractId, ContractUpdateTransaction, EvmHookSpec, HookCreationDetails, HookExtensionPoint, EvmHook, PrivateKey
+    AccountId, Client, ContractCreateTransaction, ContractId, ContractUpdateTransaction, EvmHook, EvmHookSpec, HookCreationDetails, HookExtensionPoint, PrivateKey
 };
 
 #[derive(Parser, Debug)]

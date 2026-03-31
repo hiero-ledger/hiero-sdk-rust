@@ -427,12 +427,12 @@ mod tests {
         AnyTransaction,
         ContractCreateTransaction,
         ContractId,
+        EvmHook,
         EvmHookSpec,
         FileId,
         Hbar,
         HookCreationDetails,
         HookExtensionPoint,
-        EvmHook,
         PublicKey,
     };
 

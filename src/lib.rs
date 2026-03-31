@@ -248,8 +248,11 @@ pub use hbar::{
 };
 pub use hiero_sdk_proto::services::ResponseCodeEnum as Status;
 pub use hooks::{
+    EvmHook,
     EvmHookCall,
     EvmHookSpec,
+    EvmHookStorageSlot,
+    EvmHookStorageUpdate,
     FungibleHookCall,
     FungibleHookType,
     HookCall,
@@ -257,11 +260,8 @@ pub use hooks::{
     HookEntityId,
     HookExtensionPoint,
     HookId,
-    EvmHook,
     HookStoreTransaction,
     HookStoreTransactionData,
-    EvmHookStorageSlot,
-    EvmHookStorageUpdate,
     NftHookCall,
     NftHookType,
 };

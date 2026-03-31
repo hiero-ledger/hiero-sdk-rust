@@ -400,10 +400,10 @@ mod tests {
         AnyTransaction,
         ContractId,
         ContractUpdateTransaction,
+        EvmHook,
         EvmHookSpec,
         HookCreationDetails,
         HookExtensionPoint,
-        EvmHook,
         PublicKey,
     };
 

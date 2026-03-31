@@ -6,8 +6,8 @@ use time::Duration;
 use tonic::transport::Channel;
 
 use crate::hooks::{
-    HookCreationDetails,
     EvmHook,
+    HookCreationDetails,
 };
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
@@ -456,11 +456,11 @@ mod tests {
         AnyTransaction,
         ContractId,
         EvmAddress,
+        EvmHook,
         EvmHookSpec,
         Hbar,
         HookCreationDetails,
         HookExtensionPoint,
-        EvmHook,
         PublicKey,
     };
 

@@ -1,8 +1,8 @@
 use hiero_sdk_proto::services;
 
 use crate::hooks::{
-    HookExtensionPoint,
     EvmHook,
+    HookExtensionPoint,
 };
 use crate::key::Key;
 use crate::{

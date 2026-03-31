@@ -1108,16 +1108,24 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                 return Err(Error::from_protobuf("AtomicBatch transactions are not supported"))
             }
             Data::LedgerIdPublication(_) => {
-                return Err(Error::from_protobuf("LedgerIdPublication transactions are not supported"))
+                return Err(Error::from_protobuf(
+                    "LedgerIdPublication transactions are not supported",
+                ))
             }
             Data::RegisteredNodeCreate(_) => {
-                return Err(Error::from_protobuf("RegisteredNodeCreate transactions are not supported"))
+                return Err(Error::from_protobuf(
+                    "RegisteredNodeCreate transactions are not supported",
+                ))
             }
             Data::RegisteredNodeUpdate(_) => {
-                return Err(Error::from_protobuf("RegisteredNodeUpdate transactions are not supported"))
+                return Err(Error::from_protobuf(
+                    "RegisteredNodeUpdate transactions are not supported",
+                ))
             }
             Data::RegisteredNodeDelete(_) => {
-                return Err(Error::from_protobuf("RegisteredNodeDelete transactions are not supported"))
+                return Err(Error::from_protobuf(
+                    "RegisteredNodeDelete transactions are not supported",
+                ))
             }
         };
 

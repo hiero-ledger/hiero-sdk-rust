@@ -6,13 +6,13 @@ use hiero_sdk::{
     ContractId,
     ContractInfoQuery,
     ContractUpdateTransaction,
+    EvmHook,
     EvmHookSpec,
+    EvmHookStorageSlot,
+    EvmHookStorageUpdate,
     Hbar,
     HookCreationDetails,
     HookExtensionPoint,
-    EvmHook,
-    EvmHookStorageSlot,
-    EvmHookStorageUpdate,
     PublicKey,
     Status,
 };
@@ -73,8 +73,7 @@ async fn basic_contract_update() -> anyhow::Result<()> {
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
 
     let info_before = ContractInfoQuery::new().contract_id(contract_id).execute(&client).await?;
 
@@ -117,8 +116,7 @@ async fn contract_update_fails_when_contract_id_not_set() -> anyhow::Result<()> 
     };
 
     let operator_key = op.private_key.public_key();
-    let _contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let _contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
 
     let result = ContractUpdateTransaction::new()
         .contract_memo("[e2e::ContractUpdateTransaction]")
@@ -142,8 +140,7 @@ async fn contract_update_auto_renew_account_id_to_zero() -> anyhow::Result<()> {
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
 
     let info_before = ContractInfoQuery::new().contract_id(contract_id).execute(&client).await?;
 
@@ -183,8 +180,7 @@ async fn contract_update_adds_basic_evm_hook() -> anyhow::Result<()> {
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
     let lambda_contract_id = create_hook_contract(&client).await?;
 
     let lambda_hook = EvmHook::new(EvmHookSpec::new(Some(lambda_contract_id)), vec![]);
@@ -215,8 +211,7 @@ async fn contract_update_fails_with_duplicate_hook_ids() -> anyhow::Result<()> {
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
     let lambda_contract_id = create_hook_contract(&client).await?;
 
     let lambda_hook = EvmHook::new(EvmHookSpec::new(Some(lambda_contract_id)), vec![]);
@@ -254,8 +249,7 @@ async fn contract_update_fails_when_hook_id_in_use() -> anyhow::Result<()> {
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
     let lambda_contract_id = create_hook_contract(&client).await?;
 
     let lambda_hook = EvmHook::new(EvmHookSpec::new(Some(lambda_contract_id)), vec![]);
@@ -302,8 +296,7 @@ async fn contract_update_adds_evm_hook_with_storage_updates() -> anyhow::Result<
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
     let lambda_contract_id = create_hook_contract(&client).await?;
 
     let storage_slot = EvmHookStorageSlot::new(vec![0x01, 0x02, 0x03, 0x04], vec![]);
@@ -338,8 +331,7 @@ async fn contract_update_deletes_hook_by_id() -> anyhow::Result<()> {
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
     let lambda_contract_id = create_hook_contract(&client).await?;
 
     let lambda_hook = EvmHook::new(EvmHookSpec::new(Some(lambda_contract_id)), vec![]);
@@ -380,8 +372,7 @@ async fn contract_update_fails_when_deleting_nonexistent_hook() -> anyhow::Resul
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
     let lambda_contract_id = create_hook_contract(&client).await?;
 
     let lambda_hook = EvmHook::new(EvmHookSpec::new(Some(lambda_contract_id)), vec![]);
@@ -422,8 +413,7 @@ async fn contract_update_fails_when_adding_and_deleting_same_hook_id() -> anyhow
     };
 
     let operator_key = op.private_key.public_key();
-    let contract_id =
-        create_test_contract(&client, operator_key, op.account_id).await?;
+    let contract_id = create_test_contract(&client, operator_key, op.account_id).await?;
     let lambda_contract_id = create_hook_contract(&client).await?;
 
     let lambda_hook = EvmHook::new(EvmHookSpec::new(Some(lambda_contract_id)), vec![]);
