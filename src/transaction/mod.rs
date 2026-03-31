@@ -1505,6 +1505,7 @@ pub(crate) mod test_helpers {
             data,
             max_custom_fees,
             batch_key: _,
+            high_volume: _,
         } = body;
 
         assert_eq!(transaction_id, Some(TEST_TX_ID.to_protobuf()));

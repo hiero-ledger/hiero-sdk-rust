@@ -119,5 +119,6 @@ NodeUpdate(
         ),
         decline_reward: None,
         grpc_proxy_endpoint: None,
+        associated_registered_node_list: None,
     },
 )

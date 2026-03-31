@@ -423,6 +423,7 @@ mod tests {
                     3,
                 ],
                 node_id: 1,
+                registered_node_id: 0,
             }
         "#]]
         .assert_debug_eq(&make_receipt().to_protobuf())

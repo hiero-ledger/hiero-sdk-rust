@@ -129,6 +129,7 @@ TransactionRecord {
                 3,
             ],
             node_id: 1,
+            registered_node_id: 0,
         },
     ),
     transaction_hash: [
@@ -406,6 +407,7 @@ TransactionRecord {
             ),
         },
     ],
+    high_volume_pricing_multiplier: 0,
     body: Some(
         ContractCallResult(
             ContractFunctionResult {
