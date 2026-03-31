@@ -328,6 +328,9 @@ impl FromProtobuf<services::schedulable_transaction_body::Data> for AnySchedulab
             Data::TokenCancelAirdrop(it) => {
                 Ok(Self::TokenCancelAirdrop(data::TokenCancelAirdrop::from_protobuf(it)?))
             }
+            Data::RegisteredNodeCreate(_) | Data::RegisteredNodeUpdate(_) | Data::RegisteredNodeDelete(_) => {
+                Err(crate::Error::from_protobuf("unsupported schedulable transaction"))
+            }
         }
     }
 }
@@ -547,8 +550,8 @@ impl TryFrom<AnyTransactionData> for AnySchedulableTransactionData {
             AnyTransactionData::Batch(_) => {
                 Err(crate::Error::basic_parse("Cannot schedule `BatchTransaction`"))
             }
-            AnyTransactionData::LambdaSStore(_) => {
-                Err(crate::Error::basic_parse("Cannot schedule `LambdaSStoreTransaction`"))
+            AnyTransactionData::HookStore(_) => {
+                Err(crate::Error::basic_parse("Cannot schedule `HookStoreTransaction`"))
             }
         }
     }

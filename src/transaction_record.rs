@@ -311,6 +311,7 @@ impl ToProtobuf for TransactionRecord {
                 .map(|it| services::transaction_record::Body::ContractCallResult(it.to_protobuf())),
             entropy,
             new_pending_airdrops: self.pending_airdrop_records.to_protobuf(),
+            high_volume_pricing_multiplier: 0,
         }
     }
 }

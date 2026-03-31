@@ -224,6 +224,7 @@ impl ToProtobuf for TransactionReceipt {
             scheduled_transaction_id: self.scheduled_transaction_id.to_protobuf(),
             serial_numbers: self.serials.clone(),
             node_id: self.node_id,
+            registered_node_id: 0,
         }
     }
 }

@@ -892,6 +892,7 @@ impl<D: TransactionExecute> Transaction<D> {
                 .to_tinybars() as u64,
             max_custom_fees: { self.body.custom_fee_limits.to_protobuf() },
             batch_key: self.body.batch_key.as_ref().map(|key| key.to_protobuf()),
+            high_volume: false,
         };
 
         let body_bytes = transaction_body.encode_to_vec();
@@ -1284,6 +1285,7 @@ fn pb_transaction_body_eq(
         data,
         max_custom_fees,
         batch_key: _,
+        high_volume: _,
     } = rhs;
 
     if &lhs.transaction_fee != transaction_fee {

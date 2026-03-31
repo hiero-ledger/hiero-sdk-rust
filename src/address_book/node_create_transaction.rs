@@ -314,6 +314,7 @@ impl ToProtobuf for NodeCreateTransactionData {
             admin_key: self.admin_key.to_protobuf(),
             decline_reward: self.decline_reward,
             grpc_proxy_endpoint: self.grpc_proxy_endpoint.as_ref().map(|it| it.to_protobuf()),
+            associated_registered_node: Vec::new(),
         }
     }
 }
