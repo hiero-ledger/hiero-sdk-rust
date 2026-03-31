@@ -4,7 +4,7 @@ use std::fs;
 use std::path::Path;
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction, AccountId, Client, ContractCreateTransaction, ContractId, EvmHookCall, EvmHookSpec, FungibleHookCall, FungibleHookType, Hbar, HookCall, HookCreationDetails, HookExtensionPoint, EvmHook, NftHookCall, NftHookType, PrivateKey, TokenCreateTransaction, TokenMintTransaction, TokenType, TransferTransaction
 };
 
@@ -233,8 +233,8 @@ async fn main() -> anyhow::Result<()> {
             nft_id,
             sender_account_id,
             receiver_account_id,
-            nft_sender_hook,
-            nft_receiver_hook,
+            Some(nft_sender_hook),
+            Some(nft_receiver_hook),
         )
         .freeze_with(&client)?
         .sign(sender_key.clone())

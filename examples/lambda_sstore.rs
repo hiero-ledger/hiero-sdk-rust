@@ -4,7 +4,7 @@ use std::fs;
 use std::path::Path;
 
 use clap::Parser;
-use hedera::{
+use hiero_sdk::{
     AccountCreateTransaction, AccountId, Client, ContractCreateTransaction, ContractId, EvmHookSpec, Hbar, HookCreationDetails, HookEntityId, HookExtensionPoint, HookId, EvmHook, HookStoreTransaction, EvmHookStorageSlot, EvmHookStorageUpdate, PrivateKey
 };
 
