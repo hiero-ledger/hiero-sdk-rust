@@ -403,7 +403,7 @@ mod tests {
         EvmHookSpec,
         HookCreationDetails,
         HookExtensionPoint,
-        LambdaEvmHook,
+        EvmHook,
         PublicKey,
     };
 
@@ -741,7 +741,7 @@ mod tests {
         let hooks = vec![HookCreationDetails::new(
             HookExtensionPoint::AccountAllowanceHook,
             0,
-            Some(LambdaEvmHook::new(EvmHookSpec::new(Some(CONTRACT_ID)), vec![])),
+            Some(EvmHook::new(EvmHookSpec::new(Some(CONTRACT_ID)), vec![])),
         )];
 
         let hook_ids_to_delete = vec![1, 2, 3];

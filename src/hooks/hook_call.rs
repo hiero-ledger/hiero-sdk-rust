@@ -1,4 +1,4 @@
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::hooks::{
     EvmHookCall,
@@ -51,13 +51,7 @@ impl ToProtobuf for HookCall {
     type Protobuf = services::HookCall;
 
     fn to_protobuf(&self) -> Self::Protobuf {
-        let id = if let Some(full_hook_id) = &self.full_hook_id {
-            Some(services::hook_call::Id::FullHookId(full_hook_id.to_protobuf()))
-        } else if let Some(hook_id) = self.hook_id {
-            Some(services::hook_call::Id::HookId(hook_id))
-        } else {
-            None
-        };
+        let id = self.hook_id.map(services::hook_call::Id::HookId);
 
         let call_spec = self
             .call
@@ -71,9 +65,6 @@ impl ToProtobuf for HookCall {
 impl FromProtobuf<services::HookCall> for HookCall {
     fn from_protobuf(pb: services::HookCall) -> crate::Result<Self> {
         let (full_hook_id, hook_id) = match pb.id {
-            Some(services::hook_call::Id::FullHookId(id)) => {
-                (Some(HookId::from_protobuf(id)?), None)
-            }
             Some(services::hook_call::Id::HookId(id)) => (None, Some(id)),
             None => (None, None),
         };

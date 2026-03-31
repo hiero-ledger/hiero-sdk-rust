@@ -5,7 +5,7 @@ use std::path::Path;
 
 use clap::Parser;
 use hedera::{
-    AccountCreateTransaction, AccountId, AccountUpdateTransaction, Client, ContractCreateTransaction, ContractId, EvmHookSpec, Hbar, HookCreationDetails, HookExtensionPoint, LambdaEvmHook, PrivateKey
+    AccountCreateTransaction, AccountId, AccountUpdateTransaction, Client, ContractCreateTransaction, ContractId, EvmHookSpec, Hbar, HookCreationDetails, HookExtensionPoint, EvmHook, PrivateKey
 };
 
 #[derive(Parser, Debug)]
@@ -86,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Create a lambda EVM hook
     let spec = EvmHookSpec::new(Some(contract_id));
-    let lambda_hook = LambdaEvmHook::new(spec, vec![]);
+    let lambda_hook = EvmHook::new(spec, vec![]);
 
     // Create hook creation details
     let admin_key = client.get_operator_public_key().unwrap();
@@ -120,7 +120,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Create basic lambda hooks with no storage updates
     let spec1 = EvmHookSpec::new(Some(contract_id));
-    let basic_hook = LambdaEvmHook::new(spec1, vec![]);
+    let basic_hook = EvmHook::new(spec1, vec![]);
     let mut hook_with_id_1 = HookCreationDetails::new(
         HookExtensionPoint::AccountAllowanceHook,
         1,
@@ -129,7 +129,7 @@ async fn main() -> anyhow::Result<()> {
     hook_with_id_1.admin_key = Some(admin_key.into());
 
     let spec2 = EvmHookSpec::new(Some(contract_id));
-    let basic_hook2 = LambdaEvmHook::new(spec2, vec![]);
+    let basic_hook2 = EvmHook::new(spec2, vec![]);
     let mut hook_with_id_2 = HookCreationDetails::new(
         HookExtensionPoint::AccountAllowanceHook,
         2,

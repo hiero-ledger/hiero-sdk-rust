@@ -5,7 +5,7 @@ use std::path::Path;
 
 use clap::Parser;
 use hedera::{
-    AccountCreateTransaction, AccountId, Client, ContractCreateTransaction, ContractId, EvmHookCall, EvmHookSpec, FungibleHookCall, FungibleHookType, Hbar, HookCall, HookCreationDetails, HookExtensionPoint, LambdaEvmHook, NftHookCall, NftHookType, PrivateKey, TokenCreateTransaction, TokenMintTransaction, TokenType, TransferTransaction
+    AccountCreateTransaction, AccountId, Client, ContractCreateTransaction, ContractId, EvmHookCall, EvmHookSpec, FungibleHookCall, FungibleHookType, Hbar, HookCall, HookCreationDetails, HookExtensionPoint, EvmHook, NftHookCall, NftHookType, PrivateKey, TokenCreateTransaction, TokenMintTransaction, TokenType, TransferTransaction
 };
 
 #[derive(Parser, Debug)]
@@ -77,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
 
     let hook_id = 1;
     let spec = EvmHookSpec::new(Some(hook_contract_id));
-    let lambda_hook = LambdaEvmHook::new(spec, vec![]);
+    let lambda_hook = EvmHook::new(spec, vec![]);
     let hook_details = HookCreationDetails::new(
         HookExtensionPoint::AccountAllowanceHook,
         hook_id,

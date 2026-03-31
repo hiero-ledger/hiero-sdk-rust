@@ -7,7 +7,7 @@ use tonic::transport::Channel;
 
 use crate::hooks::{
     HookCreationDetails,
-    LambdaEvmHook,
+    EvmHook,
 };
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
@@ -307,7 +307,7 @@ impl AccountCreateTransaction {
         self
     }
 
-    pub fn add_lambda_evm_hook(&mut self, hook: LambdaEvmHook) -> &mut Self {
+    pub fn add_evm_hook(&mut self, hook: EvmHook) -> &mut Self {
         // Helper to add a Lambda EVM hook with default extension point and hook ID
         use crate::hooks::HookExtensionPoint;
         let details =
@@ -460,7 +460,7 @@ mod tests {
         Hbar,
         HookCreationDetails,
         HookExtensionPoint,
-        LambdaEvmHook,
+        EvmHook,
         PublicKey,
     };
 
@@ -758,7 +758,7 @@ mod tests {
         let hooks = vec![HookCreationDetails::new(
             HookExtensionPoint::AccountAllowanceHook,
             0,
-            Some(LambdaEvmHook::new(EvmHookSpec::new(Some(contract_id)), vec![])),
+            Some(EvmHook::new(EvmHookSpec::new(Some(contract_id)), vec![])),
         )];
 
         let tx = services::CryptoCreateTransactionBody {

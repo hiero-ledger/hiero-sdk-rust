@@ -1,8 +1,8 @@
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::hooks::{
     HookExtensionPoint,
-    LambdaEvmHook,
+    EvmHook,
 };
 use crate::key::Key;
 use crate::{
@@ -18,7 +18,7 @@ pub struct HookCreationDetails {
     /// The ID to create the hook at.
     pub hook_id: i64,
     /// The hook implementation (currently only Lambda EVM hooks).
-    pub lambda_evm_hook: Option<LambdaEvmHook>,
+    pub evm_hook: Option<EvmHook>,
     /// Admin key for the hook (if any).
     pub admin_key: Option<Key>,
 }
@@ -28,9 +28,9 @@ impl HookCreationDetails {
     pub fn new(
         extension_point: HookExtensionPoint,
         hook_id: i64,
-        lambda_evm_hook: Option<LambdaEvmHook>,
+        evm_hook: Option<EvmHook>,
     ) -> Self {
-        Self { extension_point, hook_id, lambda_evm_hook, admin_key: None }
+        Self { extension_point, hook_id, evm_hook, admin_key: None }
     }
 }
 
@@ -39,9 +39,9 @@ impl ToProtobuf for HookCreationDetails {
 
     fn to_protobuf(&self) -> Self::Protobuf {
         let hook = self
-            .lambda_evm_hook
+            .evm_hook
             .as_ref()
-            .map(|h| services::hook_creation_details::Hook::LambdaEvmHook(h.to_protobuf()));
+            .map(|h| services::hook_creation_details::Hook::EvmHook(h.to_protobuf()));
 
         services::HookCreationDetails {
             extension_point: self.extension_point as i32,
@@ -56,15 +56,15 @@ impl FromProtobuf<services::HookCreationDetails> for HookCreationDetails {
     fn from_protobuf(pb: services::HookCreationDetails) -> crate::Result<Self> {
         let extension_point = HookExtensionPoint::try_from(pb.extension_point)?;
 
-        let lambda_evm_hook = match pb.hook {
-            Some(services::hook_creation_details::Hook::LambdaEvmHook(hook)) => {
-                Some(LambdaEvmHook::from_protobuf(hook)?)
+        let evm_hook = match pb.hook {
+            Some(services::hook_creation_details::Hook::EvmHook(hook)) => {
+                Some(EvmHook::from_protobuf(hook)?)
             }
             None => None,
         };
 
         let admin_key = pb.admin_key.map(Key::from_protobuf).transpose()?;
 
-        Ok(Self { extension_point, hook_id: pb.hook_id, lambda_evm_hook, admin_key })
+        Ok(Self { extension_point, hook_id: pb.hook_id, evm_hook, admin_key })
     }
 }

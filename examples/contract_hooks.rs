@@ -7,7 +7,7 @@ use std::path::Path;
 
 use clap::Parser;
 use hedera::{
-    AccountId, Client, ContractCreateTransaction, ContractId, ContractUpdateTransaction, EvmHookSpec, HookCreationDetails, HookExtensionPoint, LambdaEvmHook, PrivateKey
+    AccountId, Client, ContractCreateTransaction, ContractId, ContractUpdateTransaction, EvmHookSpec, HookCreationDetails, HookExtensionPoint, EvmHook, PrivateKey
 };
 
 #[derive(Parser, Debug)]
@@ -87,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Build a basic lambda EVM hook (no admin key, no storage updates)
     let spec = EvmHookSpec::new(Some(hook_contract_id));
-    let lambda_hook = LambdaEvmHook::new(spec, vec![]);
+    let lambda_hook = EvmHook::new(spec, vec![]);
     let hook_with_id_1 = HookCreationDetails::new(
         HookExtensionPoint::AccountAllowanceHook,
         1,
@@ -118,7 +118,7 @@ async fn main() -> anyhow::Result<()> {
 
     let admin_key = client.get_operator_public_key().unwrap();
     let spec3 = EvmHookSpec::new(Some(hook_contract_id));
-    let basic_hook = LambdaEvmHook::new(spec3, vec![]);
+    let basic_hook = EvmHook::new(spec3, vec![]);
     let mut hook_with_id_3 = HookCreationDetails::new(
         HookExtensionPoint::AccountAllowanceHook,
         3,

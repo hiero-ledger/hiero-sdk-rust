@@ -1,4 +1,4 @@
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::{
     FromProtobuf,
@@ -7,7 +7,7 @@ use crate::{
 
 /// A slot in the storage of a lambda EVM hook.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LambdaStorageSlot {
+pub struct EvmHookStorageSlot {
     /// The key of the slot.
     pub key: Vec<u8>,
 
@@ -15,8 +15,8 @@ pub struct LambdaStorageSlot {
     pub value: Vec<u8>,
 }
 
-impl LambdaStorageSlot {
-    /// Create a new `LambdaStorageSlot`.
+impl EvmHookStorageSlot {
+    /// Create a new `EvmHookStorageSlot`.
     pub fn new(key: Vec<u8>, value: Vec<u8>) -> Self {
         Self { key, value }
     }
@@ -42,16 +42,16 @@ impl LambdaStorageSlot {
     }
 }
 
-impl ToProtobuf for LambdaStorageSlot {
-    type Protobuf = services::LambdaStorageSlot;
+impl ToProtobuf for EvmHookStorageSlot {
+    type Protobuf = services::EvmHookStorageSlot;
 
     fn to_protobuf(&self) -> Self::Protobuf {
-        services::LambdaStorageSlot { key: self.key.clone(), value: self.value.clone() }
+        services::EvmHookStorageSlot { key: self.key.clone(), value: self.value.clone() }
     }
 }
 
-impl FromProtobuf<services::LambdaStorageSlot> for LambdaStorageSlot {
-    fn from_protobuf(pb: services::LambdaStorageSlot) -> crate::Result<Self> {
+impl FromProtobuf<services::EvmHookStorageSlot> for EvmHookStorageSlot {
+    fn from_protobuf(pb: services::EvmHookStorageSlot) -> crate::Result<Self> {
         Ok(Self { key: pb.key, value: pb.value })
     }
 }

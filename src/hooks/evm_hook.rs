@@ -1,8 +1,8 @@
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::hooks::{
     EvmHookSpec,
-    LambdaStorageUpdate,
+    EvmHookStorageUpdate,
 };
 use crate::{
     FromProtobuf,
@@ -10,32 +10,32 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LambdaEvmHook {
+pub struct EvmHook {
     pub spec: EvmHookSpec,
-    pub storage_updates: Vec<LambdaStorageUpdate>,
+    pub storage_updates: Vec<EvmHookStorageUpdate>,
 }
 
-impl LambdaEvmHook {
-    pub fn new(spec: EvmHookSpec, storage_updates: Vec<LambdaStorageUpdate>) -> Self {
+impl EvmHook {
+    pub fn new(spec: EvmHookSpec, storage_updates: Vec<EvmHookStorageUpdate>) -> Self {
         Self { spec, storage_updates }
     }
 
-    pub fn set_storage_updates(&mut self, storage_updates: Vec<LambdaStorageUpdate>) -> &mut Self {
+    pub fn set_storage_updates(&mut self, storage_updates: Vec<EvmHookStorageUpdate>) -> &mut Self {
         self.storage_updates = storage_updates;
         self
     }
 
-    pub fn add_storage_update(&mut self, storage_update: LambdaStorageUpdate) -> &mut Self {
+    pub fn add_storage_update(&mut self, storage_update: EvmHookStorageUpdate) -> &mut Self {
         self.storage_updates.push(storage_update);
         self
     }
 }
 
-impl ToProtobuf for LambdaEvmHook {
-    type Protobuf = services::LambdaEvmHook;
+impl ToProtobuf for EvmHook {
+    type Protobuf = services::EvmHook;
 
     fn to_protobuf(&self) -> Self::Protobuf {
-        services::LambdaEvmHook {
+        services::EvmHook {
             spec: Some(self.spec.to_protobuf()),
             storage_updates: self
                 .storage_updates
@@ -46,8 +46,8 @@ impl ToProtobuf for LambdaEvmHook {
     }
 }
 
-impl FromProtobuf<services::LambdaEvmHook> for LambdaEvmHook {
-    fn from_protobuf(pb: services::LambdaEvmHook) -> crate::Result<Self> {
+impl FromProtobuf<services::EvmHook> for EvmHook {
+    fn from_protobuf(pb: services::EvmHook) -> crate::Result<Self> {
         let spec = pb
             .spec
             .map(EvmHookSpec::from_protobuf)
@@ -57,7 +57,7 @@ impl FromProtobuf<services::LambdaEvmHook> for LambdaEvmHook {
         let storage_updates = pb
             .storage_updates
             .into_iter()
-            .map(LambdaStorageUpdate::from_protobuf)
+            .map(EvmHookStorageUpdate::from_protobuf)
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Self { spec, storage_updates })
@@ -68,62 +68,62 @@ impl FromProtobuf<services::LambdaEvmHook> for LambdaEvmHook {
 mod tests {
     use super::*;
     use crate::contract::ContractId;
-    use crate::hooks::LambdaStorageSlot;
+    use crate::hooks::EvmHookStorageSlot;
 
     #[test]
-    fn test_lambda_evm_hook_creation() {
+    fn test_evm_hook_creation() {
         let contract_id = ContractId::new(0, 0, 123);
         let spec = EvmHookSpec::new(Some(contract_id));
-        let storage_slot = LambdaStorageSlot::new(vec![1, 2, 3], vec![4, 5, 6]);
-        let storage_update = LambdaStorageUpdate::StorageSlot(storage_slot);
+        let storage_slot = EvmHookStorageSlot::new(vec![1, 2, 3], vec![4, 5, 6]);
+        let storage_update = EvmHookStorageUpdate::StorageSlot(storage_slot);
         let storage_updates = vec![storage_update];
 
-        let hook = LambdaEvmHook::new(spec.clone(), storage_updates.clone());
+        let hook = EvmHook::new(spec.clone(), storage_updates.clone());
 
         assert_eq!(hook.spec, spec);
         assert_eq!(hook.storage_updates, storage_updates);
     }
 
     #[test]
-    fn test_lambda_evm_hook_with_spec_only() {
+    fn test_evm_hook_with_spec_only() {
         let contract_id = ContractId::new(0, 0, 456);
         let spec = EvmHookSpec::new(Some(contract_id));
-        let hook = LambdaEvmHook::new(spec.clone(), vec![]);
+        let hook = EvmHook::new(spec.clone(), vec![]);
 
         assert_eq!(hook.spec, spec);
         assert_eq!(hook.storage_updates.len(), 0);
     }
 
     #[test]
-    fn test_lambda_evm_hook_setters() {
+    fn test_evm_hook_setters() {
         let contract_id = ContractId::new(0, 0, 789);
         let spec = EvmHookSpec::new(Some(contract_id));
-        let mut hook = LambdaEvmHook::new(spec, vec![]);
+        let mut hook = EvmHook::new(spec, vec![]);
 
-        let storage_slot = LambdaStorageSlot::new(vec![1, 2, 3], vec![4, 5, 6]);
-        let storage_update = LambdaStorageUpdate::StorageSlot(storage_slot);
+        let storage_slot = EvmHookStorageSlot::new(vec![1, 2, 3], vec![4, 5, 6]);
+        let storage_update = EvmHookStorageUpdate::StorageSlot(storage_slot);
         let storage_updates = vec![storage_update.clone()];
 
         hook.set_storage_updates(storage_updates.clone());
         assert_eq!(hook.storage_updates, storage_updates);
 
-        let another_slot = LambdaStorageSlot::new(vec![7, 8, 9], vec![10, 11, 12]);
-        let another_update = LambdaStorageUpdate::StorageSlot(another_slot);
+        let another_slot = EvmHookStorageSlot::new(vec![7, 8, 9], vec![10, 11, 12]);
+        let another_update = EvmHookStorageUpdate::StorageSlot(another_slot);
         hook.add_storage_update(another_update);
 
         assert_eq!(hook.storage_updates.len(), 2);
     }
 
     #[test]
-    fn test_lambda_evm_hook_protobuf_roundtrip() {
+    fn test_evm_hook_protobuf_roundtrip() {
         let contract_id = ContractId::new(0, 0, 111);
         let spec = EvmHookSpec::new(Some(contract_id));
-        let storage_slot = LambdaStorageSlot::new(vec![1, 2, 3], vec![4, 5, 6]);
-        let storage_update = LambdaStorageUpdate::StorageSlot(storage_slot);
-        let original = LambdaEvmHook::new(spec, vec![storage_update]);
+        let storage_slot = EvmHookStorageSlot::new(vec![1, 2, 3], vec![4, 5, 6]);
+        let storage_update = EvmHookStorageUpdate::StorageSlot(storage_slot);
+        let original = EvmHook::new(spec, vec![storage_update]);
 
         let protobuf = original.to_protobuf();
-        let reconstructed = LambdaEvmHook::from_protobuf(protobuf).unwrap();
+        let reconstructed = EvmHook::from_protobuf(protobuf).unwrap();
 
         assert_eq!(original, reconstructed);
     }

@@ -8,10 +8,10 @@ pub mod hook_entity_id;
 pub mod hook_extension_point;
 pub mod hook_id;
 pub mod hook_type;
-pub mod lambda_evm_hook;
-pub mod lambda_s_store_transaction;
-pub mod lambda_storage_slot;
-pub mod lambda_storage_update;
+pub mod evm_hook;
+pub mod hook_store_transaction;
+pub mod evm_hook_storage_slot;
+pub mod evm_hook_storage_update;
 pub mod nft_hook_call;
 pub mod nft_hook_type;
 
@@ -24,12 +24,12 @@ pub use hook_creation_details::HookCreationDetails;
 pub use hook_entity_id::HookEntityId;
 pub use hook_extension_point::HookExtensionPoint;
 pub use hook_id::HookId;
-pub use lambda_evm_hook::LambdaEvmHook;
-pub use lambda_s_store_transaction::{
-    LambdaSStoreTransaction,
-    LambdaSStoreTransactionData,
+pub use evm_hook::EvmHook;
+pub use hook_store_transaction::{
+    HookStoreTransaction,
+    HookStoreTransactionData,
 };
-pub use lambda_storage_slot::LambdaStorageSlot;
-pub use lambda_storage_update::LambdaStorageUpdate;
+pub use evm_hook_storage_slot::EvmHookStorageSlot;
+pub use evm_hook_storage_update::EvmHookStorageUpdate;
 pub use nft_hook_call::NftHookCall;
 pub use nft_hook_type::NftHookType;

@@ -432,7 +432,7 @@ mod tests {
         Hbar,
         HookCreationDetails,
         HookExtensionPoint,
-        LambdaEvmHook,
+        EvmHook,
         PublicKey,
     };
 
@@ -742,7 +742,7 @@ mod tests {
         let hooks = vec![HookCreationDetails::new(
             HookExtensionPoint::AccountAllowanceHook,
             0,
-            Some(LambdaEvmHook::new(EvmHookSpec::new(Some(contract_id)), vec![])),
+            Some(EvmHook::new(EvmHookSpec::new(Some(contract_id)), vec![])),
         )];
 
         let tx = services::ContractCreateTransactionBody {

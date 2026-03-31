@@ -145,7 +145,7 @@ impl TransferTransaction {
                 tt.expected_decimals = expected_decimals;
             } else {
                 // Found TokenTransfer but no matching account - push new transfer
-                tt.transfers.push(Transfer { account_id, amount, is_approval: approved });
+                tt.transfers.push(transfer.clone());
                 tt.expected_decimals = expected_decimals;
             }
         } else {
@@ -154,7 +154,7 @@ impl TransferTransaction {
                 token_id,
                 expected_decimals,
                 nft_transfers: Vec::new(),
-                transfers: vec![Transfer { account_id, amount, is_approval: approved }],
+                transfers: vec![transfer],
             });
         }
 
@@ -330,22 +330,22 @@ impl TransferTransaction {
         self._token_transfer(token_id, account_id, amount, false, None, Some(hook_call))
     }
 
-    /// Add an NFT transfer with both sender and receiver hook calls.
+    /// Add an NFT transfer with optional sender and/or receiver hook calls.
     pub fn add_nft_transfer_with_hook(
         &mut self,
         nft_id: impl Into<NftId>,
         sender: AccountId,
         receiver: AccountId,
-        sender_hook_call: NftHookCall,
-        receiver_hook_call: NftHookCall,
+        sender_hook_call: Option<NftHookCall>,
+        receiver_hook_call: Option<NftHookCall>,
     ) -> &mut Self {
         self._nft_transfer(
             nft_id.into(),
             sender,
             receiver,
             false,
-            Some(sender_hook_call),
-            Some(receiver_hook_call),
+            sender_hook_call,
+            receiver_hook_call,
         )
     }
 }

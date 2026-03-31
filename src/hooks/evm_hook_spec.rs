@@ -1,4 +1,4 @@
-use hedera_proto::services;
+use hiero_sdk_proto::services;
 
 use crate::contract::ContractId;
 use crate::{
@@ -76,7 +76,7 @@ mod tests {
         let pb = spec.to_protobuf();
 
         let got = match pb.bytecode_source {
-            Some(hedera_proto::services::evm_hook_spec::BytecodeSource::ContractId(id)) => {
+            Some(hiero_sdk_proto::services::evm_hook_spec::BytecodeSource::ContractId(id)) => {
                 Some(ContractId::from_protobuf(id).unwrap())
             }
             None => None,
@@ -95,9 +95,9 @@ mod tests {
     #[test]
     fn from_protobuf_with_contract_id_parses() {
         let cid = ContractId::new(0, 0, 555);
-        let pb = hedera_proto::services::EvmHookSpec {
+        let pb = hiero_sdk_proto::services::EvmHookSpec {
             bytecode_source: Some(
-                hedera_proto::services::evm_hook_spec::BytecodeSource::ContractId(
+                hiero_sdk_proto::services::evm_hook_spec::BytecodeSource::ContractId(
                     cid.to_protobuf(),
                 ),
             ),
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn from_protobuf_without_contract_id_parses_none() {
-        let pb = hedera_proto::services::EvmHookSpec { bytecode_source: None };
+        let pb = hiero_sdk_proto::services::EvmHookSpec { bytecode_source: None };
         let spec = EvmHookSpec::from_protobuf(pb).unwrap();
         assert!(spec.contract_id.is_none());
     }

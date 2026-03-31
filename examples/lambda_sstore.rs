@@ -5,7 +5,7 @@ use std::path::Path;
 
 use clap::Parser;
 use hedera::{
-    AccountCreateTransaction, AccountId, Client, ContractCreateTransaction, ContractId, EvmHookSpec, Hbar, HookCreationDetails, HookEntityId, HookExtensionPoint, HookId, LambdaEvmHook, LambdaSStoreTransaction, LambdaStorageSlot, LambdaStorageUpdate, PrivateKey
+    AccountCreateTransaction, AccountId, Client, ContractCreateTransaction, ContractId, EvmHookSpec, Hbar, HookCreationDetails, HookEntityId, HookExtensionPoint, HookId, EvmHook, HookStoreTransaction, EvmHookStorageSlot, EvmHookStorageUpdate, PrivateKey
 };
 
 #[derive(Parser, Debug)]
@@ -84,7 +84,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Create a lambda EVM hook
     let spec = EvmHookSpec::new(Some(contract_id));
-    let lambda_hook = LambdaEvmHook::new(spec, vec![]);
+    let lambda_hook = EvmHook::new(spec, vec![]);
 
     // Create hook creation details
     let admin_key = client.get_operator_public_key().unwrap();
@@ -111,9 +111,9 @@ async fn main() -> anyhow::Result<()> {
     println!("Successfully created account with lambda hook!");
 
     /*
-     * Step 2: Demonstrate LambdaSStoreTransaction - the core functionality.
+     * Step 2: Demonstrate HookStoreTransaction - the core functionality.
      */
-    println!("\n=== LambdaSStoreTransaction Example ===");
+    println!("\n=== HookStoreTransaction Example ===");
 
     // Create storage key (1 byte filled with value 1)
     let mut storage_key = vec![0u8; 1];
@@ -123,8 +123,8 @@ async fn main() -> anyhow::Result<()> {
     let mut storage_value = vec![0u8; 32];
     storage_value.fill(200);
 
-    let storage_slot = LambdaStorageSlot::new(storage_key.clone(), storage_value.clone());
-    let storage_update = LambdaStorageUpdate::StorageSlot(storage_slot);
+    let storage_slot = EvmHookStorageSlot::new(storage_key.clone(), storage_value.clone());
+    let storage_update = EvmHookStorageUpdate::StorageSlot(storage_slot);
 
     // Create HookId for the existing hook (accountId with hook ID 1)
     let hook_entity_id = HookEntityId::new(Some(account_id));
@@ -140,9 +140,9 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    // Execute LambdaSStoreTransaction
-    println!("Executing LambdaSStoreTransaction...");
-    let lambda_store_receipt = LambdaSStoreTransaction::new()
+    // Execute HookStoreTransaction
+    println!("Executing HookStoreTransaction...");
+    let lambda_store_receipt = HookStoreTransaction::new()
         .set_hook_id(hook_id)
         .add_storage_update(storage_update)
         .freeze_with(&client)?
