@@ -57,7 +57,7 @@ pem = "3.0.6"
 cbc = "0.1.2"
 aes = "0.8.3"
 md5 = "0.8.0"
-sec1 = { version = "0.7.3", features = ["der"] }
+sec1 = { version = "0.8.1", features = ["der"] }
 tower = { version = "0.5.2", features = ["util"] }
 openssl = "0.10.72"
 hyper-util = "0.1.20"
