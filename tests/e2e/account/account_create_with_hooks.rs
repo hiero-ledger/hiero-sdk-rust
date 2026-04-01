@@ -27,6 +27,7 @@ async fn create_hook_contract(client: &hiero_sdk::Client) -> anyhow::Result<Cont
     let receipt = ContractCreateTransaction::new()
         .bytecode(bytecode)
         .gas(300_000)
+        .max_transaction_fee(Hbar::new(10))
         .execute(client)
         .await?
         .get_receipt(client)
@@ -54,6 +55,7 @@ async fn can_create_account_with_basic_lambda_hook() -> anyhow::Result<()> {
     let receipt = AccountCreateTransaction::new()
         .key(key.public_key())
         .initial_balance(Hbar::new(1))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(key)
@@ -91,6 +93,7 @@ async fn can_create_account_with_lambda_hook_and_storage() -> anyhow::Result<()>
     let receipt = AccountCreateTransaction::new()
         .key(key.public_key())
         .initial_balance(Hbar::new(1))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(key)
@@ -133,6 +136,7 @@ async fn cannot_create_account_with_duplicate_hook_ids() -> anyhow::Result<()> {
     let result = AccountCreateTransaction::new()
         .key(key.public_key())
         .initial_balance(Hbar::new(1))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details1)
         .add_hook(hook_details2)
         .freeze_with(&client)?
@@ -176,6 +180,7 @@ async fn cannot_create_account_with_lambda_hook_without_contract_id() -> anyhow:
     let result = AccountCreateTransaction::new()
         .key(key.public_key())
         .initial_balance(Hbar::new(1))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(key)
@@ -219,6 +224,7 @@ async fn can_create_account_with_hook_admin_key() -> anyhow::Result<()> {
     let receipt = AccountCreateTransaction::new()
         .key(account_key.public_key())
         .initial_balance(Hbar::new(1))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(account_key)

@@ -9,7 +9,6 @@ use hiero_sdk::{
     EvmHookSpec,
     EvmHookStorageSlot,
     EvmHookStorageUpdate,
-    FileDeleteTransaction,
     HookCreationDetails,
     HookExtensionPoint,
     PrivateKey,
@@ -78,13 +77,6 @@ async fn basic_contract_create() -> anyhow::Result<()> {
     ContractDeleteTransaction::new()
         .contract_id(contract_id)
         .transfer_account_id(op.account_id)
-        .execute(&client)
-        .await?
-        .get_receipt(&client)
-        .await?;
-
-    FileDeleteTransaction::new()
-        .file_id(file_id)
         .execute(&client)
         .await?
         .get_receipt(&client)

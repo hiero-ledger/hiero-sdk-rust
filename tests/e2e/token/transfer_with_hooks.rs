@@ -36,6 +36,7 @@ async fn create_hook_contract(client: &hiero_sdk::Client) -> anyhow::Result<Cont
     let receipt = ContractCreateTransaction::new()
         .bytecode(bytecode)
         .gas(1_700_000)
+        .max_transaction_fee(Hbar::new(10))
         .execute(client)
         .await?
         .get_receipt(client)
@@ -64,6 +65,7 @@ async fn can_transfer_hbar_with_pre_tx_allowance_hook() -> anyhow::Result<()> {
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
         .initial_balance(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(sender_key.clone())
@@ -97,6 +99,7 @@ async fn can_transfer_hbar_with_pre_tx_allowance_hook() -> anyhow::Result<()> {
     let transfer_receipt = TransferTransaction::new()
         .add_hbar_transfer_with_hook(sender_id, Hbar::from_tinybars(-100), fungible_hook_call)
         .hbar_transfer(receiver_id, Hbar::from_tinybars(100))
+        .max_transaction_fee(Hbar::new(10))
         .freeze_with(&client)?
         .sign(sender_key)
         .execute(&client)
@@ -129,6 +132,7 @@ async fn can_transfer_hbar_with_pre_post_tx_allowance_hook() -> anyhow::Result<(
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
         .initial_balance(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(sender_key.clone())
@@ -162,6 +166,7 @@ async fn can_transfer_hbar_with_pre_post_tx_allowance_hook() -> anyhow::Result<(
     let transfer_receipt = TransferTransaction::new()
         .add_hbar_transfer_with_hook(sender_id, Hbar::from_tinybars(-100), fungible_hook_call)
         .hbar_transfer(receiver_id, Hbar::from_tinybars(100))
+        .max_transaction_fee(Hbar::new(10))
         .freeze_with(&client)?
         .sign(sender_key)
         .execute(&client)
@@ -195,6 +200,7 @@ async fn can_transfer_fungible_token_with_hook() -> anyhow::Result<()> {
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
         .initial_balance(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(sender_key.clone())
@@ -249,6 +255,7 @@ async fn can_transfer_fungible_token_with_hook() -> anyhow::Result<()> {
     let transfer_receipt = TransferTransaction::new()
         .add_token_transfer_with_hook(token_id, sender_id, -10, fungible_hook_call)
         .token_transfer(token_id, receiver_id, 10)
+        .max_transaction_fee(Hbar::new(10))
         .freeze_with(&client)?
         .sign(sender_key)
         .execute(&client)
@@ -282,6 +289,7 @@ async fn can_transfer_nft_with_sender_hook() -> anyhow::Result<()> {
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
         .initial_balance(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(sender_key.clone())
@@ -351,6 +359,7 @@ async fn can_transfer_nft_with_sender_hook() -> anyhow::Result<()> {
             Some(sender_nft_hook_call),
             None,
         )
+        .max_transaction_fee(Hbar::new(10))
         .freeze_with(&client)?
         .sign(sender_key)
         .execute(&client)
@@ -396,6 +405,7 @@ async fn can_transfer_nft_with_receiver_hook() -> anyhow::Result<()> {
         .key(receiver_key.public_key())
         .initial_balance(Hbar::new(1))
         .max_automatic_token_associations(-1)
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(receiver_key.clone())
@@ -453,6 +463,7 @@ async fn can_transfer_nft_with_receiver_hook() -> anyhow::Result<()> {
             None,
             Some(receiver_nft_hook_call),
         )
+        .max_transaction_fee(Hbar::new(10))
         .freeze_with(&client)?
         .sign(sender_key)
         .execute(&client)
@@ -486,6 +497,7 @@ async fn can_transfer_nft_with_both_sender_and_receiver_hooks() -> anyhow::Resul
     let sender_receipt = AccountCreateTransaction::new()
         .key(sender_key.public_key())
         .initial_balance(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details.clone())
         .freeze_with(&client)?
         .sign(sender_key.clone())
@@ -501,6 +513,7 @@ async fn can_transfer_nft_with_both_sender_and_receiver_hooks() -> anyhow::Resul
         .key(receiver_key.public_key())
         .initial_balance(Hbar::new(1))
         .max_automatic_token_associations(-1)
+        .max_transaction_fee(Hbar::new(10))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(receiver_key.clone())
@@ -565,6 +578,7 @@ async fn can_transfer_nft_with_both_sender_and_receiver_hooks() -> anyhow::Resul
             Some(sender_nft_hook_call),
             Some(receiver_nft_hook_call),
         )
+        .max_transaction_fee(Hbar::new(10))
         .freeze_with(&client)?
         .sign(sender_key)
         .execute(&client)
