@@ -30,6 +30,7 @@ async fn create_hook_contract(client: &hiero_sdk::Client) -> anyhow::Result<Cont
     let receipt = ContractCreateTransaction::new()
         .bytecode(bytecode)
         .gas(300_000)
+        .max_transaction_fee(Hbar::new(10))
         .execute(client)
         .await?
         .get_receipt(client)
@@ -51,6 +52,7 @@ async fn create_test_contract(
         .bytecode(bytecode)
         .contract_memo("[e2e::ContractCreateTransaction]")
         .auto_renew_account_id(operator_account_id)
+        .max_transaction_fee(Hbar::new(10))
         .execute(client)
         .await?
         .get_receipt(client)
@@ -191,6 +193,7 @@ async fn contract_update_adds_basic_evm_hook() -> anyhow::Result<()> {
     ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .add_hook(hook_details)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -229,6 +232,7 @@ async fn contract_update_fails_with_duplicate_hook_ids() -> anyhow::Result<()> {
         .contract_id(contract_id)
         .add_hook(hook_details1)
         .add_hook(hook_details2)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await;
 
@@ -263,6 +267,7 @@ async fn contract_update_fails_when_hook_id_in_use() -> anyhow::Result<()> {
     ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .add_hook(hook_details)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -274,6 +279,7 @@ async fn contract_update_fails_when_hook_id_in_use() -> anyhow::Result<()> {
     let result = ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .add_hook(duplicate_hook_details)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -311,6 +317,7 @@ async fn contract_update_adds_evm_hook_with_storage_updates() -> anyhow::Result<
     ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .add_hook(hook_details)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -342,6 +349,7 @@ async fn contract_update_deletes_hook_by_id() -> anyhow::Result<()> {
     ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .add_hook(hook_details)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -350,6 +358,7 @@ async fn contract_update_deletes_hook_by_id() -> anyhow::Result<()> {
     let delete_receipt = ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .delete_hook(1)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -383,6 +392,7 @@ async fn contract_update_fails_when_deleting_nonexistent_hook() -> anyhow::Resul
     ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .add_hook(hook_details)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -391,6 +401,7 @@ async fn contract_update_fails_when_deleting_nonexistent_hook() -> anyhow::Resul
     let result = ContractUpdateTransaction::new()
         .contract_id(contract_id)
         .delete_hook(999)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -425,6 +436,7 @@ async fn contract_update_fails_when_adding_and_deleting_same_hook_id() -> anyhow
         .contract_id(contract_id)
         .add_hook(hook_details)
         .delete_hook(1)
+        .max_transaction_fee(Hbar::new(10))
         .execute(&client)
         .await?
         .get_receipt(&client)
