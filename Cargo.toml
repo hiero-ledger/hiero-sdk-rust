@@ -47,7 +47,7 @@ tinystr = { version = "0.7.0", default-features = false }
 arc-swap = "1.8.2"
 rlp = "0.6.1"
 bytes = { version = "1.11.1", default-features = false }
-pin-project-lite = "0.2.16"
+pin-project-lite = "0.2.17"
 unsize = "1.1.0"
 parking_lot = "0.12.5"
 serde_json = { version = "1.0.148", optional = true }
