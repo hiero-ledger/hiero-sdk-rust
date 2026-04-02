@@ -92,5 +92,6 @@ NodeCreate(
         ),
         decline_reward: false,
         grpc_proxy_endpoint: None,
+        associated_registered_node: [],
     },
 )

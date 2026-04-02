@@ -798,6 +798,9 @@ pub enum FeeDataType {
 
     /// The resource prices are scoped to a submit message operation with custom fees.
     SubmitMessageWithCustomFees,
+
+    /// The resource prices are scoped to a crypto transfer with hooks.
+    CryptoTransferWithHooks,
 }
 
 impl FromProtobuf<services::SubType> for FeeDataType {
@@ -814,8 +817,7 @@ impl FromProtobuf<services::SubType> for FeeDataType {
             SubType::ScheduleCreateContractCall => Self::ScheduleCreateContractCall,
             SubType::TopicCreateWithCustomFees => Self::TopicCreateWithCustomFees,
             SubType::SubmitMessageWithCustomFees => Self::SubmitMessageWithCustomFees,
-            // Hooks are not implemented, map to Default
-            SubType::CryptoTransferWithHooks => Self::Default,
+            SubType::CryptoTransferWithHooks => Self::CryptoTransferWithHooks,
         };
 
         Ok(value)
@@ -838,6 +840,7 @@ impl ToProtobuf for FeeDataType {
             Self::ScheduleCreateContractCall => SubType::ScheduleCreateContractCall,
             Self::TopicCreateWithCustomFees => SubType::TopicCreateWithCustomFees,
             Self::SubmitMessageWithCustomFees => SubType::SubmitMessageWithCustomFees,
+            Self::CryptoTransferWithHooks => SubType::CryptoTransferWithHooks,
         }
     }
 }

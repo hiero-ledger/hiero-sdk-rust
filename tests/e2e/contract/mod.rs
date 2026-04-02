@@ -9,18 +9,20 @@ use hiero_sdk::{
 mod bytecode;
 mod create;
 mod create_flow;
+mod create_with_hooks;
 mod delete;
 mod execute;
 mod info;
 mod nonce_info;
 mod update;
+mod update_with_hooks;
 
 enum ContractAdminKey {
     Operator,
     // Custom(PrivateKey),
 }
 
-const SMART_CONTRACT_BYTECODE: &str = concat!(
+pub(super) const SMART_CONTRACT_BYTECODE: &str = concat!(
     "608060405234801561001057600080fd5b506040516104d73803806104d7833981810160405260208110156100",
     "3357600080fd5b810190808051604051939291908464010000000082111561005357600080fd5b908301906020",
     "82018581111561006857600080fd5b825164010000000081118282018810171561008257600080fd5b82525081",

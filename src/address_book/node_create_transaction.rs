@@ -314,6 +314,7 @@ impl ToProtobuf for NodeCreateTransactionData {
             admin_key: self.admin_key.to_protobuf(),
             decline_reward: self.decline_reward,
             grpc_proxy_endpoint: self.grpc_proxy_endpoint.as_ref().map(|it| it.to_protobuf()),
+            associated_registered_node: Vec::new(),
         }
     }
 }
@@ -412,6 +413,7 @@ mod tests {
             admin_key: Some(unused_private_key().public_key().to_protobuf()),
             decline_reward: false,
             grpc_proxy_endpoint: None,
+            associated_registered_node: Vec::new(),
         };
 
         let data = NodeCreateTransactionData::from_protobuf(tx).unwrap();
