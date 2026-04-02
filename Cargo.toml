@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "hiero-sdk"
 readme = "README.md"
 repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
-version = "0.43.0"
+version = "0.44.0"
 
 [lib]
 bench = false

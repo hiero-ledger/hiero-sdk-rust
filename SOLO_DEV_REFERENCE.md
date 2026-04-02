@@ -47,7 +47,7 @@ task solo:teardown
 
 ## Default Versions
 
--   **Consensus Node:** v0.69.1 (or use `--local-build-path` for local builds)
+-   **Consensus Node:** v0.72.0 (or use `--local-build-path` for local builds)
 -   **Mirror Node:** v0.145.2
 -   **Default Nodes:** 1 node (use `task solo:setup:dual-node` for 2 nodes)
 
