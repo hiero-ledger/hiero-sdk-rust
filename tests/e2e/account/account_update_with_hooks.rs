@@ -28,7 +28,7 @@ async fn create_hook_contract(client: &hiero_sdk::Client) -> anyhow::Result<Cont
     let receipt = ContractCreateTransaction::new()
         .bytecode(bytecode)
         .gas(300_000)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .execute(client)
         .await?
         .get_receipt(client)
@@ -67,7 +67,7 @@ async fn can_update_account_to_add_lambda_hook() -> anyhow::Result<()> {
 
     let update_receipt = AccountUpdateTransaction::new()
         .account_id(account_id)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(key)
@@ -115,7 +115,7 @@ async fn can_update_account_with_multiple_hooks() -> anyhow::Result<()> {
 
     let update_receipt = AccountUpdateTransaction::new()
         .account_id(account_id)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .add_hook(hook_details1)
         .add_hook(hook_details2)
         .freeze_with(&client)?
@@ -164,7 +164,7 @@ async fn can_update_account_hook_with_storage_updates() -> anyhow::Result<()> {
 
     let update_receipt = AccountUpdateTransaction::new()
         .account_id(account_id)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(key)
@@ -215,7 +215,7 @@ async fn cannot_update_account_with_duplicate_hook_ids() -> anyhow::Result<()> {
 
     let result = AccountUpdateTransaction::new()
         .account_id(account_id)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .add_hook(hook_details1)
         .add_hook(hook_details2)
         .freeze_with(&client)?
@@ -269,7 +269,7 @@ async fn can_update_account_hook_with_admin_key() -> anyhow::Result<()> {
 
     let update_receipt = AccountUpdateTransaction::new()
         .account_id(account_id)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .add_hook(hook_details)
         .freeze_with(&client)?
         .sign(account_key)

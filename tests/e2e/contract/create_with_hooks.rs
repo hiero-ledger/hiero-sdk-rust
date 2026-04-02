@@ -30,7 +30,7 @@ async fn create_hook_contract(client: &hiero_sdk::Client) -> anyhow::Result<Cont
     let receipt = ContractCreateTransaction::new()
         .bytecode(bytecode)
         .gas(300_000)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .execute(client)
         .await?
         .get_receipt(client)
@@ -110,7 +110,7 @@ async fn contract_create_with_lambda_hook() -> anyhow::Result<()> {
         .bytecode(bytecode)
         .gas(300_000)
         .add_hook(hook_details)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -146,7 +146,7 @@ async fn contract_create_with_hook_and_storage_updates() -> anyhow::Result<()> {
         .bytecode(bytecode)
         .gas(300_000)
         .add_hook(hook_details)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -176,7 +176,7 @@ async fn contract_create_fails_when_lambda_hook_missing_contract_id() -> anyhow:
         .bytecode(bytecode)
         .gas(300_000)
         .add_hook(hook_details)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .execute(&client)
         .await?
         .get_receipt(&client)
@@ -212,7 +212,7 @@ async fn contract_create_fails_with_duplicate_hook_id() -> anyhow::Result<()> {
         .gas(300_000)
         .add_hook(hook_details)
         .add_hook(same_hook_details)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .execute(&client)
         .await;
 
@@ -250,7 +250,7 @@ async fn contract_create_with_hook_admin_key() -> anyhow::Result<()> {
         .bytecode(bytecode)
         .gas(300_000)
         .add_hook(hook_details)
-        .max_transaction_fee(Hbar::new(10))
+        .max_transaction_fee(Hbar::new(20))
         .freeze_with(&client)?
         .sign(admin_key)
         .execute(&client)
