@@ -4,7 +4,7 @@ license = "Apache-2.0"
 name = "hiero-sdk-proto"
 description = "Protobufs for the Hedera™ Hashgraph SDK"
 repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
-version = "0.20.0"
+version = "0.21.0"
 exclude = [
     "services/.github",
     "services/config",
