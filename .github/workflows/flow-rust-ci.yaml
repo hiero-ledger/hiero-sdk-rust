@@ -116,7 +116,7 @@ jobs:
           hieroVersion: v0.72.0
           installMirrorNode: true
           mirrorNodeVersion: v0.151.0
-          soloVersion: v0.67.0
+          soloVersion: v0.68.0
 
       - name: Create env file
         run: |
