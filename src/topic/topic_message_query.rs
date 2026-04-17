@@ -17,7 +17,7 @@ use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
+use crate::Channel;
 use tonic::Response;
 
 use super::topic_message::{

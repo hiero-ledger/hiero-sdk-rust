@@ -6,7 +6,7 @@ use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::custom_fixed_fee::CustomFixedFee;
 use crate::ledger_id::RefLedgerId;

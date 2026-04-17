@@ -6,7 +6,7 @@ use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::entity_id::ValidateChecksums;
 use crate::ledger_id::RefLedgerId;

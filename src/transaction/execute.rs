@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use hiero_sdk_proto::services;
 use prost::Message;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use super::chunked::ChunkInfo;
 use super::source::SourceChunk;

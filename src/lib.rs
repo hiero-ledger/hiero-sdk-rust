@@ -103,6 +103,7 @@ mod account;
 mod address_book;
 
 mod batch_transaction;
+mod channel;
 mod client;
 mod contract;
 mod custom_fee_limit;
@@ -392,6 +393,9 @@ pub(crate) type ArcSwapOption<T> = arc_swap::ArcSwapAny<Option<triomphe::Arc<T>>
 
 /// Like [`arc_swap::ArcSwap`] but with a [`triomphe::Arc`].
 pub(crate) type ArcSwap<T> = arc_swap::ArcSwapAny<triomphe::Arc<T>>;
+
+/// A tonic channel wrapped with the SDK interceptor.
+pub(crate) use channel::Channel;
 
 /// Boxed future for GRPC calls.
 pub(crate) type BoxGrpcFuture<'a, T> =

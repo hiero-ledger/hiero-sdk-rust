@@ -5,7 +5,7 @@ use std::num::NonZeroUsize;
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::consensus_service_client::ConsensusServiceClient;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{

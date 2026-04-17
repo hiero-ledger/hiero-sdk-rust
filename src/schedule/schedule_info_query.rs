@@ -2,7 +2,7 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::schedule_service_client::ScheduleServiceClient;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::query::{
     AnyQueryData,

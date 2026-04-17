@@ -3,7 +3,7 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::schedule_service_client::ScheduleServiceClient;
 use time::OffsetDateTime;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use super::schedulable_transaction_body::SchedulableTransactionBody;
 use crate::protobuf::{

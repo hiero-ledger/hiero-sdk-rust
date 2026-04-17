@@ -2,7 +2,7 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::network_service_client::NetworkServiceClient;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::entity_id::ValidateChecksums;
 use crate::query::{

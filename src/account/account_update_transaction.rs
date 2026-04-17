@@ -6,7 +6,7 @@ use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::hooks::HookCreationDetails;
 use crate::ledger_id::RefLedgerId;

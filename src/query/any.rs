@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use hiero_sdk_proto::services;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use super::ToQueryProtobuf;
 use crate::account::{

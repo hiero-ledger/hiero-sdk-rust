@@ -1,5 +1,5 @@
 use hiero_sdk_proto::services;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use super::{
     AnyTransactionData,

@@ -3,7 +3,7 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::freeze_service_client::FreezeServiceClient;
 use time::OffsetDateTime;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::protobuf::FromProtobuf;
 use crate::transaction::{

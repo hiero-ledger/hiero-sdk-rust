@@ -2,7 +2,7 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{

@@ -104,7 +104,7 @@ impl Execute for PingQuery {
 
     fn execute(
         &self,
-        channel: tonic::transport::Channel,
+        channel: crate::Channel,
         request: Self::GrpcRequest,
     ) -> crate::BoxGrpcFuture<Self::GrpcResponse> {
         Box::pin(async { CryptoServiceClient::new(channel).crypto_get_balance(request).await })

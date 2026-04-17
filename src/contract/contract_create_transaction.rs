@@ -3,7 +3,7 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
 use time::Duration;
-use tonic::transport::Channel;
+use crate::Channel;
 
 use crate::hooks::HookCreationDetails;
 use crate::ledger_id::RefLedgerId;
