@@ -6,7 +6,6 @@ use time::{
     Duration,
     OffsetDateTime,
 };
-use crate::Channel;
 
 use crate::hooks::HookCreationDetails;
 use crate::ledger_id::RefLedgerId;
@@ -23,6 +22,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     ContractId,
     Error,
     Key,

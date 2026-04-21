@@ -3,7 +3,6 @@
 use std::fmt::Debug;
 
 use hiero_sdk_proto::services;
-use crate::Channel;
 
 use crate::entity_id::ValidateChecksums;
 use crate::execute::Execute;
@@ -14,6 +13,7 @@ use crate::query::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     FromProtobuf,
     Hbar,

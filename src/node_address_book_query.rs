@@ -14,7 +14,6 @@ use hiero_sdk_proto::{
     services,
 };
 use mirror::network_service_client::NetworkServiceClient;
-use crate::Channel;
 use tonic::Response;
 
 use crate::mirror_query::{
@@ -25,6 +24,7 @@ use crate::mirror_query::{
 use crate::protobuf::FromProtobuf;
 use crate::{
     AnyMirrorQueryResponse,
+    Channel,
     FileId,
     MirrorQuery,
     NodeAddress,

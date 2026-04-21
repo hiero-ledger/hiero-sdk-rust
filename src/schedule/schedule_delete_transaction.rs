@@ -2,7 +2,6 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::schedule_service_client::ScheduleServiceClient;
-use crate::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
@@ -19,6 +18,7 @@ use crate::transaction::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     Error,
     ScheduleId,
     Transaction,

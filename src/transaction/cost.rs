@@ -1,5 +1,4 @@
 use hiero_sdk_proto::services;
-use crate::Channel;
 
 use super::{
     AnyTransactionData,
@@ -11,6 +10,7 @@ use super::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     Transaction,
     ValidateChecksums,
 };

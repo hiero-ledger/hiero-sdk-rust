@@ -2,7 +2,6 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::crypto_service_client::CryptoServiceClient;
-use crate::Channel;
 
 use crate::transaction::{
     AnyTransactionData,
@@ -13,6 +12,7 @@ use crate::transaction::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     Error,
     Hbar,
     ToProtobuf,

@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::schedule_service_client::ScheduleServiceClient;
 use time::OffsetDateTime;
-use crate::Channel;
 
 use super::schedulable_transaction_body::SchedulableTransactionBody;
 use crate::protobuf::{
@@ -21,6 +20,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     Key,
     Transaction,

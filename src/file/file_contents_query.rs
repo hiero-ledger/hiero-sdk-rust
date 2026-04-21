@@ -2,7 +2,6 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::file_service_client::FileServiceClient;
-use crate::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -13,6 +12,7 @@ use crate::query::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     Error,
     FileContentsResponse,
     FileId,

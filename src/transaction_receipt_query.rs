@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::crypto_service_client::CryptoServiceClient;
 use hiero_sdk_proto::services::response::Response;
-use crate::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -13,6 +12,7 @@ use crate::query::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     Error,
     Query,
     Status,

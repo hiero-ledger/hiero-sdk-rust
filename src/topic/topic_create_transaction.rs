@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::consensus_service_client::ConsensusServiceClient;
 use time::Duration;
-use crate::Channel;
 
 use crate::custom_fixed_fee::CustomFixedFee;
 use crate::ledger_id::RefLedgerId;
@@ -22,6 +21,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     Hbar,
     Key,

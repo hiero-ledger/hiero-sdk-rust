@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
 use time::Duration;
-use crate::Channel;
 
 use crate::hooks::HookCreationDetails;
 use crate::ledger_id::RefLedgerId;
@@ -20,6 +19,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     FileId,
     Hbar,

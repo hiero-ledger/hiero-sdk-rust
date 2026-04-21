@@ -2,7 +2,6 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
-use crate::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -12,6 +11,7 @@ use crate::query::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     ContractId,
     ContractInfo,
     Error,
