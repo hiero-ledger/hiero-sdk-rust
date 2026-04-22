@@ -254,10 +254,13 @@ impl PrivateKey {
     }
 
     fn from_sec1_bytes_der(bytes: &[u8]) -> crate::Result<Self> {
+        const SEC1_K256_OID: sec1::der::oid::ObjectIdentifier =
+            sec1::der::oid::ObjectIdentifier::new_unwrap("1.3.132.0.10");
+
         let sec1 = EcPrivateKey::try_from(bytes).map_err(Error::key_parse)?;
 
         match sec1.parameters.and_then(sec1::EcParameters::named_curve) {
-            Some(K256_OID) => Self::from_bytes_ecdsa(sec1.private_key),
+            Some(SEC1_K256_OID) => Self::from_bytes_ecdsa(sec1.private_key),
             Some(oid) => Err(Error::key_parse(format!("unsupported curve OID: {oid}"))),
             None => Err(Error::key_parse("missing curve parameters")),
         }
