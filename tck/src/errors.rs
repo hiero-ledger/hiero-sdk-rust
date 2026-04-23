@@ -11,6 +11,8 @@ pub(crate) const HEDERA_ERROR: i32 = -32001;
 pub fn from_hedera_error(error: Error) -> ErrorObjectOwned {
     match error {
         Error::QueryPreCheckStatus { status, .. }
+        | Error::QueryPaymentPreCheckStatus { status, .. }
+        | Error::QueryNoPaymentPreCheckStatus { status, .. }
         | Error::ReceiptStatus { status, .. }
         | Error::TransactionPreCheckStatus { status, .. } => ErrorObject::owned(
             HEDERA_ERROR,

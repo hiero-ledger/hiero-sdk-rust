@@ -116,6 +116,7 @@ mod execute;
 mod fee_schedules;
 mod file;
 mod hbar;
+mod hooks;
 mod key;
 mod ledger_id;
 mod mirror_query;
@@ -195,8 +196,10 @@ pub use contract::{
 };
 pub use custom_fee_limit::CustomFeeLimit;
 pub use custom_fixed_fee::CustomFixedFee;
-pub use entity_id::EntityId;
-pub(crate) use entity_id::ValidateChecksums;
+pub use entity_id::{
+    EntityId,
+    ValidateChecksums,
+};
 pub use error::{
     Error,
     Result,
@@ -244,6 +247,24 @@ pub use hbar::{
     Tinybar,
 };
 pub use hiero_sdk_proto::services::ResponseCodeEnum as Status;
+pub use hooks::{
+    EvmHook,
+    EvmHookCall,
+    EvmHookSpec,
+    EvmHookStorageSlot,
+    EvmHookStorageUpdate,
+    FungibleHookCall,
+    FungibleHookType,
+    HookCall,
+    HookCreationDetails,
+    HookEntityId,
+    HookExtensionPoint,
+    HookId,
+    HookStoreTransaction,
+    HookStoreTransactionData,
+    NftHookCall,
+    NftHookType,
+};
 pub use key::{
     Key,
     KeyList,

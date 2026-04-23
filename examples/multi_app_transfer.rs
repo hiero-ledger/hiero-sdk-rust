@@ -28,9 +28,9 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key);
 
     // the exchange should possess this key, we're only generating it for demonstration purposes
-    let exchange_key = PrivateKey::generate_ed25519();
+    let exchange_key = PrivateKey::generate_ecdsa();
     // this is the only key we should actually possess
-    let user_key = PrivateKey::generate_ed25519();
+    let user_key = PrivateKey::generate_ecdsa();
 
     // the exchange creates an account for the user to transfer funds to
     let exchange_account_id = AccountCreateTransaction::new()

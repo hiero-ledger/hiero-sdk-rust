@@ -38,6 +38,13 @@ use crate::{
     ValidateChecksums,
 };
 
+/// Check if the executable is a receipt or record query.
+fn is_receipt_or_record_query<E: Execute>(_executable: &E) -> bool {
+    // Check if the type name contains "Receipt" or "Record" query
+    let type_name = std::any::type_name::<E>();
+    type_name.contains("TransactionReceiptQuery") || type_name.contains("TransactionRecordQuery")
+}
+
 pub(crate) trait Execute: ValidateChecksums {
     type GrpcRequest: Clone + Message;
 
@@ -153,6 +160,8 @@ struct ExecuteContext<'a> {
     grpc_deadline: Duration,
     // Reference to the client for triggering network updates
     client: &'a Client,
+    // Whether receipt/record query failover is enabled
+    enable_receipt_record_query_failover: bool,
 }
 
 pub(crate) async fn execute<E>(
@@ -217,6 +226,7 @@ where
             network: client.net().0.load_full(),
             grpc_deadline,
             client,
+            enable_receipt_record_query_failover: client.get_enable_receipt_record_query_failover(),
         },
         executable,
     )
@@ -239,6 +249,7 @@ where
                 max_attempts: ctx.max_attempts,
                 client: ctx.client,
                 grpc_deadline: ctx.grpc_deadline,
+                enable_receipt_record_query_failover: ctx.enable_receipt_record_query_failover,
             };
             let ping_query = PingQuery::new(ctx.network.node_ids()[index]);
 
@@ -266,13 +277,45 @@ where
         .map(|ids| ctx.network.node_indexes_for_ids(ids))
         .transpose()?;
 
-    let explicit_node_indexes = explicit_node_indexes.as_deref();
+    // Check if this is a receipt/record query with explicit node pinning
+    let is_pinned_receipt_record_query =
+        is_receipt_or_record_query(executable) && explicit_node_indexes.is_some();
+
+    // Determine node selection strategy:
+    // - If it's a pinned receipt/record query AND failover is disabled: use only explicit nodes
+    // - If it's a pinned receipt/record query AND failover is enabled: start with explicit, then allow others
+    // - Otherwise: use explicit nodes if provided, or all nodes
+    let (primary_node_indexes, allow_failover_to_other_nodes) =
+        if is_pinned_receipt_record_query && !ctx.enable_receipt_record_query_failover {
+            // Strict mode: only use pinned nodes
+            (explicit_node_indexes.as_deref(), false)
+        } else if is_pinned_receipt_record_query && ctx.enable_receipt_record_query_failover {
+            // Failover mode: start with pinned, then allow others
+            (explicit_node_indexes.as_deref(), true)
+        } else {
+            // Normal query: use explicit if provided
+            (explicit_node_indexes.as_deref(), false)
+        };
 
     let layer = move || async move {
+        let mut attempted_primary_nodes = false;
         loop {
             let mut last_error: Option<Error> = None;
 
-            let random_node_indexes = random_node_indexes(&ctx.network, explicit_node_indexes)
+            // Determine which nodes to try this iteration
+            let nodes_to_try = if !attempted_primary_nodes && primary_node_indexes.is_some() {
+                // First attempt: use primary (pinned) nodes only
+                attempted_primary_nodes = true;
+                primary_node_indexes
+            } else if attempted_primary_nodes && allow_failover_to_other_nodes {
+                // Failover enabled: try all other nodes after primary failed
+                None // This will select from all nodes
+            } else {
+                // Either no primary nodes, or failover not allowed
+                primary_node_indexes
+            };
+
+            let random_node_indexes = random_node_indexes(&ctx.network, nodes_to_try)
                 .ok_or(retry::Error::EmptyTransient)?;
 
             let random_node_indexes = {
@@ -282,7 +325,7 @@ where
                 futures_util::stream::iter(random_node_indexes.iter().copied()).filter(
                     move |&node_index| async move {
                         // NOTE: For pings we're relying on the fact that they have an explict node index.
-                        explicit_node_indexes.is_some()
+                        nodes_to_try.is_some()
                             || client.network.node_recently_pinged(node_index, now)
                             || recurse_ping(client, node_index).await
                     },

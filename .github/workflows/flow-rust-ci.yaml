@@ -55,7 +55,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # v1
         with:
           toolchain: 1.88.0
 
@@ -90,7 +90,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # v1
         with:
           toolchain: 1.88.0
 
@@ -113,6 +113,7 @@ jobs:
         id: solo
         uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
         with:
+          hieroVersion: v0.72.0
           installMirrorNode: true
 
       - name: Create env file
@@ -144,7 +145,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # v1
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # v1
         with:
           toolchain: 1.88.0
 
@@ -167,7 +168,7 @@ jobs:
         id: solo-dab
         uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
         with:
-          hieroVersion: v0.68.0-rc.1
+          hieroVersion: v0.72.0
           installMirrorNode: true
           mirrorNodeVersion: v0.142.0
           dualMode: true

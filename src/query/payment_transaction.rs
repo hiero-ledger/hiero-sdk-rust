@@ -85,11 +85,13 @@ impl ToTransactionDataProtobuf for PaymentTransactionData {
                         account_id: node_account_id.to_protobuf(),
                         amount: amount.to_tinybars(),
                         is_approval: false,
+                        hook_call: None,
                     },
                     services::AccountAmount {
                         account_id: Some(transaction_id.account_id.to_protobuf()),
                         amount: -(amount.to_tinybars()),
                         is_approval: false,
+                        hook_call: None,
                     },
                 ],
             }),

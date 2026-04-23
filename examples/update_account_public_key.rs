@@ -27,8 +27,8 @@ async fn main() -> anyhow::Result<()> {
 
     // First, we create a new account so we don't affect our account
 
-    let key1 = PrivateKey::generate_ed25519();
-    let key2 = PrivateKey::generate_ed25519();
+    let key1 = PrivateKey::generate_ecdsa();
+    let key2 = PrivateKey::generate_ecdsa();
 
     let response = AccountCreateTransaction::new()
         .set_key_without_alias(key1.public_key())

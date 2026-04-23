@@ -34,8 +34,8 @@ async fn main() -> anyhow::Result<()> {
     /*
      * Step 1: Create key pairs
      */
-    let key1 = PrivateKey::generate_ed25519();
-    let key2 = PrivateKey::generate_ed25519();
+    let key1 = PrivateKey::generate_ecdsa();
+    let key2 = PrivateKey::generate_ecdsa();
 
     println!("Creating Key List... (w/ threshold, 2 of 2 keys generated above is required to modify the account)");
 

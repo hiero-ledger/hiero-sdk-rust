@@ -274,6 +274,7 @@ impl ToProtobuf for TransactionRecord {
                         account_id: Some(it.0.to_protobuf()),
                         amount: *it.1,
                         is_approval: false,
+                        hook_call: None,
                     })
                     .collect(),
                 nft_transfers: Vec::new(),
@@ -365,6 +366,8 @@ mod tests {
             transfers: Vec::from([Transfer {
                 account_id: AccountId::new(4, 4, 4),
                 amount: Hbar::new(5),
+                is_approved: false,
+                hook_call: None,
             }]),
             token_transfers: HashMap::from([(
                 TokenId::new(6, 6, 6),
@@ -378,6 +381,8 @@ mod tests {
                     receiver: AccountId::new(3, 2, 1),
                     serial: 4,
                     is_approved: true,
+                    sender_hook_call: None,
+                    receiver_hook_call: None,
                 }]),
             )]),
             transaction_id: TEST_TX_ID,

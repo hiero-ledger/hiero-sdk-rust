@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
      * Step 1: Genereate ED25519 key pair
      */
     println!("Generating ED25519 key pair...");
-    let private_key = PrivateKey::generate_ed25519();
+    let private_key = PrivateKey::generate_ecdsa();
 
     /*
      * Step 2: Create an account
