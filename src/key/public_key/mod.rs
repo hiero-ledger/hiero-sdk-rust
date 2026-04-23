@@ -207,7 +207,7 @@ impl PublicKey {
     /// Optionally strips a `0x` prefix.
     ///
     /// # Errors
-    /// - [`Error::KeyParse`] if `s` cannot be parsed into a Ecdsa(secp256k1) `PublicKey`.
+    /// - [`Error::KeyParse`] if `s` cannot be parsed into a ECDSA(secp256k1) `PublicKey`.
     pub fn from_str_ecdsa(s: &str) -> crate::Result<Self> {
         Self::from_bytes_ecdsa(
             &hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(Error::key_parse)?,

@@ -49,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!(r#""Creating" a new account"#);
 
-    let private_key = PrivateKey::generate_ed25519();
+    let private_key = PrivateKey::generate_ecdsa();
     let public_key = private_key.public_key();
 
     // Assuming that the target shard and realm are known.

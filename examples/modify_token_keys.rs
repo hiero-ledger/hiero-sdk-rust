@@ -28,13 +28,13 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_id, args.operator_key.clone());
 
     // Generate a higher-privileged key.
-    let admin_key = PrivateKey::generate_ed25519();
+    let admin_key = PrivateKey::generate_ecdsa();
 
     // Generate the lower-privileged keys that will be modified.
     // Note: Lower-privileged keys are KYC, Freeze, Wipe, and Supply, Fee Schedule, Metadata key.
-    let supply_key = PrivateKey::generate_ed25519();
-    let wipe_key = PrivateKey::generate_ed25519();
-    let new_supply_key = PrivateKey::generate_ed25519();
+    let supply_key = PrivateKey::generate_ecdsa();
+    let wipe_key = PrivateKey::generate_ecdsa();
+    let new_supply_key = PrivateKey::generate_ecdsa();
 
     // Generate an invalid key to update the supply key.
     let unusable = PublicKey::from_str_ed25519(

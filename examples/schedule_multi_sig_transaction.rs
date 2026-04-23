@@ -27,9 +27,9 @@ async fn main() -> anyhow::Result<()> {
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
     // Generate 3 random keys
-    let key1 = PrivateKey::generate_ed25519();
-    let key2 = PrivateKey::generate_ed25519();
-    let key3 = PrivateKey::generate_ed25519();
+    let key1 = PrivateKey::generate_ecdsa();
+    let key2 = PrivateKey::generate_ecdsa();
+    let key3 = PrivateKey::generate_ecdsa();
 
     // Create a keylist from those keys. This key will be used as the new account's key
     // The reason we want to use a `KeyList` is to simulate a multi-party system where

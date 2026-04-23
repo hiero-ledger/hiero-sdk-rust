@@ -394,6 +394,18 @@ impl Client {
         self.net().0.load().set_min_backoff(min_node_backoff)
     }
 
+    /// Returns the max number of nodes to attempt for a request/transaction before failing.
+    pub fn max_nodes_per_request(&self) -> Option<u32> {
+        self.net().0.load().max_nodes_per_request()
+    }
+
+    /// Sets the max number of nodes to attempt for a request/transaction before failing.
+    ///
+    /// If set to `None`, then the client will attempt to use all healthy nodes.
+    pub fn set_max_nodes_per_request(&self, max_nodes: Option<u32>) {
+        self.net().0.load().set_max_nodes_per_request(max_nodes)
+    }
+
     /// Construct a hedera client pre-configured for access to the given network.
     ///
     /// Currently supported network names are `"mainnet"`, `"testnet"`, and `"previewnet"`.

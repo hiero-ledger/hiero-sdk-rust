@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
     // on the Hiero network, but that transaction only requires your signature in order to
     // execute and no one else's, that scheduled transaction will be automatically
     // executed immediately.
-    let bobs_key = PrivateKey::generate_ed25519();
+    let bobs_key = PrivateKey::generate_ecdsa();
 
     let bobs_id = AccountCreateTransaction::new()
         .receiver_signature_required(true)

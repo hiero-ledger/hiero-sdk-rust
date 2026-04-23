@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     let mut accounts = Vec::with_capacity(3);
 
     for i in 0..3 {
-        let private_key = PrivateKey::generate_ed25519();
+        let private_key = PrivateKey::generate_ecdsa();
         let public_key = private_key.public_key();
 
         println!("key #{i}");

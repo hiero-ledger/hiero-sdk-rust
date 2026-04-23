@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
 
     client.set_operator(args.operator_account_id, args.operator_key.clone());
 
-    let admin_key = PrivateKey::generate_ed25519();
+    let admin_key = PrivateKey::generate_ecdsa();
 
     // Initial metadata
     let metadata: Vec<u8> = vec![1];
