@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use hiero_sdk_proto::services;
-use tonic::transport::Channel;
 
 use crate::entity_id::ValidateChecksums;
 use crate::execute::{
@@ -13,6 +12,7 @@ use crate::query::QueryExecute;
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Client,
     Hbar,
     Query,

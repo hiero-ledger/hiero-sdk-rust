@@ -1,6 +1,5 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
-use tonic::transport::Channel;
 
 use crate::hooks::{
     EvmHookStorageUpdate,
@@ -17,6 +16,7 @@ use crate::transaction::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     ValidateChecksums,
 };
 

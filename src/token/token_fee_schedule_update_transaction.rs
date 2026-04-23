@@ -2,7 +2,6 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::token_service_client::TokenServiceClient;
-use tonic::transport::Channel;
 
 use crate::protobuf::{
     FromProtobuf,
@@ -19,6 +18,7 @@ use crate::transaction::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     Error,
     TokenId,
     Transaction,

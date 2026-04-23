@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::freeze_service_client::FreezeServiceClient;
 use time::OffsetDateTime;
-use tonic::transport::Channel;
 
 use crate::protobuf::FromProtobuf;
 use crate::transaction::{
@@ -16,6 +15,7 @@ use crate::transaction::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     Error,
     FileId,
     FreezeType,

@@ -13,10 +13,8 @@ use openssl::ssl::{
     SslMethod,
     SslVerifyMode,
 };
-use tonic::transport::{
-    Channel,
-    Endpoint,
-};
+use tonic::service::interceptor::InterceptedService;
+use tonic::transport::Endpoint;
 use triomphe::Arc;
 
 use crate::ArcSwap;
@@ -64,7 +62,7 @@ impl MirrorNetwork {
 #[derive(Clone, Default)]
 pub(crate) struct MirrorNetworkData {
     addresses: Vec<Cow<'static, str>>,
-    channel: OnceCell<Channel>,
+    channel: OnceCell<tonic::transport::Channel>,
 }
 
 impl MirrorNetworkData {
@@ -78,8 +76,9 @@ impl MirrorNetworkData {
         Self { addresses, channel: OnceCell::new() }
     }
 
-    pub(crate) fn channel(&self, grpc_deadline: Duration) -> Channel {
-        self.channel
+    pub(crate) fn channel(&self, grpc_deadline: Duration) -> crate::Channel {
+        let channel = self
+            .channel
             .get_or_init(|| {
                 let endpoint = self.addresses.iter().next().unwrap();
 
@@ -113,7 +112,9 @@ impl MirrorNetworkData {
                     endpoint.connect_with_connector_lazy(https)
                 }
             })
-            .clone()
+            .clone();
+
+        InterceptedService::new(channel, crate::channel::SdkInterceptor)
     }
 
     pub(crate) fn addresses(&self) -> impl Iterator<Item = String> + '_ {
