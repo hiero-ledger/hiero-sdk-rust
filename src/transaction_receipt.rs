@@ -224,6 +224,7 @@ impl ToProtobuf for TransactionReceipt {
             scheduled_transaction_id: self.scheduled_transaction_id.to_protobuf(),
             serial_numbers: self.serials.clone(),
             node_id: self.node_id,
+            registered_node_id: 0,
         }
     }
 }
@@ -422,6 +423,7 @@ mod tests {
                     3,
                 ],
                 node_id: 1,
+                registered_node_id: 0,
             }
         "#]]
         .assert_debug_eq(&make_receipt().to_protobuf())

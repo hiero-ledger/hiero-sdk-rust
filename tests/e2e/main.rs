@@ -7,6 +7,7 @@ mod contract;
 mod ethereum_transaction;
 mod fee_schedules;
 mod file;
+// mod hooks;
 mod network_version_info;
 mod node;
 mod node_address_book;

@@ -6,13 +6,20 @@ use hex_literal::hex;
 use time::OffsetDateTime;
 
 use crate::client::DEFAULT_GRPC_DEADLINE;
+use crate::transaction::test_helpers::{
+    unused_private_key,
+    TEST_NODE_ACCOUNT_IDS,
+    TEST_TX_ID,
+};
 use crate::transaction::AnyTransactionData;
 use crate::{
     AnyTransaction,
     Client,
+    FileAppendTransaction,
     Hbar,
     PrivateKey,
     TopicMessageSubmitTransaction,
+    Transaction,
     TransactionId,
     TransferTransaction,
 };
@@ -248,4 +255,52 @@ fn test_grpc_deadline_preserved_through_clone() {
     assert_eq!(tx1.get_grpc_deadline(), Some(StdDuration::from_secs(5)));
     assert_eq!(tx2.get_grpc_deadline(), Some(StdDuration::from_secs(5)));
     assert_eq!(tx3.get_grpc_deadline(), Some(StdDuration::from_secs(8)));
+}
+
+#[test]
+fn test_offline_transaction_signing() -> crate::Result<()> {
+    let mut tx = TransferTransaction::new();
+
+    tx.node_account_ids(TEST_NODE_ACCOUNT_IDS)
+        .transaction_id(TEST_TX_ID)
+        .max_transaction_fee(Hbar::new(2))
+        .freeze()?;
+
+    let tx_bytes = tx.to_bytes()?;
+
+    let private_key = unused_private_key();
+    let signatures = private_key.sign_transaction_map(&mut tx)?;
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    let mut tx = Transaction::from_bytes(&tx_bytes)?;
+    tx.freeze()?;
+    tx.add_signature_map(signatures);
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    Ok(())
+}
+
+#[test]
+fn test_offline_transaction_signing_with_chunks() -> crate::Result<()> {
+    let mut tx = FileAppendTransaction::new();
+
+    tx.node_account_ids(TEST_NODE_ACCOUNT_IDS)
+        .transaction_id(TEST_TX_ID)
+        .max_transaction_fee(Hbar::new(2))
+        .contents(vec![0; 8000]) // contents that will require chunking
+        .freeze()?;
+
+    let tx_bytes = tx.to_bytes()?;
+
+    let private_key = unused_private_key();
+    let signatures = private_key.sign_transaction_map(&mut tx)?;
+
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    let mut tx = Transaction::from_bytes(&tx_bytes)?;
+    tx.freeze()?;
+    tx.add_signature_map(signatures);
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    Ok(())
 }

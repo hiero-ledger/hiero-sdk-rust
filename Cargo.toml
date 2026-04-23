@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "hiero-sdk"
 readme = "README.md"
 repository = "https://github.com/hiero-ledger/hiero-sdk-rust"
-version = "0.43.0"
+version = "0.44.1"
 
 [lib]
 bench = false
@@ -27,7 +27,7 @@ fraction = { version = "0.15.1", default-features = false }
 futures-core = "0.3.32"
 # Transitive dependency of tonic 0.12
 h2 = "0.4.12"
-hiero-sdk-proto = { path = "./protobufs", version = "0.20.0", features = ["time_0_3", "fraction"] }
+hiero-sdk-proto = { path = "./protobufs", version = "0.21.0", features = ["time_0_3", "fraction"] }
 hex = "0.4.3"
 hmac = "0.12.1"
 # Dependency of tonic 0.12
@@ -44,7 +44,7 @@ time = "0.3.47"
 tokio = { version = "1.48.0", features = ["time"] }
 tonic = "0.12.3"
 tinystr = { version = "0.7.0", default-features = false }
-arc-swap = "1.8.0"
+arc-swap = "1.8.2"
 rlp = "0.6.1"
 bytes = { version = "1.11.1", default-features = false }
 pin-project-lite = "0.2.16"
@@ -57,10 +57,10 @@ pem = "3.0.6"
 cbc = "0.1.2"
 aes = "0.8.3"
 md5 = "0.8.0"
-sec1 = { version = "0.7.3", features = ["der"] }
+sec1 = { version = "0.8.1", features = ["der"] }
 tower = { version = "0.5.2", features = ["util"] }
-openssl = "0.10.72"
-hyper-util = "0.1.16"
+openssl = "0.10.78"
+hyper-util = "0.1.20"
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
 
 [dependencies.futures-util]
