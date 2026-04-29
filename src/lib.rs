@@ -113,9 +113,14 @@ mod error;
 mod ethereum;
 mod exchange_rates;
 mod execute;
+mod fee_estimate_mode;
+#[cfg(feature = "serde")]
+mod fee_estimate_query;
+mod fee_estimate_types;
 mod fee_schedules;
 mod file;
 mod hbar;
+mod hooks;
 mod key;
 mod ledger_id;
 mod mirror_query;
@@ -220,6 +225,15 @@ pub use exchange_rates::{
     ExchangeRate,
     ExchangeRates,
 };
+pub use fee_estimate_mode::FeeEstimateMode;
+#[cfg(feature = "serde")]
+pub use fee_estimate_query::FeeEstimateQuery;
+pub use fee_estimate_types::{
+    FeeEstimate,
+    FeeEstimateResponse,
+    FeeExtra,
+    NetworkFee,
+};
 pub use fee_schedules::{
     FeeComponents,
     FeeData,
@@ -246,6 +260,24 @@ pub use hbar::{
     Tinybar,
 };
 pub use hiero_sdk_proto::services::ResponseCodeEnum as Status;
+pub use hooks::{
+    EvmHook,
+    EvmHookCall,
+    EvmHookSpec,
+    EvmHookStorageSlot,
+    EvmHookStorageUpdate,
+    FungibleHookCall,
+    FungibleHookType,
+    HookCall,
+    HookCreationDetails,
+    HookEntityId,
+    HookExtensionPoint,
+    HookId,
+    HookStoreTransaction,
+    HookStoreTransactionData,
+    NftHookCall,
+    NftHookType,
+};
 pub use key::{
     Key,
     KeyList,

@@ -54,6 +54,7 @@ mod data {
         FileDeleteTransactionData as FileDelete,
         FileUpdateTransactionData as FileUpdate,
     };
+    pub(super) use crate::hooks::HookStoreTransactionData as HookStore;
     pub(super) use crate::prng_transaction::PrngTransactionData as Prng;
     pub(super) use crate::schedule::{
         ScheduleCreateTransactionData as ScheduleCreate,
@@ -152,6 +153,7 @@ pub enum AnyTransactionData {
     TokenClaimAirdrop(data::TokenClaimAirdrop),
     TokenCancelAirdrop(data::TokenCancelAirdrop),
     Batch(data::Batch),
+    HookStore(data::HookStore),
 }
 
 impl ToTransactionDataProtobuf for AnyTransactionData {
@@ -294,8 +296,6 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
 
             Self::NodeDelete(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
-            Self::TokenReject(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
-
             Self::TokenAirdrop(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
 
             Self::TokenClaimAirdrop(transaction) => {
@@ -305,6 +305,7 @@ impl ToTransactionDataProtobuf for AnyTransactionData {
                 transaction.to_transaction_data_protobuf(chunk_info)
             }
             Self::Batch(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
+            Self::HookStore(transaction) => transaction.to_transaction_data_protobuf(chunk_info),
         }
     }
 }
@@ -362,6 +363,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenClaimAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::TokenCancelAirdrop(transaction) => transaction.default_max_transaction_fee(),
             Self::Batch(transaction) => transaction.default_max_transaction_fee(),
+            Self::HookStore(transaction) => transaction.default_max_transaction_fee(),
         }
     }
 
@@ -417,6 +419,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenClaimAirdrop(it) => it.maybe_chunk_data(),
             Self::TokenCancelAirdrop(it) => it.maybe_chunk_data(),
             Self::Batch(it) => it.maybe_chunk_data(),
+            Self::HookStore(it) => it.maybe_chunk_data(),
         }
     }
 
@@ -472,6 +475,7 @@ impl TransactionData for AnyTransactionData {
             Self::TokenClaimAirdrop(it) => it.wait_for_receipt(),
             Self::TokenCancelAirdrop(it) => it.wait_for_receipt(),
             Self::Batch(it) => it.wait_for_receipt(),
+            Self::HookStore(it) => it.wait_for_receipt(),
         }
     }
 }
@@ -533,6 +537,7 @@ impl TransactionExecute for AnyTransactionData {
             Self::TokenClaimAirdrop(transaction) => transaction.execute(channel, request),
             Self::TokenCancelAirdrop(transaction) => transaction.execute(channel, request),
             Self::Batch(transaction) => transaction.execute(channel, request),
+            Self::HookStore(transaction) => transaction.execute(channel, request),
         }
     }
 }
@@ -592,6 +597,7 @@ impl ValidateChecksums for AnyTransactionData {
             Self::TokenClaimAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::TokenCancelAirdrop(transaction) => transaction.validate_checksums(ledger_id),
             Self::Batch(transaction) => transaction.validate_checksums(ledger_id),
+            Self::HookStore(transaction) => transaction.validate_checksums(ledger_id),
         }
     }
 }
@@ -678,9 +684,35 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
                     "unsupported transaction `NodeStakeUpdateTransaction`",
                 ))
             }
+            Data::HookStore(pb) => data::HookStore::from_protobuf(pb)?.into(),
+            Data::HookDispatch(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `HookDispatchTransaction`",
+                ))
+            }
             Data::AtomicBatch(_) => {
                 return Err(Error::from_protobuf(
                     "unsupported transaction `AtomicBatchTransaction`",
+                ))
+            }
+            Data::LedgerIdPublication(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `LedgerIdPublicationTransaction`",
+                ))
+            }
+            Data::RegisteredNodeCreate(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `RegisteredNodeCreateTransaction`",
+                ))
+            }
+            Data::RegisteredNodeUpdate(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `RegisteredNodeUpdateTransaction`",
+                ))
+            }
+            Data::RegisteredNodeDelete(_) => {
+                return Err(Error::from_protobuf(
+                    "unsupported transaction `RegisteredNodeDeleteTransaction`",
                 ))
             }
         };
@@ -912,6 +944,7 @@ impl AnyTransaction {
                 batch_key: first_body
                     .batch_key
                     .map(|key| crate::protobuf::FromProtobuf::from_protobuf(key).unwrap()),
+                high_volume: first_body.high_volume,
             },
             signers: Vec::new(),
             sources: None,
@@ -1066,8 +1099,34 @@ impl FromProtobuf<Vec<services::transaction_body::Data>> for ServicesTransaction
                     "unsupported transaction `NodeStakeUpdateTransaction`",
                 ))
             }
+            Data::HookStore(_) => {
+                return Err(Error::from_protobuf("HookStore transactions cannot be chunked"))
+            }
+            Data::HookDispatch(_) => {
+                return Err(Error::from_protobuf("HookDispatch transactions are not supported"))
+            }
             Data::AtomicBatch(_) => {
                 return Err(Error::from_protobuf("AtomicBatch transactions are not supported"))
+            }
+            Data::LedgerIdPublication(_) => {
+                return Err(Error::from_protobuf(
+                    "LedgerIdPublication transactions are not supported",
+                ))
+            }
+            Data::RegisteredNodeCreate(_) => {
+                return Err(Error::from_protobuf(
+                    "RegisteredNodeCreate transactions are not supported",
+                ))
+            }
+            Data::RegisteredNodeUpdate(_) => {
+                return Err(Error::from_protobuf(
+                    "RegisteredNodeUpdate transactions are not supported",
+                ))
+            }
+            Data::RegisteredNodeDelete(_) => {
+                return Err(Error::from_protobuf(
+                    "RegisteredNodeDelete transactions are not supported",
+                ))
             }
         };
 
@@ -1179,6 +1238,7 @@ macro_rules! impl_cast_any {
                             regenerate_transaction_id: transaction.body.regenerate_transaction_id,
                             custom_fee_limits: transaction.body.custom_fee_limits,
                             batch_key: transaction.body.batch_key,
+                            high_volume: transaction.body.high_volume,
                         },
                         signers: transaction.signers,
                         sources: transaction.sources,
@@ -1253,5 +1313,6 @@ impl_cast_any! {
              TokenAirdrop,
     TokenClaimAirdrop,
     TokenCancelAirdrop,
-    Batch
+    Batch,
+    HookStore
 }

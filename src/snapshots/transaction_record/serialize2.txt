@@ -129,6 +129,7 @@ TransactionRecord {
                 3,
             ],
             node_id: 1,
+            registered_node_id: 0,
         },
     ),
     transaction_hash: [
@@ -186,6 +187,7 @@ TransactionRecord {
                     ),
                     amount: 500000000,
                     is_approval: false,
+                    hook_call: None,
                 },
             ],
         },
@@ -214,6 +216,7 @@ TransactionRecord {
                     ),
                     amount: 4,
                     is_approval: false,
+                    hook_call: None,
                 },
             ],
             nft_transfers: [],
@@ -404,6 +407,7 @@ TransactionRecord {
             ),
         },
     ],
+    high_volume_pricing_multiplier: 1000,
     body: Some(
         ContractCallResult(
             ContractFunctionResult {

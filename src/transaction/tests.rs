@@ -6,13 +6,20 @@ use hex_literal::hex;
 use time::OffsetDateTime;
 
 use crate::client::DEFAULT_GRPC_DEADLINE;
+use crate::transaction::test_helpers::{
+    unused_private_key,
+    TEST_NODE_ACCOUNT_IDS,
+    TEST_TX_ID,
+};
 use crate::transaction::AnyTransactionData;
 use crate::{
     AnyTransaction,
     Client,
+    FileAppendTransaction,
     Hbar,
     PrivateKey,
     TopicMessageSubmitTransaction,
+    Transaction,
     TransactionId,
     TransferTransaction,
 };
@@ -62,6 +69,40 @@ fn to_bytes_from_bytes() -> crate::Result<()> {
     assert!(tx2.sources.is_some());
 
     Ok(())
+}
+
+#[test]
+fn high_volume_round_trip() -> crate::Result<()> {
+    let mut tx = TransferTransaction::new();
+
+    let bytes = tx
+        .max_transaction_fee(Hbar::new(10))
+        .transaction_valid_duration(time::Duration::seconds(119))
+        .hbar_transfer(2.into(), Hbar::new(2))
+        .hbar_transfer(101.into(), Hbar::new(-2))
+        .set_high_volume(true)
+        .transaction_id(TransactionId {
+            account_id: 101.into(),
+            valid_start: OffsetDateTime::now_utc(),
+            nonce: None,
+            scheduled: false,
+        })
+        .node_account_ids([6.into()])
+        .freeze()?
+        .to_bytes()?;
+
+    let tx2 = AnyTransaction::from_bytes(&bytes)?;
+
+    assert_eq!(tx.get_high_volume(), true);
+    assert_eq!(tx2.get_high_volume(), true);
+
+    Ok(())
+}
+
+#[test]
+fn high_volume_defaults_to_false() {
+    let tx = TransferTransaction::new();
+    assert_eq!(tx.get_high_volume(), false);
 }
 
 #[test]
@@ -248,4 +289,52 @@ fn test_grpc_deadline_preserved_through_clone() {
     assert_eq!(tx1.get_grpc_deadline(), Some(StdDuration::from_secs(5)));
     assert_eq!(tx2.get_grpc_deadline(), Some(StdDuration::from_secs(5)));
     assert_eq!(tx3.get_grpc_deadline(), Some(StdDuration::from_secs(8)));
+}
+
+#[test]
+fn test_offline_transaction_signing() -> crate::Result<()> {
+    let mut tx = TransferTransaction::new();
+
+    tx.node_account_ids(TEST_NODE_ACCOUNT_IDS)
+        .transaction_id(TEST_TX_ID)
+        .max_transaction_fee(Hbar::new(2))
+        .freeze()?;
+
+    let tx_bytes = tx.to_bytes()?;
+
+    let private_key = unused_private_key();
+    let signatures = private_key.sign_transaction_map(&mut tx)?;
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    let mut tx = Transaction::from_bytes(&tx_bytes)?;
+    tx.freeze()?;
+    tx.add_signature_map(signatures);
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    Ok(())
+}
+
+#[test]
+fn test_offline_transaction_signing_with_chunks() -> crate::Result<()> {
+    let mut tx = FileAppendTransaction::new();
+
+    tx.node_account_ids(TEST_NODE_ACCOUNT_IDS)
+        .transaction_id(TEST_TX_ID)
+        .max_transaction_fee(Hbar::new(2))
+        .contents(vec![0; 8000]) // contents that will require chunking
+        .freeze()?;
+
+    let tx_bytes = tx.to_bytes()?;
+
+    let private_key = unused_private_key();
+    let signatures = private_key.sign_transaction_map(&mut tx)?;
+
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    let mut tx = Transaction::from_bytes(&tx_bytes)?;
+    tx.freeze()?;
+    tx.add_signature_map(signatures);
+    private_key.public_key().verify_transaction(&mut tx)?;
+
+    Ok(())
 }

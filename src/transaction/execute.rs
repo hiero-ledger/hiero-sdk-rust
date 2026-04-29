@@ -289,6 +289,7 @@ where
             transaction_fee,
             max_custom_fees: { self.body.custom_fee_limits.to_protobuf() },
             batch_key: None,
+            high_volume: self.body.high_volume,
         }
     }
 }

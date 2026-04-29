@@ -92,6 +92,7 @@ impl ScheduleInfo {
                 regenerate_transaction_id: Some(false),
                 custom_fee_limits: Vec::new(),
                 batch_key: None,
+                high_volume: false,
             },
             Vec::new(),
         ))

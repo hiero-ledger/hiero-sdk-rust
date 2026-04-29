@@ -5,6 +5,10 @@ use hiero_sdk_proto::services::crypto_service_client::CryptoServiceClient;
 use time::Duration;
 use tonic::transport::Channel;
 
+use crate::hooks::{
+    EvmHook,
+    HookCreationDetails,
+};
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::{
     FromProtobuf,
@@ -76,6 +80,9 @@ pub struct AccountCreateTransactionData {
 
     /// If true, the account declines receiving a staking reward. The default value is false.
     decline_staking_reward: bool,
+
+    /// Hooks to add immediately after creating this account.
+    hooks: Vec<HookCreationDetails>,
 }
 
 impl Default for AccountCreateTransactionData {
@@ -91,6 +98,7 @@ impl Default for AccountCreateTransactionData {
             alias: None,
             staked_id: None,
             decline_staking_reward: false,
+            hooks: Vec::new(),
         }
     }
 }
@@ -293,6 +301,29 @@ impl AccountCreateTransaction {
         self.data_mut().decline_staking_reward = decline;
         self
     }
+
+    pub fn add_hook(&mut self, hook: HookCreationDetails) -> &mut Self {
+        self.data_mut().hooks.push(hook);
+        self
+    }
+
+    pub fn add_evm_hook(&mut self, hook: EvmHook) -> &mut Self {
+        // Helper to add a Lambda EVM hook with default extension point and hook ID
+        use crate::hooks::HookExtensionPoint;
+        let details =
+            HookCreationDetails::new(HookExtensionPoint::AccountAllowanceHook, 1, Some(hook));
+        self.data_mut().hooks.push(details);
+        self
+    }
+
+    pub fn set_hooks(&mut self, hooks: Vec<HookCreationDetails>) -> &mut Self {
+        self.data_mut().hooks = hooks;
+        self
+    }
+
+    pub fn get_hooks(&self) -> &[HookCreationDetails] {
+        &self.data().hooks
+    }
 }
 
 impl TransactionData for AccountCreateTransactionData {}
@@ -353,6 +384,11 @@ impl FromProtobuf<services::CryptoCreateTransactionBody> for AccountCreateTransa
             alias,
             staked_id: Option::from_protobuf(pb.staked_id)?,
             decline_staking_reward: pb.decline_reward,
+            hooks: pb
+                .hook_creation_details
+                .into_iter()
+                .map(HookCreationDetails::from_protobuf)
+                .collect::<Result<Vec<_>, _>>()?,
         })
     }
 }
@@ -391,6 +427,8 @@ impl ToProtobuf for AccountCreateTransactionData {
             alias: self.alias.map_or(vec![], |it| it.to_bytes().to_vec()),
             decline_reward: self.decline_staking_reward,
             staked_id,
+            hook_creation_details: self.hooks.iter().map(|h| h.to_protobuf()).collect(),
+            delegation_address: Vec::new(),
         }
     }
 }
@@ -417,8 +455,13 @@ mod tests {
         AccountCreateTransaction,
         AccountId,
         AnyTransaction,
+        ContractId,
         EvmAddress,
+        EvmHook,
+        EvmHookSpec,
         Hbar,
+        HookCreationDetails,
+        HookExtensionPoint,
         PublicKey,
     };
 
@@ -560,6 +603,8 @@ mod tests {
                         20,
                         23,
                     ],
+                    hook_creation_details: [],
+                    delegation_address: [],
                     staked_id: Some(
                         StakedAccountId(
                             AccountId {
@@ -683,6 +728,8 @@ mod tests {
                         20,
                         23,
                     ],
+                    hook_creation_details: [],
+                    delegation_address: [],
                     staked_id: Some(
                         StakedNodeId(
                             4,
@@ -710,6 +757,13 @@ mod tests {
     #[test]
     fn from_proto_body() {
         #[allow(deprecated)]
+        let contract_id = ContractId::new(0, 0, 1);
+        let hooks = vec![HookCreationDetails::new(
+            HookExtensionPoint::AccountAllowanceHook,
+            0,
+            Some(EvmHook::new(EvmHookSpec::new(Some(contract_id)), vec![])),
+        )];
+
         let tx = services::CryptoCreateTransactionBody {
             key: Some(key().to_protobuf()),
             initial_balance: INITIAL_BALANCE.to_tinybars() as u64,
@@ -728,6 +782,8 @@ mod tests {
             staked_id: Some(services::crypto_create_transaction_body::StakedId::StakedAccountId(
                 STAKED_ACCOUNT_ID.to_protobuf(),
             )),
+            hook_creation_details: hooks.iter().map(|h| h.to_protobuf()).collect(),
+            delegation_address: Vec::new(),
         };
 
         let tx = AccountCreateTransactionData::from_protobuf(tx).unwrap();
