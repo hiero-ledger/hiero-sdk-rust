@@ -60,8 +60,9 @@ md5 = "0.8.0"
 sec1 = { version = "0.8.1", features = ["der"] }
 tower = { version = "0.5.2", features = ["util"] }
 openssl = "0.10.78"
-hyper-util = "0.1.20"
+hyper-util = { version = "0.1.20", features = ["client-legacy", "http1", "http2", "tokio"] }
 hyper-openssl = {version = "0.10.2", features = ["client-legacy"]}
+http-body-util = "0.1"
 
 [dependencies.futures-util]
 version = "0.3.31"
