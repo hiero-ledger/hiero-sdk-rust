@@ -88,10 +88,7 @@ async fn high_volume_account_create_insufficient_fee_fails() -> anyhow::Result<(
 
     assert_matches::assert_matches!(
         res,
-        Err(hiero_sdk::Error::TransactionPreCheckStatus {
-            status: Status::InsufficientTxFee,
-            ..
-        })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InsufficientTxFee, .. })
     );
 
     Ok(())
