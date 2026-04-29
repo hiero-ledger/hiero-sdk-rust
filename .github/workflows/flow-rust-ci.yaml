@@ -113,7 +113,7 @@ jobs:
         id: solo
         uses: hiero-ledger/hiero-solo-action@fbca3e7a99ce9aa8a250563a81187abe115e0dad # v0.16.0
         with:
-          hieroVersion: v0.72.0
+          hieroVersion: v0.73.0
           installMirrorNode: true
 
       - name: Create env file
