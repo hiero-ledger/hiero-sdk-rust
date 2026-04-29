@@ -22,8 +22,7 @@ async fn transfer_transaction_intrinsic_mode() -> anyhow::Result<()> {
     let operator_id = config.operator.as_ref().unwrap().account_id;
 
     let mut tx = TransferTransaction::new();
-    tx.hbar_transfer(operator_id, Hbar::new(-1))
-        .hbar_transfer("0.0.3".parse()?, Hbar::new(1));
+    tx.hbar_transfer(operator_id, Hbar::new(-1)).hbar_transfer("0.0.3".parse()?, Hbar::new(1));
 
     let response = FeeEstimateQuery::new()
         .set_mode(FeeEstimateMode::Intrinsic)
@@ -49,8 +48,7 @@ async fn transfer_transaction_state_mode() -> anyhow::Result<()> {
     let operator_id = config.operator.as_ref().unwrap().account_id;
 
     let mut tx = TransferTransaction::new();
-    tx.hbar_transfer(operator_id, Hbar::new(-1))
-        .hbar_transfer("0.0.3".parse()?, Hbar::new(1));
+    tx.hbar_transfer(operator_id, Hbar::new(-1)).hbar_transfer("0.0.3".parse()?, Hbar::new(1));
 
     let response = FeeEstimateQuery::new()
         .set_mode(FeeEstimateMode::State)
@@ -78,10 +76,8 @@ async fn account_create_transaction() -> anyhow::Result<()> {
     let mut tx = AccountCreateTransaction::new();
     tx.set_key_without_alias(key.public_key()).initial_balance(Hbar::new(1));
 
-    let response = FeeEstimateQuery::new()
-        .set_transaction(&mut tx, &client)?
-        .execute(&client)
-        .await?;
+    let response =
+        FeeEstimateQuery::new().set_transaction(&mut tx, &client)?.execute(&client).await?;
 
     assert!(response.total > 0, "expected non-zero total fee estimate");
 
@@ -104,8 +100,7 @@ async fn high_volume_throttle() -> anyhow::Result<()> {
     let operator_id = config.operator.as_ref().unwrap().account_id;
 
     let mut tx = TransferTransaction::new();
-    tx.hbar_transfer(operator_id, Hbar::new(-1))
-        .hbar_transfer("0.0.3".parse()?, Hbar::new(1));
+    tx.hbar_transfer(operator_id, Hbar::new(-1)).hbar_transfer("0.0.3".parse()?, Hbar::new(1));
 
     let response = FeeEstimateQuery::new()
         .set_transaction(&mut tx, &client)?
@@ -128,8 +123,7 @@ async fn intrinsic_vs_state_mode_both_return_fees() -> anyhow::Result<()> {
     let operator_id = config.operator.as_ref().unwrap().account_id;
 
     let mut tx = TransferTransaction::new();
-    tx.hbar_transfer(operator_id, Hbar::new(-1))
-        .hbar_transfer("0.0.3".parse()?, Hbar::new(1));
+    tx.hbar_transfer(operator_id, Hbar::new(-1)).hbar_transfer("0.0.3".parse()?, Hbar::new(1));
 
     let intrinsic = FeeEstimateQuery::new()
         .set_mode(FeeEstimateMode::Intrinsic)
@@ -173,21 +167,17 @@ async fn fee_extras_populated() -> anyhow::Result<()> {
     let operator_id = config.operator.as_ref().unwrap().account_id;
 
     let mut tx = TransferTransaction::new();
-    tx.hbar_transfer(operator_id, Hbar::new(-1))
-        .hbar_transfer("0.0.3".parse()?, Hbar::new(1));
+    tx.hbar_transfer(operator_id, Hbar::new(-1)).hbar_transfer("0.0.3".parse()?, Hbar::new(1));
 
-    let response = FeeEstimateQuery::new()
-        .set_transaction(&mut tx, &client)?
-        .execute(&client)
-        .await?;
+    let response =
+        FeeEstimateQuery::new().set_transaction(&mut tx, &client)?.execute(&client).await?;
 
     let node = response.node.expect("expected node fee component");
     // Signature verification should appear as an extra
     assert!(!node.extras.is_empty(), "expected at least one node fee extra");
 
-    let sig_extra = node.extras.iter().find(|e| {
-        e.name.as_deref().map_or(false, |n| n.contains("SIGNATURE"))
-    });
+    let sig_extra =
+        node.extras.iter().find(|e| e.name.as_deref().map_or(false, |n| n.contains("SIGNATURE")));
     assert!(sig_extra.is_some(), "expected signature verification extra in node fees");
 
     Ok(())

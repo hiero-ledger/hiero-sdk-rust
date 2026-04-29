@@ -181,10 +181,7 @@ impl FeeEstimateQuery {
     /// Panics if `max_backoff` is less than 500ms.
     #[must_use]
     pub fn set_max_backoff(mut self, max_backoff: Duration) -> Self {
-        assert!(
-            max_backoff >= Duration::from_millis(500),
-            "max_backoff must be at least 500ms"
-        );
+        assert!(max_backoff >= Duration::from_millis(500), "max_backoff must be at least 500ms");
         self.max_backoff = max_backoff;
         self
     }
@@ -202,10 +199,9 @@ impl FeeEstimateQuery {
     /// - If the mirror node returns an unrecoverable error.
     /// - If all retry attempts are exhausted.
     pub async fn execute(&self, client: &Client) -> crate::Result<FeeEstimateResponse> {
-        let transaction_bytes = self
-            .transaction_bytes
-            .as_ref()
-            .ok_or_else(|| Error::basic_parse("transaction bytes must be set on FeeEstimateQuery"))?;
+        let transaction_bytes = self.transaction_bytes.as_ref().ok_or_else(|| {
+            Error::basic_parse("transaction bytes must be set on FeeEstimateQuery")
+        })?;
 
         let base_url = mirror_rest_base_url(client);
         let url = self.build_url(&base_url);
@@ -269,10 +265,7 @@ impl FeeEstimateQuery {
 
 /// Determines whether a response status code is retryable.
 fn should_retry_status(status: hyper::StatusCode) -> bool {
-    matches!(
-        status.as_u16(),
-        408 | 429 | 500 | 502 | 503 | 504
-    )
+    matches!(status.as_u16(), 408 | 429 | 500 | 502 | 503 | 504)
 }
 
 /// Computes exponential backoff delay: `min(500ms * 2^attempt, max_backoff)`.
@@ -334,12 +327,7 @@ fn build_http_client(
 
 /// Reads the full body of an HTTP response as a string.
 async fn read_body(response: Response<Incoming>) -> Result<String, String> {
-    let body_bytes = response
-        .into_body()
-        .collect()
-        .await
-        .map_err(|e| e.to_string())?
-        .to_bytes();
+    let body_bytes = response.into_body().collect().await.map_err(|e| e.to_string())?.to_bytes();
     String::from_utf8(body_bytes.to_vec()).map_err(|e| e.to_string())
 }
 
@@ -362,30 +350,15 @@ fn parse_fee_estimate_response_json(json: &str) -> crate::Result<FeeEstimateResp
         .and_then(|v| v.as_u64())
         .unwrap_or(1);
 
-    let network = value
-        .get("network")
-        .and_then(|v| parse_network_fee(v));
+    let network = value.get("network").and_then(|v| parse_network_fee(v));
 
-    let node = value
-        .get("node")
-        .and_then(|v| parse_fee_estimate(v));
+    let node = value.get("node").and_then(|v| parse_fee_estimate(v));
 
-    let service = value
-        .get("service")
-        .and_then(|v| parse_fee_estimate(v));
+    let service = value.get("service").and_then(|v| parse_fee_estimate(v));
 
-    let total = value
-        .get("total")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0);
+    let total = value.get("total").and_then(|v| v.as_u64()).unwrap_or(0);
 
-    Ok(FeeEstimateResponse {
-        high_volume_multiplier,
-        network,
-        node,
-        service,
-        total,
-    })
+    Ok(FeeEstimateResponse { high_volume_multiplier, network, node, service, total })
 }
 
 fn parse_network_fee(value: &serde_json::Value) -> Option<NetworkFee> {
@@ -533,9 +506,8 @@ mod tests {
 
     #[test]
     fn build_url_state_with_throttle() {
-        let query = FeeEstimateQuery::new()
-            .set_mode(FeeEstimateMode::State)
-            .set_high_volume_throttle(5000);
+        let query =
+            FeeEstimateQuery::new().set_mode(FeeEstimateMode::State).set_high_volume_throttle(5000);
         let url = query.build_url("https://mirror.example.com/api/v1");
         assert_eq!(
             url,

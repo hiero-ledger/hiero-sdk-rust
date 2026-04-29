@@ -111,12 +111,12 @@ mod downcast;
 mod entity_id;
 mod error;
 mod ethereum;
+mod exchange_rates;
+mod execute;
 mod fee_estimate_mode;
 #[cfg(feature = "serde")]
 mod fee_estimate_query;
 mod fee_estimate_types;
-mod exchange_rates;
-mod execute;
 mod fee_schedules;
 mod file;
 mod hbar;

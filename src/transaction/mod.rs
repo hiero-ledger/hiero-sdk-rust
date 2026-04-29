@@ -1025,10 +1025,7 @@ where
         &mut self,
         client: &Client,
     ) -> crate::Result<crate::FeeEstimateResponse> {
-        crate::FeeEstimateQuery::new()
-            .set_transaction(self, client)?
-            .execute(client)
-            .await
+        crate::FeeEstimateQuery::new().set_transaction(self, client)?.execute(client).await
     }
 
     /// Execute this transaction against the provided client of the Hiero network.
