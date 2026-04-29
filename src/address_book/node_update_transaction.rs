@@ -352,7 +352,7 @@ impl ToProtobuf for NodeUpdateTransactionData {
             admin_key: self.admin_key.to_protobuf(),
             decline_reward: self.decline_reward,
             grpc_proxy_endpoint: self.grpc_proxy_endpoint.as_ref().map(|it| it.to_protobuf()),
-            associated_registered_node: Vec::new(),
+            associated_registered_node_list: None,
         }
     }
 }
@@ -460,7 +460,7 @@ mod tests {
             admin_key: Some(unused_private_key().public_key().to_protobuf()),
             decline_reward: Some(false),
             grpc_proxy_endpoint: Some(grpc_proxy_endpoint.to_protobuf()),
-            associated_registered_node: Vec::new(),
+            associated_registered_node_list: None,
         };
 
         let data = NodeUpdateTransactionData::from_protobuf(tx).unwrap();

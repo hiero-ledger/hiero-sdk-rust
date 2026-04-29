@@ -428,6 +428,7 @@ impl ToProtobuf for AccountCreateTransactionData {
             decline_reward: self.decline_staking_reward,
             staked_id,
             hook_creation_details: self.hooks.iter().map(|h| h.to_protobuf()).collect(),
+            delegation_address: Vec::new(),
         }
     }
 }
@@ -603,6 +604,7 @@ mod tests {
                         23,
                     ],
                     hook_creation_details: [],
+                    delegation_address: [],
                     staked_id: Some(
                         StakedAccountId(
                             AccountId {
@@ -727,6 +729,7 @@ mod tests {
                         23,
                     ],
                     hook_creation_details: [],
+                    delegation_address: [],
                     staked_id: Some(
                         StakedNodeId(
                             4,
@@ -780,6 +783,7 @@ mod tests {
                 STAKED_ACCOUNT_ID.to_protobuf(),
             )),
             hook_creation_details: hooks.iter().map(|h| h.to_protobuf()).collect(),
+            delegation_address: Vec::new(),
         };
 
         let tx = AccountCreateTransactionData::from_protobuf(tx).unwrap();

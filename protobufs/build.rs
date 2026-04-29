@@ -364,6 +364,16 @@ fn remove_unused_types(contents: &str) -> String {
         "// com.hedera.hapi.services.auxiliary.hints.CrsPublicationTransactionBody",
     );
 
+    let contents = contents.replace(
+        "import \"services/auxiliary/blockrecords/migration_root_hash_vote.proto\";",
+        "// import \"services/auxiliary/blockrecords/migration_root_hash_vote.proto\";",
+    );
+
+    let contents = contents.replace(
+        "com.hedera.hapi.services.auxiliary.blockrecords.MigrationRootHashVoteTransactionBody",
+        "// com.hedera.hapi.services.auxiliary.blockrecords.MigrationRootHashVoteTransactionBody",
+    );
+
     contents
 }
 

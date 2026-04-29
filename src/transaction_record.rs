@@ -105,6 +105,13 @@ pub struct TransactionRecord {
 
     /// A list of pending token airdrops.
     pub pending_airdrop_records: Vec<PendingAirdropRecord>,
+
+    /// A pricing multiplier for high-volume entity creation.
+    /// If the transaction that produced this record was flagged as high-volume,
+    /// this field contains the pricing multiplier applied to the transaction fee.
+    /// The value is expressed with an implicit denominator of 1,000
+    /// (e.g., 1000 = 1.000x base fee). Zero if not high-volume.
+    pub high_volume_pricing_multiplier: u64,
 }
 // TODO: paid_staking_rewards
 
@@ -221,6 +228,7 @@ impl TransactionRecord {
             prng_bytes,
             prng_number,
             pending_airdrop_records,
+            high_volume_pricing_multiplier: record.high_volume_pricing_multiplier,
         })
     }
 }
@@ -311,6 +319,7 @@ impl ToProtobuf for TransactionRecord {
                 .map(|it| services::transaction_record::Body::ContractCallResult(it.to_protobuf())),
             entropy,
             new_pending_airdrops: self.pending_airdrop_records.to_protobuf(),
+            high_volume_pricing_multiplier: self.high_volume_pricing_multiplier,
         }
     }
 }
@@ -414,6 +423,7 @@ mod tests {
             prng_bytes,
             prng_number,
             evm_address: Some(crate::EvmAddress([0; 20])),
+            high_volume_pricing_multiplier: 1000,
             pending_airdrop_records: vec![PendingAirdropRecord {
                 pending_airdrop_id: PendingAirdropId::new_token_id(
                     AccountId::new(0, 0, 678),

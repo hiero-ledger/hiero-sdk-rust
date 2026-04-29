@@ -944,6 +944,7 @@ impl AnyTransaction {
                 batch_key: first_body
                     .batch_key
                     .map(|key| crate::protobuf::FromProtobuf::from_protobuf(key).unwrap()),
+                high_volume: first_body.high_volume,
             },
             signers: Vec::new(),
             sources: None,
@@ -1237,6 +1238,7 @@ macro_rules! impl_cast_any {
                             regenerate_transaction_id: transaction.body.regenerate_transaction_id,
                             custom_fee_limits: transaction.body.custom_fee_limits,
                             batch_key: transaction.body.batch_key,
+                            high_volume: transaction.body.high_volume,
                         },
                         signers: transaction.signers,
                         sources: transaction.sources,

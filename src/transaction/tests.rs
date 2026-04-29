@@ -72,6 +72,40 @@ fn to_bytes_from_bytes() -> crate::Result<()> {
 }
 
 #[test]
+fn high_volume_round_trip() -> crate::Result<()> {
+    let mut tx = TransferTransaction::new();
+
+    let bytes = tx
+        .max_transaction_fee(Hbar::new(10))
+        .transaction_valid_duration(time::Duration::seconds(119))
+        .hbar_transfer(2.into(), Hbar::new(2))
+        .hbar_transfer(101.into(), Hbar::new(-2))
+        .set_high_volume(true)
+        .transaction_id(TransactionId {
+            account_id: 101.into(),
+            valid_start: OffsetDateTime::now_utc(),
+            nonce: None,
+            scheduled: false,
+        })
+        .node_account_ids([6.into()])
+        .freeze()?
+        .to_bytes()?;
+
+    let tx2 = AnyTransaction::from_bytes(&bytes)?;
+
+    assert_eq!(tx.get_high_volume(), true);
+    assert_eq!(tx2.get_high_volume(), true);
+
+    Ok(())
+}
+
+#[test]
+fn high_volume_defaults_to_false() {
+    let tx = TransferTransaction::new();
+    assert_eq!(tx.get_high_volume(), false);
+}
+
+#[test]
 fn signed_to_bytes_from_bytes_preserves_signatures() -> crate::Result<()> {
     let mut tx = TransferTransaction::new();
 
