@@ -407,6 +407,7 @@ TransactionRecord {
             ),
         },
     ],
+    high_volume_pricing_multiplier: 1000,
     body: Some(
         ContractCallResult(
             ContractFunctionResult {

@@ -174,6 +174,7 @@ impl AccountInfo {
             // additional fields
             live_hashes: self.live_hashes.to_protobuf(),
             token_relationships: self.token_relationships.to_protobuf(),
+            delegation_address: Vec::new(),
         }
         .encode_to_vec()
     }

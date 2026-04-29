@@ -431,6 +431,7 @@ impl ToProtobuf for AccountUpdateTransactionData {
             staked_id,
             hook_creation_details: self.hooks.iter().map(|hook| hook.to_protobuf()).collect(),
             hook_ids_to_delete: self.hook_ids_to_delete.clone(),
+            delegation_address: Vec::new(),
         }
     }
 }
@@ -619,6 +620,7 @@ mod tests {
                     decline_reward: None,
                     hook_ids_to_delete: [],
                     hook_creation_details: [],
+                    delegation_address: [],
                     send_record_threshold_field: None,
                     receive_record_threshold_field: None,
                     receiver_sig_required_field: Some(
@@ -754,6 +756,7 @@ mod tests {
                     decline_reward: None,
                     hook_ids_to_delete: [],
                     hook_creation_details: [],
+                    delegation_address: [],
                     send_record_threshold_field: None,
                     receive_record_threshold_field: None,
                     receiver_sig_required_field: Some(
@@ -814,6 +817,7 @@ mod tests {
             expiration_time: Some(EXPIRATION_TIME.to_protobuf()),
             hook_creation_details: hooks.iter().map(|h| h.to_protobuf()).collect(),
             hook_ids_to_delete,
+            delegation_address: Vec::new(),
         };
 
         let tx = AccountUpdateTransactionData::from_protobuf(tx).unwrap();

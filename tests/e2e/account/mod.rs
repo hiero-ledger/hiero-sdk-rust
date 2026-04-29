@@ -5,6 +5,7 @@ mod allowance_delete;
 mod balance;
 mod create;
 mod delete;
+mod high_volume_create;
 mod info;
 mod update;
 

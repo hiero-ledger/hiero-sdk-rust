@@ -110,6 +110,11 @@ pub(crate) struct TransactionBody<D> {
 
     /// The public key of the trusted batch assembler.
     pub(crate) batch_key: Option<crate::Key>,
+
+    /// Whether to use high-volume throttles for this transaction.
+    /// When true, enables high-volume throttles and pricing for entity creation.
+    /// Only affects supported transaction types; otherwise, it is ignored.
+    pub(crate) high_volume: bool,
 }
 
 impl<D> Default for Transaction<D>
@@ -130,6 +135,7 @@ where
                 regenerate_transaction_id: None,
                 custom_fee_limits: Vec::new(),
                 batch_key: None,
+                high_volume: false,
             },
             signers: Vec::new(),
             sources: None,
@@ -560,6 +566,23 @@ impl<D: ValidateChecksums> Transaction<D> {
     pub fn get_batch_key(&self) -> Option<&crate::Key> {
         self.body.batch_key.as_ref()
     }
+
+    /// Set whether to use high-volume throttles for this transaction.
+    ///
+    /// When true, enables high-volume throttles and pricing for entity creation.
+    /// Only affects supported transaction types; otherwise, it is ignored.
+    #[track_caller]
+    pub fn set_high_volume(&mut self, high_volume: bool) -> &mut Self {
+        self.require_not_frozen();
+        self.body_mut().high_volume = high_volume;
+        self
+    }
+
+    /// Get whether high-volume throttles are enabled for this transaction.
+    #[must_use]
+    pub fn get_high_volume(&self) -> bool {
+        self.body.high_volume
+    }
 }
 
 impl<D: TransactionExecute> Transaction<D> {
@@ -892,7 +915,7 @@ impl<D: TransactionExecute> Transaction<D> {
                 .to_tinybars() as u64,
             max_custom_fees: { self.body.custom_fee_limits.to_protobuf() },
             batch_key: self.body.batch_key.as_ref().map(|key| key.to_protobuf()),
-            high_volume: false,
+            high_volume: self.body.high_volume,
         };
 
         let body_bytes = transaction_body.encode_to_vec();
@@ -1383,6 +1406,7 @@ where
             regenerate_transaction_id,
             custom_fee_limits,
             batch_key,
+            high_volume,
         } = body;
 
         // not a `map().map_err()` because ownership.
@@ -1400,6 +1424,7 @@ where
                     regenerate_transaction_id,
                     custom_fee_limits,
                     batch_key,
+                    high_volume,
                 },
                 signers,
                 sources,
@@ -1420,6 +1445,7 @@ where
                     regenerate_transaction_id,
                     custom_fee_limits,
                     batch_key: batch_key.clone(),
+                    high_volume,
                 },
                 signers,
                 sources,
