@@ -26,10 +26,12 @@ use crate::fee_estimate_types::{
     FeeExtra,
     NetworkFee,
 };
+use crate::transaction::TransactionExecute;
 use crate::{
     Client,
     Error,
     FeeEstimateMode,
+    Transaction,
 };
 
 /// Default maximum number of retry attempts.
@@ -49,17 +51,16 @@ const INITIAL_BACKOFF: Duration = Duration::from_millis(500);
 /// # Examples
 /// ```no_run
 /// # async fn example() -> hiero_sdk::Result<()> {
-/// use hiero_sdk::{Client, TransferTransaction, FeeEstimateQuery, FeeEstimateMode};
+/// use hiero_sdk::{Client, AccountId, PrivateKey, TransferTransaction, FeeEstimateQuery, FeeEstimateMode};
 ///
 /// let client = Client::for_testnet();
-/// client.set_operator(/* ... */);
+/// client.set_operator(AccountId::new(0, 0, 1234), PrivateKey::generate_ed25519());
 ///
 /// let mut tx = TransferTransaction::new();
 /// // ... configure transaction ...
-/// tx.freeze_with(&client)?;
 ///
 /// let response = FeeEstimateQuery::new()
-///     .set_transaction_bytes(tx.to_bytes()?)
+///     .set_transaction(&mut tx, &client)?
 ///     .set_mode(FeeEstimateMode::Intrinsic)
 ///     .execute(&client)
 ///     .await?;
@@ -106,6 +107,24 @@ impl FeeEstimateQuery {
     #[must_use]
     pub fn get_mode(&self) -> FeeEstimateMode {
         self.mode
+    }
+
+    /// Sets the transaction to estimate fees for.
+    ///
+    /// The transaction will be automatically frozen with the given client if not already frozen.
+    /// For chunked transactions, only the first chunk is used for fee estimation.
+    ///
+    /// # Errors
+    /// - If the transaction cannot be frozen.
+    /// - If the transaction bytes cannot be serialized.
+    pub fn set_transaction<D: TransactionExecute>(
+        mut self,
+        transaction: &mut Transaction<D>,
+        client: &Client,
+    ) -> crate::Result<Self> {
+        transaction.freeze_with(Some(client))?;
+        self.transaction_bytes = Some(transaction.to_bytes()?);
+        Ok(self)
     }
 
     /// Sets the protobuf-encoded transaction bytes to estimate fees for.

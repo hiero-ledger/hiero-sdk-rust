@@ -1014,6 +1014,23 @@ where
         }
     }
 
+    /// Estimate the fee for this transaction using the mirror node REST API (HIP-1261).
+    ///
+    /// The transaction will be automatically frozen with the given client if not already frozen.
+    ///
+    /// # Errors
+    /// - If the transaction cannot be frozen or serialized.
+    /// - If the mirror node returns an error.
+    pub async fn estimate_fee(
+        &mut self,
+        client: &Client,
+    ) -> crate::Result<crate::FeeEstimateResponse> {
+        crate::FeeEstimateQuery::new()
+            .set_transaction(self, client)?
+            .execute(client)
+            .await
+    }
+
     /// Execute this transaction against the provided client of the Hiero network.
     pub async fn execute(&mut self, client: &Client) -> crate::Result<TransactionResponse> {
         self.execute_with_optional_timeout(client, None).await
