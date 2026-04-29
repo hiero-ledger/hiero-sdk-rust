@@ -111,6 +111,10 @@ mod downcast;
 mod entity_id;
 mod error;
 mod ethereum;
+mod fee_estimate_mode;
+#[cfg(feature = "serde")]
+mod fee_estimate_query;
+mod fee_estimate_types;
 mod exchange_rates;
 mod execute;
 mod fee_schedules;
@@ -220,6 +224,15 @@ pub use ethereum::{
 pub use exchange_rates::{
     ExchangeRate,
     ExchangeRates,
+};
+pub use fee_estimate_mode::FeeEstimateMode;
+#[cfg(feature = "serde")]
+pub use fee_estimate_query::FeeEstimateQuery;
+pub use fee_estimate_types::{
+    FeeEstimate,
+    FeeEstimateResponse,
+    FeeExtra,
+    NetworkFee,
 };
 pub use fee_schedules::{
     FeeComponents,

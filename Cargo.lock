@@ -1061,6 +1061,7 @@ dependencies = [
  "hex-literal",
  "hiero-sdk-proto",
  "hmac",
+ "http-body-util",
  "hyper",
  "hyper-openssl",
  "hyper-util",
