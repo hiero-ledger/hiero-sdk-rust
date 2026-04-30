@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::crypto_service_client::CryptoServiceClient;
 use services::crypto_get_account_balance_query::BalanceSource;
-use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::query::{
@@ -16,6 +15,7 @@ use crate::{
     AccountBalance,
     AccountId,
     BoxGrpcFuture,
+    Channel,
     ContractId,
     Error,
     ToProtobuf,

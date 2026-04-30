@@ -2,7 +2,6 @@ use std::cmp;
 use std::num::NonZeroUsize;
 
 use hiero_sdk_proto::services;
-use tonic::transport::Channel;
 
 use super::{
     TransactionData,
@@ -14,6 +13,7 @@ use crate::ledger_id::RefLedgerId;
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     Hbar,
     Transaction,

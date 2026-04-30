@@ -4,7 +4,6 @@ use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::file_service_client::FileServiceClient;
 use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
 use time::OffsetDateTime;
-use tonic::transport::Channel;
 
 use crate::protobuf::{
     FromProtobuf,
@@ -20,6 +19,7 @@ use crate::transaction::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     ContractId,
     Error,
     FileId,

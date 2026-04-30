@@ -17,7 +17,6 @@ use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
 use tonic::Response;
 
 use super::topic_message::{
@@ -32,6 +31,7 @@ use crate::mirror_query::{
 use crate::protobuf::FromProtobuf;
 use crate::{
     AnyMirrorQueryResponse,
+    Channel,
     MirrorQuery,
     ToProtobuf,
     TopicId,

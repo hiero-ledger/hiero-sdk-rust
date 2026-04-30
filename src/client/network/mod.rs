@@ -17,10 +17,8 @@ use backoff::backoff::Backoff;
 use once_cell::sync::OnceCell;
 use parking_lot::RwLock;
 use rand::thread_rng;
-use tonic::transport::{
-    Channel,
-    Endpoint,
-};
+use tonic::service::interceptor::InterceptedService;
+use tonic::transport::Endpoint;
 use triomphe::Arc;
 
 use crate::{
@@ -401,7 +399,11 @@ impl NetworkData {
         node_id_indecies.into_iter().map(|index| node_ids[index]).collect()
     }
 
-    pub(crate) fn channel(&self, index: usize, grpc_deadline: Duration) -> (AccountId, Channel) {
+    pub(crate) fn channel(
+        &self,
+        index: usize,
+        grpc_deadline: Duration,
+    ) -> (AccountId, crate::Channel) {
         let id = self.node_ids[index];
 
         let channel = self.connections[index].channel(grpc_deadline);
@@ -535,7 +537,7 @@ impl NodeHealth {
 #[derive(Clone)]
 struct NodeConnection {
     addresses: BTreeSet<String>,
-    channel: OnceCell<Channel>,
+    channel: OnceCell<tonic::transport::Channel>,
 }
 
 impl NodeConnection {
@@ -552,7 +554,7 @@ impl NodeConnection {
         }
     }
 
-    pub(crate) fn channel(&self, grpc_deadline: Duration) -> Channel {
+    pub(crate) fn channel(&self, grpc_deadline: Duration) -> crate::Channel {
         let channel = self
             .channel
             .get_or_init(|| {
@@ -565,11 +567,11 @@ impl NodeConnection {
                         .connect_timeout(grpc_deadline)
                 });
 
-                Channel::balance_list(addresses)
+                tonic::transport::Channel::balance_list(addresses)
             })
             .clone();
 
-        channel
+        InterceptedService::new(channel, crate::channel::SdkInterceptor)
     }
 }
 

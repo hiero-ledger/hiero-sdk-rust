@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::crypto_service_client::CryptoServiceClient;
 use time::Duration;
-use tonic::transport::Channel;
 
 use crate::hooks::{
     EvmHook,
@@ -26,6 +25,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     EvmAddress,
     Hbar,
