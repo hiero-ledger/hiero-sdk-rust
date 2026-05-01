@@ -29,7 +29,7 @@ futures-core = "0.3.32"
 h2 = "0.4.12"
 hiero-sdk-proto = { path = "./protobufs", version = "0.22.0", features = ["time_0_3", "fraction"] }
 hex = "0.4.3"
-hmac = "0.12.1"
+hmac = "0.13.0"
 # Dependency of tonic 0.12
 hyper = { version = "1.6", default-features = false }
 log = "0.4.28"
