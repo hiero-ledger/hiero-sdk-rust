@@ -168,11 +168,17 @@ mod tests {
     #[test]
     fn from_protobuf_missing_creation_time() {
         use hiero_sdk_proto::services;
+
         use crate::FromProtobuf;
 
         let pb = services::TokenNftInfo {
             nft_id: Some(services::NftId {
-                token_id: Some(services::TokenId { shard_num: 1, realm_num: 2, token_num: 3, ..Default::default() }),
+                token_id: Some(services::TokenId {
+                    shard_num: 1,
+                    realm_num: 2,
+                    token_num: 3,
+                    ..Default::default()
+                }),
                 serial_number: 4,
             }),
             account_id: Some(services::AccountId {
@@ -190,5 +196,4 @@ mod tests {
         let result = TokenNftInfo::from_protobuf(pb);
         assert!(result.is_err());
     }
-
 }
