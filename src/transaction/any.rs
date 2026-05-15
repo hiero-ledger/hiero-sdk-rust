@@ -733,15 +733,9 @@ impl FromProtobuf<services::transaction_body::Data> for AnyTransactionData {
                     "unsupported transaction `LedgerIdPublicationTransaction`",
                 ))
             }
-            Data::RegisteredNodeCreate(pb) => {
-                data::RegisteredNodeCreate::from_protobuf(pb)?.into()
-            }
-            Data::RegisteredNodeUpdate(pb) => {
-                data::RegisteredNodeUpdate::from_protobuf(pb)?.into()
-            }
-            Data::RegisteredNodeDelete(pb) => {
-                data::RegisteredNodeDelete::from_protobuf(pb)?.into()
-            }
+            Data::RegisteredNodeCreate(pb) => data::RegisteredNodeCreate::from_protobuf(pb)?.into(),
+            Data::RegisteredNodeUpdate(pb) => data::RegisteredNodeUpdate::from_protobuf(pb)?.into(),
+            Data::RegisteredNodeDelete(pb) => data::RegisteredNodeDelete::from_protobuf(pb)?.into(),
         };
 
         Ok(data)

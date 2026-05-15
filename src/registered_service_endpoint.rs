@@ -34,9 +34,7 @@ impl BlockNodeApi {
             2 => Ok(Self::Publish),
             3 => Ok(Self::SubscribeStream),
             4 => Ok(Self::StateProof),
-            _ => Err(crate::Error::from_protobuf(format!(
-                "unknown BlockNodeApi value: {value}"
-            ))),
+            _ => Err(crate::Error::from_protobuf(format!("unknown BlockNodeApi value: {value}"))),
         }
     }
 
@@ -116,9 +114,7 @@ impl FromProtobuf<services::RegisteredServiceEndpoint> for RegisteredServiceEndp
             Some(registered_service_endpoint::Address::DomainName(name)) => {
                 Ok(RegisteredEndpointAddress::DomainName(name))
             }
-            None => {
-                Err(crate::Error::from_protobuf("RegisteredServiceEndpoint missing address"))
-            }
+            None => Err(crate::Error::from_protobuf("RegisteredServiceEndpoint missing address")),
         }?;
 
         let endpoint_type = match pb.endpoint_type {
@@ -139,9 +135,9 @@ impl FromProtobuf<services::RegisteredServiceEndpoint> for RegisteredServiceEndp
             Some(registered_service_endpoint::EndpointType::GeneralService(gs)) => {
                 Ok(RegisteredEndpointType::GeneralService(gs.description))
             }
-            None => Err(crate::Error::from_protobuf(
-                "RegisteredServiceEndpoint missing endpoint_type",
-            )),
+            None => {
+                Err(crate::Error::from_protobuf("RegisteredServiceEndpoint missing endpoint_type"))
+            }
         }?;
 
         Ok(Self { address, port: pb.port, requires_tls: pb.requires_tls, endpoint_type })

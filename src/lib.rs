@@ -306,12 +306,6 @@ pub(crate) use node_address_book_query::NodeAddressBookQueryData;
 pub use pending_airdrop_id::PendingAirdropId;
 pub use pending_airdrop_record::PendingAirdropRecord;
 pub use prng_transaction::PrngTransaction;
-pub use registered_service_endpoint::{
-    BlockNodeApi,
-    RegisteredEndpointAddress,
-    RegisteredEndpointType,
-    RegisteredServiceEndpoint,
-};
 pub(crate) use protobuf::{
     FromProtobuf,
     ToProtobuf,
@@ -320,6 +314,12 @@ pub use query::{
     AnyQuery,
     AnyQueryResponse,
     Query,
+};
+pub use registered_service_endpoint::{
+    BlockNodeApi,
+    RegisteredEndpointAddress,
+    RegisteredEndpointType,
+    RegisteredServiceEndpoint,
 };
 pub(crate) use retry::retry;
 pub use schedule::{

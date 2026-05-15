@@ -1,7 +1,9 @@
 use std::net::Ipv4Addr;
+use std::str::FromStr;
 
 use assert_matches::assert_matches;
 use hiero_sdk::{
+    AccountId,
     BlockNodeApi,
     PrivateKey,
     RegisteredEndpointAddress,
@@ -17,6 +19,16 @@ use crate::common::{
     setup_nonfree,
     TestEnvironment,
 };
+
+/// Set the operator to account 0.0.2 (address book admin) which has permission
+/// to manage registered nodes.
+fn set_address_book_operator(client: &hiero_sdk::Client) {
+    let operator_key = PrivateKey::from_str(
+        "302e020100300506032b65700422042091132178e72057a1d7528025956fe39b0b847f200ab59b2fdd367017f3087137",
+    )
+    .unwrap();
+    client.set_operator(AccountId::new(0, 0, 2), operator_key);
+}
 
 fn make_block_node_endpoint() -> RegisteredServiceEndpoint {
     RegisteredServiceEndpoint {
@@ -102,6 +114,7 @@ async fn can_create_registered_node_with_block_node() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -119,6 +132,7 @@ async fn can_create_registered_node_with_mirror_node() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -140,16 +154,13 @@ async fn can_create_registered_node_with_rpc_relay() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
-    let registered_node_id = create_registered_node(
-        &client,
-        &admin_key,
-        "rpc relay",
-        vec![make_rpc_relay_endpoint()],
-    )
-    .await?;
+    let registered_node_id =
+        create_registered_node(&client, &admin_key, "rpc relay", vec![make_rpc_relay_endpoint()])
+            .await?;
 
     delete_registered_node(&client, &admin_key, registered_node_id).await?;
 
@@ -161,6 +172,7 @@ async fn can_create_registered_node_with_general_service() -> anyhow::Result<()>
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -182,6 +194,7 @@ async fn can_create_registered_node_with_multiple_endpoint_types() -> anyhow::Re
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -208,6 +221,7 @@ async fn can_create_registered_node_with_domain_name() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -235,6 +249,7 @@ async fn create_registered_node_fails_without_admin_key() -> anyhow::Result<()> 
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let res = RegisteredNodeCreateTransaction::new()
         .service_endpoints(vec![make_block_node_endpoint()])
@@ -243,10 +258,7 @@ async fn create_registered_node_fails_without_admin_key() -> anyhow::Result<()> 
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::TransactionPreCheckStatus {
-            status: Status::KeyRequired,
-            ..
-        })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::KeyRequired, .. })
     );
 
     Ok(())
@@ -257,6 +269,7 @@ async fn create_registered_node_fails_with_empty_endpoints() -> anyhow::Result<(
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -271,10 +284,7 @@ async fn create_registered_node_fails_with_empty_endpoints() -> anyhow::Result<(
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::ReceiptStatus {
-            status: Status::InvalidRegisteredEndpoint,
-            ..
-        })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidRegisteredEndpoint, .. })
     );
 
     Ok(())
@@ -287,6 +297,7 @@ async fn can_update_registered_node_description() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -318,6 +329,7 @@ async fn can_update_registered_node_service_endpoints() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -350,6 +362,7 @@ async fn can_rotate_admin_key() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let old_admin_key = PrivateKey::generate_ed25519();
     let new_admin_key = PrivateKey::generate_ed25519();
@@ -385,6 +398,7 @@ async fn can_replace_ip_address_with_domain() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -428,6 +442,7 @@ async fn update_registered_node_fails_with_invalid_id() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -443,10 +458,7 @@ async fn update_registered_node_fails_with_invalid_id() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::ReceiptStatus {
-            status: Status::InvalidRegisteredNodeId,
-            ..
-        })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidRegisteredNodeId, .. })
     );
 
     Ok(())
@@ -457,6 +469,7 @@ async fn update_registered_node_fails_without_admin_key_signature() -> anyhow::R
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
     let wrong_key = PrivateKey::generate_ed25519();
@@ -496,6 +509,7 @@ async fn admin_key_rotation_fails_without_new_key_signature() -> anyhow::Result<
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let old_admin_key = PrivateKey::generate_ed25519();
     let new_admin_key = PrivateKey::generate_ed25519();
@@ -537,6 +551,7 @@ async fn can_delete_registered_node() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -558,6 +573,7 @@ async fn delete_registered_node_fails_with_invalid_id() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -572,10 +588,7 @@ async fn delete_registered_node_fails_with_invalid_id() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::ReceiptStatus {
-            status: Status::InvalidRegisteredNodeId,
-            ..
-        })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidRegisteredNodeId, .. })
     );
 
     Ok(())
@@ -586,6 +599,7 @@ async fn delete_already_deleted_registered_node_fails() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
@@ -612,10 +626,7 @@ async fn delete_already_deleted_registered_node_fails() -> anyhow::Result<()> {
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::ReceiptStatus {
-            status: Status::InvalidRegisteredNodeId,
-            ..
-        })
+        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidRegisteredNodeId, .. })
     );
 
     Ok(())
@@ -626,6 +637,7 @@ async fn delete_registered_node_fails_without_admin_key_signature() -> anyhow::R
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
     let wrong_key = PrivateKey::generate_ed25519();
@@ -666,6 +678,7 @@ async fn registered_node_full_lifecycle() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
     };
+    set_address_book_operator(&client);
 
     let admin_key = PrivateKey::generate_ed25519();
 
