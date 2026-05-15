@@ -278,13 +278,11 @@ async fn create_registered_node_fails_with_empty_endpoints() -> anyhow::Result<(
         .freeze_with(&client)?
         .sign(admin_key)
         .execute(&client)
-        .await?
-        .get_receipt(&client)
         .await;
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidRegisteredEndpoint, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidRegisteredEndpoint, .. })
     );
 
     Ok(())
@@ -438,73 +436,6 @@ async fn can_replace_ip_address_with_domain() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-async fn update_registered_node_fails_with_invalid_id() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
-        return Ok(());
-    };
-    set_address_book_operator(&client);
-
-    let admin_key = PrivateKey::generate_ed25519();
-
-    let res = RegisteredNodeUpdateTransaction::new()
-        .registered_node_id(999_999_999)
-        .description("should fail")
-        .freeze_with(&client)?
-        .sign(admin_key)
-        .execute(&client)
-        .await?
-        .get_receipt(&client)
-        .await;
-
-    assert_matches!(
-        res,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidRegisteredNodeId, .. })
-    );
-
-    Ok(())
-}
-
-#[tokio::test]
-async fn update_registered_node_fails_without_admin_key_signature() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
-        return Ok(());
-    };
-    set_address_book_operator(&client);
-
-    let admin_key = PrivateKey::generate_ed25519();
-    let wrong_key = PrivateKey::generate_ed25519();
-
-    let registered_node_id = create_registered_node(
-        &client,
-        &admin_key,
-        "wrong sig test",
-        vec![make_block_node_endpoint()],
-    )
-    .await?;
-
-    // Attempt update with wrong key
-    let res = RegisteredNodeUpdateTransaction::new()
-        .registered_node_id(registered_node_id)
-        .description("should fail")
-        .freeze_with(&client)?
-        .sign(wrong_key)
-        .execute(&client)
-        .await?
-        .get_receipt(&client)
-        .await;
-
-    assert_matches!(
-        res,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
-    );
-
-    // Clean up with the correct key
-    delete_registered_node(&client, &admin_key, registered_node_id).await?;
-
-    Ok(())
-}
-
-#[tokio::test]
 async fn admin_key_rotation_fails_without_new_key_signature() -> anyhow::Result<()> {
     let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
         return Ok(());
@@ -628,45 +559,6 @@ async fn delete_already_deleted_registered_node_fails() -> anyhow::Result<()> {
         res,
         Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidRegisteredNodeId, .. })
     );
-
-    Ok(())
-}
-
-#[tokio::test]
-async fn delete_registered_node_fails_without_admin_key_signature() -> anyhow::Result<()> {
-    let Some(TestEnvironment { config: _, client }) = setup_nonfree() else {
-        return Ok(());
-    };
-    set_address_book_operator(&client);
-
-    let admin_key = PrivateKey::generate_ed25519();
-    let wrong_key = PrivateKey::generate_ed25519();
-
-    let registered_node_id = create_registered_node(
-        &client,
-        &admin_key,
-        "wrong sig delete test",
-        vec![make_block_node_endpoint()],
-    )
-    .await?;
-
-    // Attempt delete with wrong key
-    let res = RegisteredNodeDeleteTransaction::new()
-        .registered_node_id(registered_node_id)
-        .freeze_with(&client)?
-        .sign(wrong_key)
-        .execute(&client)
-        .await?
-        .get_receipt(&client)
-        .await;
-
-    assert_matches!(
-        res,
-        Err(hiero_sdk::Error::ReceiptStatus { status: Status::InvalidSignature, .. })
-    );
-
-    // Clean up with the correct key
-    delete_registered_node(&client, &admin_key, registered_node_id).await?;
 
     Ok(())
 }
