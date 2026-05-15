@@ -1,0 +1,5 @@
+RegisteredNodeDelete(
+    RegisteredNodeDeleteTransactionBody {
+        registered_node_id: 42,
+    },
+)
