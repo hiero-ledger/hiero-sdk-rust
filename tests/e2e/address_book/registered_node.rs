@@ -282,7 +282,10 @@ async fn create_registered_node_fails_with_empty_endpoints() -> anyhow::Result<(
 
     assert_matches!(
         res,
-        Err(hiero_sdk::Error::TransactionPreCheckStatus { status: Status::InvalidRegisteredEndpoint, .. })
+        Err(hiero_sdk::Error::TransactionPreCheckStatus {
+            status: Status::InvalidRegisteredEndpoint,
+            ..
+        })
     );
 
     Ok(())
