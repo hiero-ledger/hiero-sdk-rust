@@ -307,11 +307,9 @@ jobs:
         id: proto-publish-args
         if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
         run: |
-          # Proto package should always be published for real (no dry-run)
-          # because the SDK depends on it. If we dry-run the proto package,
-          # the SDK dry-run will fail due to missing dependency.
           PUBLISH_ARGS="--locked --allow-dirty"
-          
+          [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
+
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
         working-directory: protobufs
 
@@ -321,13 +319,9 @@ jobs:
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
-          
+
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
 
-      # Publish the hiero-sdk-proto package
-      # NOTE: Proto package is ALWAYS published for real (never dry-run) when required,
-      # even if dry-run is enabled. This is necessary because the SDK package depends on it.
-      # Without the proto package on crates.io, the SDK dry-run validation would fail.
       - name: Publish proto to crates.io (hiero-sdk-proto)
         if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
         env:
