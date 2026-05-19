@@ -322,6 +322,7 @@ jobs:
 
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
 
+      # Publish the hiero-sdk-proto package
       - name: Publish proto to crates.io (hiero-sdk-proto)
         if: ${{ needs.validate-release.outputs.hiero-proto-publish-required == 'true' }}
         env:
