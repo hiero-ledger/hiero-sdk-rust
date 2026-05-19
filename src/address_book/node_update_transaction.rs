@@ -4,7 +4,6 @@ use std::net::Ipv4Addr;
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::address_book_service_client::AddressBookServiceClient;
-use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
@@ -20,6 +19,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     Key,
     ToProtobuf,

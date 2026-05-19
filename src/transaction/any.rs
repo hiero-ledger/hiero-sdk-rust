@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use hiero_sdk_proto::services;
-use tonic::transport::Channel;
 
 use super::chunked::ChunkInfo;
 use super::{
@@ -21,6 +20,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     Hbar,
     Transaction,

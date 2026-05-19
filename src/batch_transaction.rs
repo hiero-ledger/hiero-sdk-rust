@@ -3,7 +3,6 @@
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::util_service_client::UtilServiceClient;
 use prost::Message;
-use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
@@ -17,6 +16,7 @@ use crate::transaction::{
 use crate::{
     AnyTransaction,
     BoxGrpcFuture,
+    Channel,
     Error,
     Hbar,
     Transaction,

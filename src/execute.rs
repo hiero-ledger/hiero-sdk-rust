@@ -19,8 +19,6 @@ use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use tonic::metadata::AsciiMetadataValue;
-use tonic::transport::Channel;
-use tonic::Request;
 use triomphe::Arc;
 
 use crate::client::NetworkData;
@@ -31,6 +29,7 @@ use crate::{
     retry,
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Client,
     Error,
     Status,
@@ -101,12 +100,6 @@ pub(crate) trait Execute: ValidateChecksums {
     #[allow(unused_variables)]
     fn should_retry(&self, response: &Self::GrpcResponse) -> bool {
         false
-    }
-
-    /// Add metadata to the request.
-    fn add_metadata(&self, metadata: &mut tonic::metadata::MetadataMap) {
-        let user_agent = format!("hiero-sdk-rust/{}", env!("CARGO_PKG_VERSION"));
-        metadata.insert("x-user-agent", user_agent.parse().unwrap());
     }
 
     /// Create a new request for execution.
@@ -450,10 +443,7 @@ async fn execute_single<'a, E: Execute + Sync>(
         type_name::<E>()
     );
 
-    let mut req = Request::new(request);
-    executable.add_metadata(req.metadata_mut());
-
-    let fut = executable.execute(channel, req.into_inner());
+    let fut = executable.execute(channel, request);
 
     let response = match tokio::time::timeout(ctx.grpc_deadline, fut).await {
         Ok(it) => it,

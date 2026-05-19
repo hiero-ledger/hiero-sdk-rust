@@ -6,7 +6,6 @@ use time::{
     Duration,
     OffsetDateTime,
 };
-use tonic::transport::Channel;
 
 use crate::custom_fixed_fee::CustomFixedFee;
 use crate::ledger_id::RefLedgerId;
@@ -25,6 +24,7 @@ use crate::transaction::{
 use crate::{
     AccountId,
     BoxGrpcFuture,
+    Channel,
     Error,
     Key,
     TopicId,

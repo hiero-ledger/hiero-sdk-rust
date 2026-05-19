@@ -7,11 +7,11 @@ use futures_core::future::BoxFuture;
 use futures_core::Stream;
 use futures_util::StreamExt;
 use tokio::time::sleep;
-use tonic::transport::Channel;
 use tonic::Status;
 
 use crate::mirror_query::AnyMirrorQueryData;
 use crate::{
+    Channel,
     Client,
     Error,
     MirrorQuery,

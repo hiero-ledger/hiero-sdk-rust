@@ -92,7 +92,7 @@ impl ToTransactionDataProtobuf for PrngTransactionData {
 impl TransactionExecute for PrngTransactionData {
     fn execute(
         &self,
-        channel: tonic::transport::Channel,
+        channel: crate::Channel,
         request: services::Transaction,
     ) -> crate::BoxGrpcFuture<'_, services::TransactionResponse> {
         Box::pin(async { UtilServiceClient::new(channel).prng(request).await })

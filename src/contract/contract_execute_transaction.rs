@@ -2,7 +2,6 @@
 
 use hiero_sdk_proto::services;
 use hiero_sdk_proto::services::smart_contract_service_client::SmartContractServiceClient;
-use tonic::transport::Channel;
 
 use crate::ledger_id::RefLedgerId;
 use crate::protobuf::FromProtobuf;
@@ -16,6 +15,7 @@ use crate::transaction::{
 };
 use crate::{
     BoxGrpcFuture,
+    Channel,
     ContractFunctionParameters,
     ContractId,
     Error,
