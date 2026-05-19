@@ -309,7 +309,7 @@ jobs:
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
-          
+
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
         working-directory: protobufs
 
@@ -319,7 +319,7 @@ jobs:
         run: |
           PUBLISH_ARGS="--locked --allow-dirty"
           [[ "${DRY_RUN_ENABLED}" == "true" ]] && PUBLISH_ARGS="${PUBLISH_ARGS} --dry-run"
-          
+
           echo "args=${PUBLISH_ARGS}" >> "${GITHUB_OUTPUT}"
 
       # Publish the hiero-sdk-proto package

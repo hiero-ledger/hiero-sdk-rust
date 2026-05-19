@@ -1,0 +1,73 @@
+RegisteredNodeCreate(
+    RegisteredNodeCreateTransactionBody {
+        admin_key: Some(
+            Key {
+                key: Some(
+                    Ed25519(
+                        [
+                            224,
+                            200,
+                            236,
+                            39,
+                            88,
+                            165,
+                            135,
+                            159,
+                            250,
+                            194,
+                            38,
+                            161,
+                            60,
+                            12,
+                            81,
+                            107,
+                            121,
+                            158,
+                            114,
+                            227,
+                            81,
+                            65,
+                            160,
+                            221,
+                            130,
+                            143,
+                            148,
+                            211,
+                            121,
+                            136,
+                            164,
+                            183,
+                        ],
+                    ),
+                ),
+            },
+        ),
+        description: "test registered node",
+        service_endpoint: [
+            RegisteredServiceEndpoint {
+                port: 8080,
+                requires_tls: true,
+                address: Some(
+                    IpAddress(
+                        [
+                            127,
+                            0,
+                            0,
+                            1,
+                        ],
+                    ),
+                ),
+                endpoint_type: Some(
+                    BlockNode(
+                        BlockNodeEndpoint {
+                            endpoint_api: [
+                                Status,
+                                Publish,
+                            ],
+                        },
+                    ),
+                ),
+            },
+        ],
+    },
+)
