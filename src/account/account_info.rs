@@ -10,6 +10,7 @@ use time::{
 use crate::protobuf::ToProtobuf;
 use crate::{
     AccountId,
+    EvmAddress,
     FromProtobuf,
     Hbar,
     Key,
@@ -102,6 +103,12 @@ pub struct AccountInfo {
 
     /// All tokens associated with the account.
     pub token_relationships: Vec<TokenRelationship>,
+
+    /// The delegation address for this account.
+    ///
+    /// When set, calls to this account will execute the EVM code of the contract at
+    /// the delegation address in the context of this account (similar to DELEGATECALL).
+    pub delegation_address: Option<EvmAddress>,
 }
 
 /// A live hash attached to an account.
@@ -174,7 +181,9 @@ impl AccountInfo {
             // additional fields
             live_hashes: self.live_hashes.to_protobuf(),
             token_relationships: self.token_relationships.to_protobuf(),
-            delegation_address: Vec::new(),
+            delegation_address: self
+                .delegation_address
+                .map_or(vec![], |it| it.to_bytes().to_vec()),
         }
         .encode_to_vec()
     }
@@ -203,6 +212,9 @@ impl FromProtobuf<services::crypto_get_info_response::AccountInfo> for AccountIn
         let staking = Option::from_protobuf(pb.staking_info)?;
         let live_hashes = Vec::from_protobuf(pb.live_hashes)?;
         let token_relationships = Vec::from_protobuf(pb.token_relationships)?;
+        let delegation_address = (!pb.delegation_address.is_empty())
+            .then(|| EvmAddress::try_from(pb.delegation_address))
+            .transpose()?;
 
         #[allow(deprecated)]
         Ok(Self {
@@ -224,6 +236,7 @@ impl FromProtobuf<services::crypto_get_info_response::AccountInfo> for AccountIn
             alias_key,
             ethereum_nonce: pb.ethereum_nonce as u64,
             is_receiver_signature_required: pb.receiver_sig_required,
+            delegation_address,
 
             // deprecated fields
             proxy_account_id: Option::from_protobuf(pb.proxy_account_id)?,

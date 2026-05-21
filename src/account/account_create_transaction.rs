@@ -81,6 +81,13 @@ pub struct AccountCreateTransactionData {
     /// If true, the account declines receiving a staking reward. The default value is false.
     decline_staking_reward: bool,
 
+    /// A 20-byte EVM address to be used as the account's delegation address.
+    ///
+    /// When a call is made to an account with a delegation address set, the EVM code of
+    /// the contract referenced by the delegation address executes in the context of the
+    /// delegating account (similar to DELEGATECALL). This aligns with EIP-7702.
+    delegation_address: Option<EvmAddress>,
+
     /// Hooks to add immediately after creating this account.
     hooks: Vec<HookCreationDetails>,
 }
@@ -98,6 +105,7 @@ impl Default for AccountCreateTransactionData {
             alias: None,
             staked_id: None,
             decline_staking_reward: false,
+            delegation_address: None,
             hooks: Vec::new(),
         }
     }
@@ -302,6 +310,21 @@ impl AccountCreateTransaction {
         self
     }
 
+    /// Returns the delegation address for this account.
+    #[must_use]
+    pub fn get_delegation_address(&self) -> Option<EvmAddress> {
+        self.data().delegation_address
+    }
+
+    /// Sets the delegation address for this account.
+    ///
+    /// When set, calls to this account will execute the EVM code of the contract at
+    /// the delegation address in the context of this account (similar to DELEGATECALL).
+    pub fn delegation_address(&mut self, address: EvmAddress) -> &mut Self {
+        self.data_mut().delegation_address = Some(address);
+        self
+    }
+
     pub fn add_hook(&mut self, hook: HookCreationDetails) -> &mut Self {
         self.data_mut().hooks.push(hook);
         self
@@ -372,6 +395,9 @@ impl From<AccountCreateTransactionData> for AnyTransactionData {
 impl FromProtobuf<services::CryptoCreateTransactionBody> for AccountCreateTransactionData {
     fn from_protobuf(pb: services::CryptoCreateTransactionBody) -> crate::Result<Self> {
         let alias = (!pb.alias.is_empty()).then(|| EvmAddress::try_from(pb.alias)).transpose()?;
+        let delegation_address = (!pb.delegation_address.is_empty())
+            .then(|| EvmAddress::try_from(pb.delegation_address))
+            .transpose()?;
 
         Ok(Self {
             key: Option::from_protobuf(pb.key)?,
@@ -384,6 +410,7 @@ impl FromProtobuf<services::CryptoCreateTransactionBody> for AccountCreateTransa
             alias,
             staked_id: Option::from_protobuf(pb.staked_id)?,
             decline_staking_reward: pb.decline_reward,
+            delegation_address,
             hooks: pb
                 .hook_creation_details
                 .into_iter()
@@ -428,13 +455,17 @@ impl ToProtobuf for AccountCreateTransactionData {
             decline_reward: self.decline_staking_reward,
             staked_id,
             hook_creation_details: self.hooks.iter().map(|h| h.to_protobuf()).collect(),
-            delegation_address: Vec::new(),
+            delegation_address: self
+                .delegation_address
+                .map_or(vec![], |it| it.to_bytes().to_vec()),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use expect_test::expect;
     use hex_literal::hex;
     use hiero_sdk_proto::services;
@@ -987,5 +1018,114 @@ mod tests {
 
         assert_eq!(tx.get_key(), Some(&generic_key));
         assert_eq!(tx.get_alias(), None);
+    }
+
+    #[test]
+    fn get_set_delegation_address() {
+        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let mut tx = AccountCreateTransaction::new();
+        tx.delegation_address(delegation_addr);
+
+        assert_eq!(tx.get_delegation_address(), Some(delegation_addr));
+    }
+
+    #[test]
+    fn get_delegation_address_returns_none_when_not_set() {
+        let tx = AccountCreateTransaction::new();
+
+        assert_eq!(tx.get_delegation_address(), None);
+    }
+
+    #[test]
+    #[should_panic]
+    fn get_set_delegation_address_frozen_panics() {
+        let mut tx = make_transaction();
+        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+
+        tx.delegation_address(delegation_addr);
+    }
+
+    #[test]
+    fn delegation_address_proto_serialization() {
+        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let mut tx = AccountCreateTransaction::new_for_tests();
+        tx.set_key_without_alias(key())
+            .delegation_address(delegation_addr)
+            .freeze()
+            .unwrap();
+
+        let body = transaction_body(tx);
+        let data = check_body(body);
+
+        match data {
+            services::transaction_body::Data::CryptoCreateAccount(pb) => {
+                assert_eq!(pb.delegation_address, delegation_addr.to_bytes().to_vec());
+            }
+            _ => panic!("expected CryptoCreateAccount"),
+        }
+    }
+
+    #[test]
+    fn delegation_address_proto_serialization_when_not_set() {
+        let mut tx = AccountCreateTransaction::new_for_tests();
+        tx.set_key_without_alias(key())
+            .freeze()
+            .unwrap();
+
+        let body = transaction_body(tx);
+        let data = check_body(body);
+
+        match data {
+            services::transaction_body::Data::CryptoCreateAccount(pb) => {
+                assert!(pb.delegation_address.is_empty());
+            }
+            _ => panic!("expected CryptoCreateAccount"),
+        }
+    }
+
+    #[test]
+    fn from_proto_body_with_delegation_address() {
+        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+
+        let tx = services::CryptoCreateTransactionBody {
+            key: Some(key().to_protobuf()),
+            initial_balance: INITIAL_BALANCE.to_tinybars() as u64,
+            proxy_account_id: None,
+            send_record_threshold: i64::MAX as u64,
+            receive_record_threshold: i64::MAX as u64,
+            receiver_sig_required: false,
+            auto_renew_period: Some(AUTO_RENEW_PERIOD.to_protobuf()),
+            shard_id: None,
+            realm_id: None,
+            new_realm_admin_key: None,
+            memo: ACCOUNT_MEMO.to_owned(),
+            max_automatic_token_associations: MAX_AUTOMATIC_TOKEN_ASSOCIATIONS,
+            decline_reward: false,
+            alias: Vec::new(),
+            staked_id: None,
+            hook_creation_details: vec![],
+            delegation_address: delegation_addr.to_bytes().to_vec(),
+        };
+
+        let tx = AccountCreateTransactionData::from_protobuf(tx).unwrap();
+
+        assert_eq!(tx.delegation_address, Some(delegation_addr));
+    }
+
+    #[test]
+    fn delegation_address_bytes_serialization() {
+        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let mut tx = AccountCreateTransaction::new_for_tests();
+        tx.set_key_without_alias(key())
+            .delegation_address(delegation_addr)
+            .freeze()
+            .unwrap();
+
+        let tx2 = AnyTransaction::from_bytes(&tx.to_bytes().unwrap()).unwrap();
+
+        let body1 = transaction_body(tx);
+        let body2 = transaction_body(tx2);
+
+        assert_eq!(body1, body2);
     }
 }

@@ -219,7 +219,9 @@ pub use error::{
     MnemonicParseError,
 };
 pub use ethereum::{
+    Authorization,
     Eip1559EthereumData,
+    Eip7702EthereumData,
     EthereumData,
     EthereumFlow,
     EthereumTransaction,
