@@ -455,9 +455,7 @@ impl ToProtobuf for AccountCreateTransactionData {
             decline_reward: self.decline_staking_reward,
             staked_id,
             hook_creation_details: self.hooks.iter().map(|h| h.to_protobuf()).collect(),
-            delegation_address: self
-                .delegation_address
-                .map_or(vec![], |it| it.to_bytes().to_vec()),
+            delegation_address: self.delegation_address.map_or(vec![], |it| it.to_bytes().to_vec()),
         }
     }
 }
@@ -1022,7 +1020,8 @@ mod tests {
 
     #[test]
     fn get_set_delegation_address() {
-        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
         let mut tx = AccountCreateTransaction::new();
         tx.delegation_address(delegation_addr);
 
@@ -1040,19 +1039,18 @@ mod tests {
     #[should_panic]
     fn get_set_delegation_address_frozen_panics() {
         let mut tx = make_transaction();
-        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
 
         tx.delegation_address(delegation_addr);
     }
 
     #[test]
     fn delegation_address_proto_serialization() {
-        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
         let mut tx = AccountCreateTransaction::new_for_tests();
-        tx.set_key_without_alias(key())
-            .delegation_address(delegation_addr)
-            .freeze()
-            .unwrap();
+        tx.set_key_without_alias(key()).delegation_address(delegation_addr).freeze().unwrap();
 
         let body = transaction_body(tx);
         let data = check_body(body);
@@ -1068,9 +1066,7 @@ mod tests {
     #[test]
     fn delegation_address_proto_serialization_when_not_set() {
         let mut tx = AccountCreateTransaction::new_for_tests();
-        tx.set_key_without_alias(key())
-            .freeze()
-            .unwrap();
+        tx.set_key_without_alias(key()).freeze().unwrap();
 
         let body = transaction_body(tx);
         let data = check_body(body);
@@ -1085,7 +1081,8 @@ mod tests {
 
     #[test]
     fn from_proto_body_with_delegation_address() {
-        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
 
         let tx = services::CryptoCreateTransactionBody {
             key: Some(key().to_protobuf()),
@@ -1114,12 +1111,10 @@ mod tests {
 
     #[test]
     fn delegation_address_bytes_serialization() {
-        let delegation_addr = EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
         let mut tx = AccountCreateTransaction::new_for_tests();
-        tx.set_key_without_alias(key())
-            .delegation_address(delegation_addr)
-            .freeze()
-            .unwrap();
+        tx.set_key_without_alias(key()).delegation_address(delegation_addr).freeze().unwrap();
 
         let tx2 = AnyTransaction::from_bytes(&tx.to_bytes().unwrap()).unwrap();
 

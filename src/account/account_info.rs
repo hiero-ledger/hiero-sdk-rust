@@ -181,9 +181,7 @@ impl AccountInfo {
             // additional fields
             live_hashes: self.live_hashes.to_protobuf(),
             token_relationships: self.token_relationships.to_protobuf(),
-            delegation_address: self
-                .delegation_address
-                .map_or(vec![], |it| it.to_bytes().to_vec()),
+            delegation_address: self.delegation_address.map_or(vec![], |it| it.to_bytes().to_vec()),
         }
         .encode_to_vec()
     }

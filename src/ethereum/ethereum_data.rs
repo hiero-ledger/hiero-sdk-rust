@@ -632,10 +632,8 @@ mod test {
                     .to_vec(),
             }],
             recovery_id: hex!("01").to_vec(),
-            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479")
-                .to_vec(),
-            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66")
-                .to_vec(),
+            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479").to_vec(),
+            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66").to_vec(),
         };
 
         let bytes = data.to_bytes();
@@ -655,10 +653,7 @@ mod test {
                 assert_eq!(hex::encode(&data.max_priority_gas), "2f");
                 assert_eq!(hex::encode(&data.max_gas), "2f");
                 assert_eq!(hex::encode(&data.gas_limit), "018000");
-                assert_eq!(
-                    hex::encode(&data.to),
-                    "7e3a9eaf9bcc39e2ffa38eb30bf7a93feacbc181"
-                );
+                assert_eq!(hex::encode(&data.to), "7e3a9eaf9bcc39e2ffa38eb30bf7a93feacbc181");
                 assert_eq!(hex::encode(&data.value), "0de0b6b3a7640000");
                 assert_eq!(hex::encode(&data.call_data), "123456");
                 assert!(data.access_list.is_empty());
@@ -666,10 +661,7 @@ mod test {
 
                 let auth = &data.authorization_list[0];
                 assert_eq!(hex::encode(&auth.chain_id), "012a");
-                assert_eq!(
-                    hex::encode(&auth.address),
-                    "1234567890abcdef1234567890abcdef12345678"
-                );
+                assert_eq!(hex::encode(&auth.address), "1234567890abcdef1234567890abcdef12345678");
                 assert_eq!(hex::encode(&auth.nonce), "01");
                 assert_eq!(hex::encode(&auth.y_parity), "01");
             }
@@ -693,10 +685,8 @@ mod test {
             access_list: vec![],
             authorization_list: vec![],
             recovery_id: hex!("01").to_vec(),
-            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479")
-                .to_vec(),
-            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66")
-                .to_vec(),
+            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479").to_vec(),
+            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66").to_vec(),
         };
 
         let bytes = data.to_bytes();
@@ -735,35 +725,25 @@ mod test {
                     address: hex!("1234567890abcdef1234567890abcdef12345678").to_vec(),
                     nonce: hex!("01").to_vec(),
                     y_parity: hex!("01").to_vec(),
-                    r: hex!(
-                        "df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479"
-                    )
-                    .to_vec(),
-                    s: hex!(
-                        "1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66"
-                    )
-                    .to_vec(),
+                    r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479")
+                        .to_vec(),
+                    s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66")
+                        .to_vec(),
                 },
                 Authorization {
                     chain_id: hex!("012a").to_vec(),
                     address: hex!("abcdef1234567890abcdef1234567890abcdef12").to_vec(),
                     nonce: hex!("02").to_vec(),
                     y_parity: hex!("00").to_vec(),
-                    r: hex!(
-                        "f9fbff985d374be4a55f296915002eec11ac96f1ce2df183adf992baa9390b2f"
-                    )
-                    .to_vec(),
-                    s: hex!(
-                        "0c1e867cc960d9c74ec2e6a662b7908ec4c8cc9f3091e886bcefbeb2290fb792"
-                    )
-                    .to_vec(),
+                    r: hex!("f9fbff985d374be4a55f296915002eec11ac96f1ce2df183adf992baa9390b2f")
+                        .to_vec(),
+                    s: hex!("0c1e867cc960d9c74ec2e6a662b7908ec4c8cc9f3091e886bcefbeb2290fb792")
+                        .to_vec(),
                 },
             ],
             recovery_id: hex!("01").to_vec(),
-            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479")
-                .to_vec(),
-            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66")
-                .to_vec(),
+            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479").to_vec(),
+            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66").to_vec(),
         };
 
         let bytes = data.to_bytes();
@@ -815,10 +795,8 @@ mod test {
                     .to_vec(),
             }],
             recovery_id: hex!("01").to_vec(),
-            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479")
-                .to_vec(),
-            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66")
-                .to_vec(),
+            r: hex!("df48f2efd10421811de2bfb125ab75b2d3c44139c4642837fb1fccce911fd479").to_vec(),
+            s: hex!("1aaf7ae92bee896651dfc9d99ae422a296bf5d9f1ca49b2d96d82b79eb112d66").to_vec(),
         };
 
         let bytes = data.to_bytes();
