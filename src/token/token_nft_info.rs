@@ -78,7 +78,7 @@ impl FromProtobuf<services::TokenNftInfo> for TokenNftInfo {
     {
         let nft_id = pb_getf!(pb, nft_id)?;
         let account_id = pb_getf!(pb, account_id)?;
-        let creation_time = pb.creation_time.unwrap();
+        let creation_time = pb_getf!(pb, creation_time)?;
         let metadata = pb.metadata;
         let spender_account_id = Option::from_protobuf(pb.spender_id)?;
 
@@ -163,5 +163,37 @@ mod tests {
             )
         "#]]
         .assert_debug_eq(&TokenNftInfo::from_bytes(&info.to_bytes()));
+    }
+
+    #[test]
+    fn from_protobuf_missing_creation_time() {
+        use hiero_sdk_proto::services;
+
+        use crate::FromProtobuf;
+
+        let pb = services::TokenNftInfo {
+            nft_id: Some(services::NftId {
+                token_id: Some(services::TokenId {
+                    shard_num: 1,
+                    realm_num: 2,
+                    token_num: 3,
+                    ..Default::default()
+                }),
+                serial_number: 4,
+            }),
+            account_id: Some(services::AccountId {
+                shard_num: 5,
+                realm_num: 6,
+                account: Some(services::account_id::Account::AccountNum(7)),
+                ..Default::default()
+            }),
+            creation_time: None, // intentionally missing
+            metadata: vec![],
+            ledger_id: vec![],
+            spender_id: None,
+        };
+
+        let result = TokenNftInfo::from_protobuf(pb);
+        assert!(result.is_err());
     }
 }
