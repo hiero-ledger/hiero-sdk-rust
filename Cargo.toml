@@ -74,7 +74,7 @@ default-features = false
 features = ["std"]
 
 [dependencies.rust_decimal]
-version = "1.40.0"
+version = "1.42.0"
 default-features = false
 features = ["std"]
 
