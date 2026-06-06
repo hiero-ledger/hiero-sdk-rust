@@ -338,3 +338,36 @@ fn test_offline_transaction_signing_with_chunks() -> crate::Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn get_transaction_body_bytes_returns_non_empty_bytes() -> crate::Result<()> {
+    let mut tx = TransferTransaction::new();
+    tx.node_account_ids(TEST_NODE_ACCOUNT_IDS)
+        .transaction_id(TEST_TX_ID)
+        .max_transaction_fee(Hbar::new(2))
+        .freeze()?;
+
+    let bytes = tx.get_transaction_body_bytes()?;
+    assert!(!bytes.is_empty());
+
+    Ok(())
+}
+
+
+
+#[test]
+fn get_transaction_body_bytes_are_signable() -> crate::Result<()> {
+    let mut tx = TransferTransaction::new();
+    tx.node_account_ids(TEST_NODE_ACCOUNT_IDS)
+        .transaction_id(TEST_TX_ID)
+        .max_transaction_fee(Hbar::new(2))
+        .freeze()?;
+
+    let bytes = tx.get_transaction_body_bytes()?;
+    let key = unused_private_key();
+    let sig = key.sign(&bytes);
+
+    assert_eq!(sig.len(), 64);
+
+    Ok(())
+}
