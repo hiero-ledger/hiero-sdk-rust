@@ -353,8 +353,6 @@ fn get_transaction_body_bytes_returns_non_empty_bytes() -> crate::Result<()> {
     Ok(())
 }
 
-
-
 #[test]
 fn get_transaction_body_bytes_are_signable() -> crate::Result<()> {
     let mut tx = TransferTransaction::new();
