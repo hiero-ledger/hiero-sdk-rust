@@ -481,5 +481,3 @@ impl ToProtobuf for PublicKey {
     }
 }
 
-// TODO: to_protobuf
-// TODO: verify_transaction
