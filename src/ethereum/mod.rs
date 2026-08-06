@@ -6,7 +6,9 @@ mod ethereum_transaction;
 mod evm_address;
 
 pub use ethereum_data::{
+    Authorization,
     Eip1559EthereumData,
+    Eip7702EthereumData,
     EthereumData,
     LegacyEthereumData,
 };
