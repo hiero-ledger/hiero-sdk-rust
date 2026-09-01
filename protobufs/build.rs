@@ -55,6 +55,8 @@ fn main() -> anyhow::Result<()> {
     // used for code generation. Later we will suppress generation of cargo
     // directives on the copy, so set a directive on the source.
     println!("cargo:rerun-if-changed={}", SERVICES_FOLDER);
+    println!("cargo:rerun-if-changed=./mirror");
+    println!("cargo:rerun-if-changed=./sdk");
 
     if !services_path.is_dir() {
         anyhow::bail!("Folder {SERVICES_FOLDER} does not exist; do you need to `git submodule update --init`?");
@@ -172,6 +174,7 @@ fn main() -> anyhow::Result<()> {
     create_dir_all(&mirror_out_dir)?;
 
     tonic_build::configure()
+        .emit_rerun_if_changed(false)
         .build_server(false)
         .extern_path(".proto.Timestamp", "crate::services::Timestamp")
         .extern_path(".proto.TopicID", "crate::services::TopicId")
@@ -196,7 +199,7 @@ fn main() -> anyhow::Result<()> {
 
     // note:
     // almost everything in services must be specified here.
-    let cfg = tonic_build::configure();
+    let cfg = tonic_build::configure().emit_rerun_if_changed(false);
     let cfg = builder::extern_basic_types(cfg)
         .services_same("AssessedCustomFee")
         .services_same("ConsensusCreateTopicTransactionBody")
