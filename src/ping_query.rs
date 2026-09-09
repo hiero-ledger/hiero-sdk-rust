@@ -15,13 +15,18 @@ use crate::{
     Client,
 };
 
+/// Account number of the treasury system account, present on every network from genesis.
+const TREASURY_ACCOUNT_NUM: u64 = 2;
+
 /// Internal "query" to ping a specific node.
 ///
-/// This is *here* so that it can change implementation at will.
-/// `PingQuery` is an `AccountBalanceQuery`-ish for now,
-/// but it doesn't have to stay that way.
+/// The probe is a `CryptoService/getAccountInfo` query for the treasury account
+/// (`<shard>.<realm>.2`) sent with `ResponseType = COST_ANSWER`: the node answers
+/// with the query fee without executing the query, so nothing is charged and no
+/// operator is required. A cost response means the node is reachable; a gRPC-level
+/// failure is recorded against the node like any other failed request.
 ///
-/// It's also ideally smaller/faster than any other query, by virtue of just...
+/// This is *here* so that it can change implementation at will.
 pub(crate) struct PingQuery {
     node_account_id: AccountId,
 }
@@ -81,22 +86,23 @@ impl Execute for PingQuery {
     ) -> crate::Result<(Self::GrpcRequest, Self::Context)> {
         const HEADER: services::QueryHeader = services::QueryHeader {
             payment: None,
-            response_type: services::ResponseType::AnswerOnly as i32,
+            response_type: services::ResponseType::CostAnswer as i32,
         };
 
         debug_assert_eq!(node_account_id, self.node_account_id);
 
+        // System accounts live in the same shard and realm as the network's nodes.
+        let treasury_account_id = AccountId::new(
+            self.node_account_id.shard,
+            self.node_account_id.realm,
+            TREASURY_ACCOUNT_NUM,
+        );
+
         let query = services::Query {
-            query: Some(services::query::Query::CryptogetAccountBalance(
-                services::CryptoGetAccountBalanceQuery {
-                    balance_source: Some(
-                        services::crypto_get_account_balance_query::BalanceSource::AccountId(
-                            self.node_account_id.to_protobuf(),
-                        ),
-                    ),
-                    header: Some(HEADER),
-                },
-            )),
+            query: Some(services::query::Query::CryptoGetInfo(services::CryptoGetInfoQuery {
+                account_id: Some(treasury_account_id.to_protobuf()),
+                header: Some(HEADER),
+            })),
         };
 
         Ok((query, ()))
@@ -107,7 +113,7 @@ impl Execute for PingQuery {
         channel: crate::Channel,
         request: Self::GrpcRequest,
     ) -> crate::BoxGrpcFuture<Self::GrpcResponse> {
-        Box::pin(async { CryptoServiceClient::new(channel).crypto_get_balance(request).await })
+        Box::pin(async { CryptoServiceClient::new(channel).get_account_info(request).await })
     }
 
     fn make_response(
@@ -131,5 +137,67 @@ impl Execute for PingQuery {
 
     fn response_pre_check_status(response: &Self::GrpcResponse) -> crate::Result<i32> {
         Ok(response_header(&response.response)?.node_transaction_precheck_code)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use expect_test::expect;
+    use hiero_sdk_proto::services;
+
+    use super::PingQuery;
+    use crate::execute::Execute;
+    use crate::protobuf::ToProtobuf;
+    use crate::AccountId;
+
+    #[test]
+    fn probe_is_a_cost_answer_get_account_info_for_the_treasury() {
+        let node_account_id = AccountId::new(0, 0, 3);
+
+        let (query, ()) =
+            PingQuery::new(node_account_id).make_request(None, node_account_id).unwrap();
+
+        expect![[r#"
+            Query {
+                query: Some(
+                    CryptoGetInfo(
+                        CryptoGetInfoQuery {
+                            header: Some(
+                                QueryHeader {
+                                    payment: None,
+                                    response_type: CostAnswer,
+                                },
+                            ),
+                            account_id: Some(
+                                AccountId {
+                                    shard_num: 0,
+                                    realm_num: 0,
+                                    account: Some(
+                                        AccountNum(
+                                            2,
+                                        ),
+                                    ),
+                                },
+                            ),
+                        },
+                    ),
+                ),
+            }
+        "#]]
+        .assert_debug_eq(&query);
+    }
+
+    #[test]
+    fn probe_follows_the_shard_and_realm_of_the_node() {
+        let node_account_id = AccountId::new(1, 2, 3);
+
+        let (query, ()) =
+            PingQuery::new(node_account_id).make_request(None, node_account_id).unwrap();
+
+        let Some(services::query::Query::CryptoGetInfo(info)) = query.query else {
+            panic!("expected a `CryptoGetInfo` query, got {:?}", query.query);
+        };
+
+        assert_eq!(info.account_id, Some(AccountId::new(1, 2, 2).to_protobuf()));
     }
 }

@@ -651,11 +651,19 @@ impl Client {
     }
 
     /// Send a ping to the given node.
+    ///
+    /// The ping is a `CryptoService/getAccountInfo` query for the treasury account sent with
+    /// `ResponseType = COST_ANSWER`: a healthy node answers with the query fee without
+    /// executing the query, so nothing is charged and no operator is required.
+    /// A gRPC-level failure fails the ping and counts against the node's health like any
+    /// other failed request.
     pub async fn ping(&self, node_account_id: AccountId) -> crate::Result<()> {
         PingQuery::new(node_account_id).execute(self, None).await
     }
 
     /// Send a ping to the given node, canceling the ping after `timeout` has elapsed.
+    ///
+    /// See [`Self::ping`] for what a ping is.
     pub async fn ping_with_timeout(
         &self,
         node_account_id: AccountId,
@@ -665,6 +673,8 @@ impl Client {
     }
 
     /// Send a ping to all nodes.
+    ///
+    /// See [`Self::ping`] for what a ping is.
     pub async fn ping_all(&self) -> crate::Result<()> {
         futures_util::future::try_join_all(
             self.net().0.load().node_ids().iter().map(|it| self.ping(*it)),
