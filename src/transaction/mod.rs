@@ -765,6 +765,23 @@ impl<D: TransactionExecute> Transaction<D> {
 
         self
     }
+    /// Returns the bytes of the transaction body for use with external signers.
+    ///
+    /// This is useful when signing with an async or remote signer (e.g. a vault or HSM)
+    /// that cannot be used with the synchronous [`Self::sign_with`] closure.
+    /// The returned bytes can be signed externally and passed to [`Self::add_signature`].
+    ///
+    /// # Errors
+    /// Returns an error if the transaction has not been frozen or has no transactions.
+    pub fn get_transaction_body_bytes(&self) -> crate::Result<Vec<u8>> {
+        let sources = self.make_sources()?;
+        Ok(sources
+            .signed_transactions()
+            .first()
+            .ok_or_else(|| crate::Error::basic_parse("no transactions"))?
+            .body_bytes
+            .clone())
+    }
 
     /// # Panics
     /// panics if the transaction is not schedulable, a transaction can be non-schedulable due to:
