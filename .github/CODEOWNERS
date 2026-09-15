@@ -2,7 +2,7 @@
 ##### Global Protection Rule ######
 ###################################
 # NOTE: This rule is overriden by the more specific rules below. This is the catch-all rule for all files not covered by the more specific rules below.
-*                                               @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+*                                               @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
 
 #########################
 #####  Core Files  ######
@@ -12,36 +12,36 @@
 
 # Protection Rules for Github Configuration Files and Actions Workflows
 /.github/                                       @hiero-ledger/github-maintainers
-/.github/dependabot.yml                         @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers @hiero-ledger/github-maintainers
+/.github/dependabot.yml                         @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters @hiero-ledger/github-maintainers
 /.github/workflows/                             @hiero-ledger/github-maintainers 
 
 # Legacy Maven project files
-**/pom.xml                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+**/pom.xml                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
 
 # Cargo project files and inline plugins
-Cargo.lock                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
-Cargo.toml                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
-rustfmt.toml                                    @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
-rust-toolchain.toml                             @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+Cargo.lock                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
+Cargo.toml                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
+rustfmt.toml                                    @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
+rust-toolchain.toml                             @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
 
 # Codacy Tool Configurations
-/config/                                        @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
-.remarkrc                                       @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+/config/                                        @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
+.remarkrc                                       @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
 
 # Self-protection for root CODEOWNERS files (this file should not exist and should definitely require approval)
 /CODEOWNERS                                     @hiero-ledger/github-maintainers
 
 # Protect the repository root files
-/README.md                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+/README.md                                      @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
 **/LICENSE                                      @hiero-ledger/github-maintainers
 
 # CodeCov configuration
-**/codecov.yml                                  @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+**/codecov.yml                                  @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
 
 # Git Ignore definitions
-**/.gitignore                                   @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
-**/.gitignore.*                                 @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+**/.gitignore                                   @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
+**/.gitignore.*                                 @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
 
 # Legacy CircleCI configuration
-.circleci.settings.xml                          @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
-/.circleci/                                     @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdk-rust-maintainers @hiero-ledger/hiero-sdk-rust-committers
+.circleci.settings.xml                          @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
+/.circleci/                                     @hiero-ledger/github-maintainers @hiero-ledger/hiero-sdkmaintainers @hiero-ledger/hiero-sdkcommitters
