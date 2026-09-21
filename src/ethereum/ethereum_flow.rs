@@ -29,13 +29,13 @@ impl EthereumFlow {
         Self::default()
     }
 
-    /// Returns the raw Ethereum transaction (RLP encoded type 0, 1, and 2).
+    /// Returns the raw Ethereum transaction (RLP encoded type 0, 1, 2, and 4).
     #[must_use]
     pub fn get_ethereum_data(&self) -> Option<&EthereumData> {
         self.ethereum_data.as_ref()
     }
 
-    /// Sets the raw Ethereum transaction data (RLP encoded type 0, 1, and 2).
+    /// Sets the raw Ethereum transaction data (RLP encoded type 0, 1, 2, and 4).
     ///
     /// # Errors
     /// - [`Error::BasicParse`](crate::Error::BasicParse) if the given `data` cannot be parsed as [`EthereumData`].

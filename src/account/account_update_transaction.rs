@@ -27,6 +27,7 @@ use crate::{
     BoxGrpcFuture,
     Channel,
     Error,
+    EvmAddress,
     Key,
     Transaction,
     ValidateChecksums,
@@ -90,6 +91,13 @@ pub struct AccountUpdateTransactionData {
 
     /// If true, the account declines receiving a staking reward. The default value is false.
     decline_staking_reward: Option<bool>,
+
+    /// A 20-byte EVM address to be used as the account's delegation address.
+    ///
+    /// When set, calls to this account will execute the EVM code of the contract at
+    /// the delegation address in the context of this account (similar to DELEGATECALL).
+    /// Set to `Some(None)` to clear an existing delegation address.
+    delegation_address: Option<Option<EvmAddress>>,
 
     /// Hooks to add immediately after updating this account.
     hooks: Vec<HookCreationDetails>,
@@ -277,6 +285,31 @@ impl AccountUpdateTransaction {
         self
     }
 
+    /// Returns the delegation address for this account.
+    ///
+    /// Returns `Some(Some(address))` if a delegation address is being set,
+    /// `Some(None)` if the delegation address is being cleared,
+    /// and `None` if the field is not being changed.
+    #[must_use]
+    pub fn get_delegation_address(&self) -> Option<Option<EvmAddress>> {
+        self.data().delegation_address
+    }
+
+    /// Sets the delegation address for this account.
+    ///
+    /// When set, calls to this account will execute the EVM code of the contract at
+    /// the delegation address in the context of this account (similar to DELEGATECALL).
+    pub fn delegation_address(&mut self, address: EvmAddress) -> &mut Self {
+        self.data_mut().delegation_address = Some(Some(address));
+        self
+    }
+
+    /// Clears the delegation address for this account.
+    pub fn clear_delegation_address(&mut self) -> &mut Self {
+        self.data_mut().delegation_address = Some(None);
+        self
+    }
+
     /// Returns the hooks to be created.
     #[must_use]
     pub fn get_hooks_to_create(&self) -> &[HookCreationDetails] {
@@ -368,6 +401,12 @@ impl FromProtobuf<services::CryptoUpdateTransactionBody> for AccountUpdateTransa
             | ReceiverSigRequiredField::ReceiverSigRequiredWrapper(it) => it,
         });
 
+        let delegation_address = if pb.delegation_address.is_empty() {
+            None
+        } else {
+            Some(Some(EvmAddress::try_from(pb.delegation_address)?))
+        };
+
         Ok(Self {
             account_id: Option::from_protobuf(pb.account_id_to_update)?,
             key: Option::from_protobuf(pb.key)?,
@@ -380,6 +419,7 @@ impl FromProtobuf<services::CryptoUpdateTransactionBody> for AccountUpdateTransa
             max_automatic_token_associations: pb.max_automatic_token_associations,
             staked_id: Option::from_protobuf(pb.staked_id)?,
             decline_staking_reward: pb.decline_reward,
+            delegation_address,
             hooks: pb
                 .hook_creation_details
                 .into_iter()
@@ -431,13 +471,19 @@ impl ToProtobuf for AccountUpdateTransactionData {
             staked_id,
             hook_creation_details: self.hooks.iter().map(|hook| hook.to_protobuf()).collect(),
             hook_ids_to_delete: self.hook_ids_to_delete.clone(),
-            delegation_address: Vec::new(),
+            delegation_address: match self.delegation_address {
+                Some(Some(addr)) => addr.to_bytes().to_vec(),
+                Some(None) => vec![],
+                None => vec![],
+            },
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use expect_test::expect;
     use hiero_sdk_proto::services;
     use time::{
@@ -461,6 +507,7 @@ mod tests {
         AccountUpdateTransaction,
         AnyTransaction,
         ContractId,
+        EvmAddress,
         EvmHook,
         EvmHookSpec,
         HookCreationDetails,
@@ -973,5 +1020,121 @@ mod tests {
     fn get_set_staked_node_id_frozen_panics() {
         let mut tx = make_transaction();
         tx.staked_node_id(STAKED_NODE_ID);
+    }
+
+    #[test]
+    fn get_set_delegation_address() {
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let mut tx = AccountUpdateTransaction::new();
+        tx.delegation_address(delegation_addr);
+
+        assert_eq!(tx.get_delegation_address(), Some(Some(delegation_addr)));
+    }
+
+    #[test]
+    fn get_delegation_address_returns_none_when_not_set() {
+        let tx = AccountUpdateTransaction::new();
+
+        assert_eq!(tx.get_delegation_address(), None);
+    }
+
+    #[test]
+    fn clear_delegation_address() {
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let mut tx = AccountUpdateTransaction::new();
+        tx.delegation_address(delegation_addr);
+        tx.clear_delegation_address();
+
+        assert_eq!(tx.get_delegation_address(), Some(None));
+    }
+
+    #[test]
+    #[should_panic]
+    fn get_set_delegation_address_frozen_panics() {
+        let mut tx = make_transaction();
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+
+        tx.delegation_address(delegation_addr);
+    }
+
+    #[test]
+    fn delegation_address_proto_serialization() {
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let mut tx = AccountUpdateTransaction::new_for_tests();
+        tx.account_id(ACCOUNT_ID).delegation_address(delegation_addr).freeze().unwrap();
+
+        let body = transaction_body(tx);
+        let data = check_body(body);
+
+        match data {
+            services::transaction_body::Data::CryptoUpdateAccount(pb) => {
+                assert_eq!(pb.delegation_address, delegation_addr.to_bytes().to_vec());
+            }
+            _ => panic!("expected CryptoUpdateAccount"),
+        }
+    }
+
+    #[test]
+    fn delegation_address_proto_serialization_clears_when_none() {
+        let mut tx = AccountUpdateTransaction::new_for_tests();
+        tx.account_id(ACCOUNT_ID).clear_delegation_address().freeze().unwrap();
+
+        let body = transaction_body(tx);
+        let data = check_body(body);
+
+        match data {
+            services::transaction_body::Data::CryptoUpdateAccount(pb) => {
+                assert!(pb.delegation_address.is_empty());
+            }
+            _ => panic!("expected CryptoUpdateAccount"),
+        }
+    }
+
+    #[test]
+    fn delegation_address_bytes_serialization() {
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+        let mut tx = AccountUpdateTransaction::new_for_tests();
+        tx.account_id(ACCOUNT_ID).delegation_address(delegation_addr).freeze().unwrap();
+
+        let tx2 = AnyTransaction::from_bytes(&tx.to_bytes().unwrap()).unwrap();
+
+        let body1 = transaction_body(tx);
+        let body2 = transaction_body(tx2);
+
+        assert_eq!(body1, body2);
+    }
+
+    #[test]
+    fn from_proto_body_with_delegation_address() {
+        let delegation_addr =
+            EvmAddress::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap();
+
+        let tx = services::CryptoUpdateTransactionBody {
+            account_id_to_update: Some(ACCOUNT_ID.to_protobuf()),
+            key: Some(key().to_protobuf()),
+            proxy_account_id: None,
+            send_record_threshold_field: None,
+            receive_record_threshold_field: None,
+            receiver_sig_required_field: None,
+            auto_renew_period: Some(AUTO_RENEW_PERIOD.to_protobuf()),
+            memo: Some(ACCOUNT_MEMO.to_owned()),
+            max_automatic_token_associations: None,
+            decline_reward: None,
+            staked_id: None,
+            proxy_fraction: 0,
+            expiration_time: None,
+            hook_creation_details: vec![],
+            hook_ids_to_delete: vec![],
+            delegation_address: delegation_addr.to_bytes().to_vec(),
+        };
+
+        let tx = AccountUpdateTransactionData::from_protobuf(tx).unwrap();
+
+        assert_eq!(tx.delegation_address, Some(Some(delegation_addr)));
     }
 }
