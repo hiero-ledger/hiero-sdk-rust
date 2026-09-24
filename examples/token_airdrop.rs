@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use std::collections::HashMap;
 use std::iter::repeat;
 
 use clap::Parser;
 use hiero_sdk::{
-    AccountBalanceQuery, AccountCreateTransaction, AccountId, Client, Hbar, PrivateKey, TokenAirdropTransaction, TokenCancelAirdropTransaction, TokenClaimAirdropTransaction, TokenCreateTransaction, TokenMintTransaction, TokenRejectTransaction
+    AccountCreateTransaction, AccountId, AccountInfoQuery, Client, Hbar, PrivateKey, TokenAirdropTransaction, TokenCancelAirdropTransaction, TokenClaimAirdropTransaction, TokenCreateTransaction, TokenId, TokenMintTransaction, TokenRejectTransaction
 };
 use time::{Duration, OffsetDateTime};
 
@@ -169,32 +170,23 @@ async fn main() -> anyhow::Result<()> {
      * Step 5:
      * Query to verify alice and bob received the airdrops and carol did not
      */
-    let alice_balance = AccountBalanceQuery::new()
-        .account_id(alice_id)
-        .execute(&client)
-        .await?;
+    let alice_balance = token_balances(&client, alice_id).await?;
 
-    let bob_balance = AccountBalanceQuery::new()
-        .account_id(bob_id)
-        .execute(&client)
-        .await?;
+    let bob_balance = token_balances(&client, bob_id).await?;
 
-    let carol_balance = AccountBalanceQuery::new()
-        .account_id(carol_id)
-        .execute(&client)
-        .await?;
+    let carol_balance = token_balances(&client, carol_id).await?;
 
     println!(
         "Alice ft balance after airdrop: {}",
-        alice_balance.tokens.get(&token_id).unwrap()
+        alice_balance.get(&token_id).unwrap()
     );
     println!(
         "Bob ft balance after airdrop: {}",
-        bob_balance.tokens.get(&token_id).unwrap()
+        bob_balance.get(&token_id).unwrap()
     );
     println!(
         "Carol ft balance after airdrop: {:?}",
-        carol_balance.tokens.get(&token_id)
+        carol_balance.get(&token_id)
     );
 
     /*
@@ -218,14 +210,11 @@ async fn main() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let carol_balance = AccountBalanceQuery::new()
-        .account_id(carol_id)
-        .execute(&client)
-        .await?;
+    let carol_balance = token_balances(&client, carol_id).await?;
 
     println!(
         "Carol ft balance after airdrop: {}",
-        carol_balance.tokens.get(&token_id).unwrap()
+        carol_balance.get(&token_id).unwrap()
     );
 
     /*
@@ -265,34 +254,25 @@ async fn main() -> anyhow::Result<()> {
      * Step 9:
      * Query to verify alice received the airdrop and bob and carol did not
      */
-    let alice_balance = AccountBalanceQuery::new()
-        .account_id(alice_id)
-        .execute(&client)
-        .await?;
+    let alice_balance = token_balances(&client, alice_id).await?;
 
-    let bob_balance = AccountBalanceQuery::new()
-        .account_id(bob_id)
-        .execute(&client)
-        .await?;
+    let bob_balance = token_balances(&client, bob_id).await?;
 
-    let carol_balance = AccountBalanceQuery::new()
-        .account_id(carol_id)
-        .execute(&client)
-        .await?;
+    let carol_balance = token_balances(&client, carol_id).await?;
 
     println!(
         "Alice nft balance after airdrop: {}",
-        alice_balance.tokens.get(&nft_id).unwrap()
+        alice_balance.get(&nft_id).unwrap()
     );
 
     println!(
         "Bob nft balance after airdrop: {:?}",
-        bob_balance.tokens.get(&nft_id)
+        bob_balance.get(&nft_id)
     );
 
     println!(
         "Carol nft balance after airdrop: {:?}",
-        carol_balance.tokens.get(&nft_id)
+        carol_balance.get(&nft_id)
     );
 
     /*
@@ -315,14 +295,11 @@ async fn main() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let bob_balance = AccountBalanceQuery::new()
-        .account_id(bob_id)
-        .execute(&client)
-        .await?;
+    let bob_balance = token_balances(&client, bob_id).await?;
 
     println!(
         "Bob nft balance after claim: {}",
-        bob_balance.tokens.get(&nft_id).unwrap()
+        bob_balance.get(&nft_id).unwrap()
     );
 
     /*
@@ -346,14 +323,11 @@ async fn main() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let carol_balance = AccountBalanceQuery::new()
-        .account_id(carol_id)
-        .execute(&client)
-        .await?;
+    let carol_balance = token_balances(&client, carol_id).await?;
 
     println!(
         "Carol nft balance after cancel: {:?}",
-        carol_balance.tokens.get(&nft_id)
+        carol_balance.get(&nft_id)
     );
 
     /*
@@ -376,28 +350,22 @@ async fn main() -> anyhow::Result<()> {
      * Step 13:
      * Query to verify bob no longer has the NFT
      */
-    let bob_balance = AccountBalanceQuery::new()
-        .account_id(bob_id)
-        .execute(&client)
-        .await?;
+    let bob_balance = token_balances(&client, bob_id).await?;
 
     println!(
         "Bob nft balance after reject: {}",
-        bob_balance.tokens.get(&nft_id).unwrap()
+        bob_balance.get(&nft_id).unwrap()
     );
 
     /*
      * Step 13:
      * Query to verify the NFT was returned to the Treasury
      */
-    let treasury_balance = AccountBalanceQuery::new()
-        .account_id(treasury_account_id)
-        .execute(&client)
-        .await?;
+    let treasury_balance = token_balances(&client, treasury_account_id).await?;
 
     println!(
         "Treasury nft balance after reject: {}",
-        treasury_balance.tokens.get(&nft_id).unwrap()
+        treasury_balance.get(&nft_id).unwrap()
     );
 
     /*
@@ -420,30 +388,41 @@ async fn main() -> anyhow::Result<()> {
      * Step 14:
      * Query to verify Carol no longer has the fungible tokens
      */
-    let carol_balance = AccountBalanceQuery::new()
-        .account_id(carol_id)
-        .execute(&client)
-        .await?;
+    let carol_balance = token_balances(&client, carol_id).await?;
 
     println!(
         "Carol ft balance after reject: {}",
-        carol_balance.tokens.get(&token_id).unwrap()
+        carol_balance.get(&token_id).unwrap()
     );
 
     /*
      * Step 15:
      * Query to verify Treasury received the rejected fungible tokens
      */
-    let treasury_balance = AccountBalanceQuery::new()
-        .account_id(treasury_account_id)
-        .execute(&client)
-        .await?;
+    let treasury_balance = token_balances(&client, treasury_account_id).await?;
 
     println!(
         "Treasury ft balance after reject: {}",
-        treasury_balance.tokens.get(&token_id).unwrap()
+        treasury_balance.get(&token_id).unwrap()
     );
 
     println!("Token airdrop example completed successfully");
     Ok(())
+}
+
+/// Token balances of `account_id`, read with `AccountInfoQuery`.
+async fn token_balances(
+    client: &Client,
+    account_id: AccountId,
+) -> anyhow::Result<HashMap<TokenId, u64>> {
+    let info = AccountInfoQuery::new()
+        .account_id(account_id)
+        .execute(client)
+        .await?;
+
+    Ok(info
+        .token_relationships
+        .into_iter()
+        .map(|it| (it.token_id, it.balance))
+        .collect())
 }

@@ -5,8 +5,11 @@ use std::sync::atomic::AtomicBool;
 use anyhow::Context;
 use hiero_sdk::{
     AccountId,
+    AccountInfoQuery,
     Client,
+    Hbar,
     PrivateKey,
+    TokenId,
 };
 use once_cell::sync::Lazy;
 
@@ -117,7 +120,7 @@ pub(crate) struct Config {
     pub(crate) network_name: Cow<'static, str>,
 
     /// The operator to use for non-free transactions / queries,
-    /// however it is also a source of a known account / private key for things like `AccountBalanceQuery`.
+    /// however it is also a source of a known account / private key for things like `AccountInfoQuery`.
     pub(crate) operator: Option<Operator>,
 
     /// A setting to allow tests that cost Hbar to run.
@@ -192,4 +195,24 @@ pub(crate) fn setup_nonfree() -> Option<TestEnvironment> {
             None
         }
     }
+}
+
+/// An account's hbar and token balances.
+pub(crate) struct AccountBalance {
+    pub(crate) hbars: Hbar,
+    pub(crate) tokens: HashMap<TokenId, u64>,
+}
+
+/// Reads an account's balances with `AccountInfoQuery`
+/// (the network no longer serves `AccountBalanceQuery`).
+pub(crate) async fn account_balance(
+    client: &Client,
+    account_id: AccountId,
+) -> anyhow::Result<AccountBalance> {
+    let info = AccountInfoQuery::new().account_id(account_id).execute(client).await?;
+
+    Ok(AccountBalance {
+        hbars: info.balance,
+        tokens: info.token_relationships.into_iter().map(|it| (it.token_id, it.balance)).collect(),
+    })
 }

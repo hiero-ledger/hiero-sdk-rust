@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use hiero_sdk::{
-    AccountBalanceQuery, AccountId, AccountInfoQuery, Client, Hbar, PrivateKey, TransferTransaction
-};
+use hiero_sdk::{AccountId, AccountInfoQuery, Client, Hbar, PrivateKey, TransferTransaction};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -79,17 +77,12 @@ async fn main() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let balance = AccountBalanceQuery::new()
-        .account_id(alias_account_id)
-        .execute(&client)
-        .await?;
-
-    println!("Balances of the new account: {balance:?}");
-
     let info = AccountInfoQuery::new()
         .account_id(alias_account_id)
         .execute(&client)
         .await?;
+
+    println!("Balance of the new account: {}", info.balance);
 
     println!("Info about the new account: {info:?}");
 

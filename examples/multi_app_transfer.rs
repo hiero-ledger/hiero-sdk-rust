@@ -2,7 +2,7 @@
 
 use clap::Parser;
 use hiero_sdk::{
-    AccountBalanceQuery, AccountCreateTransaction, AccountId, Client, Hbar, PrivateKey, Transaction, TransferTransaction
+    AccountCreateTransaction, AccountId, AccountInfoQuery, Client, Hbar, PrivateKey, Transaction, TransferTransaction
 };
 
 #[derive(Parser, Debug)]
@@ -99,17 +99,17 @@ async fn main() -> anyhow::Result<()> {
     // (important!) wait for consensus by querying for the receipt
     transaction_response.get_receipt(&client).await?;
 
-    let sender_balance_after = AccountBalanceQuery::new()
+    let sender_balance_after = AccountInfoQuery::new()
         .account_id(user_account_id)
         .execute(&client)
         .await?
-        .hbars;
+        .balance;
 
-    let receipt_balance_after = AccountBalanceQuery::new()
+    let receipt_balance_after = AccountInfoQuery::new()
         .account_id(exchange_account_id)
         .execute(&client)
         .await?
-        .hbars;
+        .balance;
 
     println!("{user_account_id} balance = {sender_balance_after}");
     println!("{exchange_account_id} balance = {receipt_balance_after}");

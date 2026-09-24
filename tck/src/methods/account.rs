@@ -5,7 +5,6 @@ use base64::Engine;
 use hiero_sdk::{
     AccountAllowanceApproveTransaction,
     AccountAllowanceDeleteTransaction,
-    AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountId,
@@ -292,6 +291,7 @@ pub async fn update_account(
     Ok(AccountUpdateResponse { status: tx_receipt.status.as_str_name().to_string() })
 }
 
+#[allow(deprecated)]
 pub async fn get_account_balance(
     client: &Client,
     account_id: Option<String>,
@@ -300,7 +300,7 @@ pub async fn get_account_balance(
 ) -> Result<AccountBalanceResponse, ErrorObjectOwned> {
     let _ = common_transaction_params;
 
-    let mut query = AccountBalanceQuery::new();
+    let mut query = hiero_sdk::AccountBalanceQuery::new();
 
     if let Some(account_id) = account_id {
         query.account_id(AccountId::from_str(&account_id).map_err(internal_error)?);

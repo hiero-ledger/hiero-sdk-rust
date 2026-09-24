@@ -5,7 +5,6 @@ use std::iter::repeat;
 use anyhow::anyhow;
 use assert_matches::assert_matches;
 use hiero_sdk::{
-    AccountBalanceQuery,
     Client,
     Hbar,
     PrivateKey,
@@ -20,6 +19,7 @@ use hiero_sdk::{
 
 use crate::account::Account;
 use crate::common::{
+    account_balance,
     setup_nonfree,
     Config,
     TestEnvironment,
@@ -67,8 +67,7 @@ async fn basic_flow_fungible_token() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let treasury_account_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let treasury_account_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(treasury_account_balance.tokens.get(&ft.id), Some(&(1_000_000 as u64)));
 

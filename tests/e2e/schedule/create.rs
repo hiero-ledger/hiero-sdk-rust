@@ -7,7 +7,6 @@ use std::thread::sleep;
 
 use assert_matches::assert_matches;
 use hiero_sdk::{
-    AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountUpdateTransaction,
@@ -31,6 +30,7 @@ use time::{
 
 use crate::account::Account;
 use crate::common::{
+    account_balance,
     setup_nonfree,
     TestEnvironment,
 };
@@ -755,12 +755,11 @@ async fn execute_with_short_exp_time() -> anyhow::Result<()> {
     // Verify the transaction has still not executed
     assert_eq!(info.executed_at, None);
 
-    let initial_balance =
-        AccountBalanceQuery::new().account_id(account.id).execute(&client).await?;
+    let initial_balance = account_balance(&client, account.id).await?;
 
     sleep(std::time::Duration::from_millis(10_000));
 
-    let new_balance = AccountBalanceQuery::new().account_id(account.id).execute(&client).await?;
+    let new_balance = account_balance(&client, account.id).await?;
 
     // Verify the schedule is executed after 10 seconds
     assert_eq!(initial_balance.hbars, new_balance.hbars + Hbar::new(1));

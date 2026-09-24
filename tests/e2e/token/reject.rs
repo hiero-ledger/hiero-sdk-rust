@@ -5,7 +5,6 @@ use std::iter::repeat;
 use anyhow::anyhow;
 use assert_matches::assert_matches;
 use hiero_sdk::{
-    AccountBalanceQuery,
     Client,
     Hbar,
     PrivateKey,
@@ -21,6 +20,7 @@ use hiero_sdk::{
 
 use crate::account::Account;
 use crate::common::{
+    account_balance,
     setup_nonfree,
     Config,
     TestEnvironment,
@@ -61,14 +61,12 @@ async fn basic_fungible_token() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let receiver_balance =
-        AccountBalanceQuery::new().account_id(receiver_account.id).execute(&client).await?;
+    let receiver_balance = account_balance(&client, receiver_account.id).await?;
 
     assert_eq!(receiver_balance.tokens.get(&ft1.id), Some(&(0 as u64)));
     assert_eq!(receiver_balance.tokens.get(&ft2.id), Some(&(0 as u64)));
 
-    let treasury_account_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let treasury_account_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(treasury_account_balance.tokens.get(&ft1.id), Some(&(1_000_000 as u64)));
     assert_eq!(treasury_account_balance.tokens.get(&ft2.id), Some(&(1_000_000 as u64)));
@@ -212,16 +210,14 @@ async fn ft_and_nft_reject() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(receiver_account.id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, receiver_account.id).await?;
 
     assert_eq!(receiver_account_balance.tokens[&ft1.id], 0);
     assert_eq!(receiver_account_balance.tokens[&ft2.id], 0);
     assert_eq!(receiver_account_balance.tokens[&nft1.id], 1);
     assert_eq!(receiver_account_balance.tokens[&nft2.id], 1);
 
-    let treasury_account_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let treasury_account_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(treasury_account_balance.tokens[&ft1.id], 1_000_000);
     assert_eq!(treasury_account_balance.tokens[&ft2.id], 1_000_000);

@@ -3,7 +3,6 @@ use std::iter::repeat;
 use anyhow::anyhow;
 use assert_matches::assert_matches;
 use hiero_sdk::{
-    AccountBalanceQuery,
     PrivateKey,
     Status,
     TokenAirdropTransaction,
@@ -17,6 +16,7 @@ use hiero_sdk::{
 
 use crate::account::Account;
 use crate::common::{
+    account_balance,
     setup_nonfree,
     Config,
     TestEnvironment,
@@ -88,15 +88,13 @@ async fn basic() -> anyhow::Result<()> {
     assert_eq!(record.pending_airdrop_records.len(), 0);
 
     // Verify the receiver holds the tokens via query
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(receiver_account.id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, receiver_account.id).await?;
 
     assert_eq!(receiver_account_balance.tokens.get(&token.id), None);
     assert_eq!(receiver_account_balance.tokens.get(&nft.id), None);
 
     // Verify the operator does not hold the tokens
-    let operator_account_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let operator_account_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(operator_account_balance.tokens.get(&token.id), Some(TEST_FUNGIBLE_INITIAL_BALANCE));
     assert_eq!(operator_account_balance.tokens.get(&nft.id), Some(TEST_MINTED_NFTS));
@@ -290,22 +288,19 @@ async fn cancel_to_multiple_receivers() -> anyhow::Result<()> {
     assert_eq!(record.pending_airdrop_records.len(), 0);
 
     // Verify the receiver1 holds the tokens via query
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(receiver_account_1.id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, receiver_account_1.id).await?;
 
     assert_eq!(receiver_account_balance.tokens.get(&token.id), None);
     assert_eq!(receiver_account_balance.tokens.get(&nft.id), None);
 
     // Verify the receiver2 holds the tokens via query
-    let receiver_account_balance_2 =
-        AccountBalanceQuery::new().account_id(receiver_account_2.id).execute(&client).await?;
+    let receiver_account_balance_2 = account_balance(&client, receiver_account_2.id).await?;
 
     assert_eq!(receiver_account_balance_2.tokens.get(&token.id), None);
     assert_eq!(receiver_account_balance_2.tokens.get(&nft.id), None);
 
     // Verify the operator does not hold the tokens
-    let operator_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let operator_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(operator_balance.tokens.get(&token.id), Some(TEST_FUNGIBLE_INITIAL_BALANCE));
     assert_eq!(operator_balance.tokens.get(&nft.id), Some(TEST_MINTED_NFTS));
@@ -389,15 +384,13 @@ async fn cancel_from_multiple_airdrops() -> anyhow::Result<()> {
     assert_eq!(record.pending_airdrop_records.len(), 0);
 
     // Verify the receiver1 holds the tokens via query
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(receiver_account.id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, receiver_account.id).await?;
 
     assert_eq!(receiver_account_balance.tokens.get(&token.id).as_deref(), None);
     assert_eq!(receiver_account_balance.tokens.get(&nft.id), None);
 
     // Verify the operator does not hold the tokens
-    let operator_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let operator_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(operator_balance.tokens.get(&token.id), Some(TEST_FUNGIBLE_INITIAL_BALANCE));
     assert_eq!(operator_balance.tokens.get(&nft.id), Some(TEST_MINTED_NFTS));

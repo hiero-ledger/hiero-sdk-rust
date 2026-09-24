@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use hiero_sdk::{
-    AccountAllowanceApproveTransaction, AccountBalanceQuery, AccountCreateTransaction, AccountDeleteTransaction, AccountId, Client, Hbar, PrivateKey, TransactionId, TransferTransaction
+    AccountAllowanceApproveTransaction, AccountCreateTransaction, AccountDeleteTransaction, AccountId, AccountInfoQuery, Client, Hbar, PrivateKey, TransactionId, TransferTransaction
 };
 
 #[derive(Parser, Debug)]
@@ -242,11 +242,11 @@ async fn main() -> anyhow::Result<()> {
 
 async fn print_balances(client: &Client, accounts: &[Account; 3]) -> hiero_sdk::Result<()> {
     for account in accounts {
-        let balance = AccountBalanceQuery::new()
+        let balance = AccountInfoQuery::new()
             .account_id(account.id)
             .execute(client)
             .await?
-            .hbars;
+            .balance;
 
         println!("{name}'s balance: {balance}", name = account.name);
     }

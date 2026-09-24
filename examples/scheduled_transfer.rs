@@ -2,7 +2,7 @@
 
 use clap::Parser;
 use hiero_sdk::{
-    AccountBalanceQuery, AccountCreateTransaction, AccountDeleteTransaction, AccountId, Client, Hbar, PrivateKey, ScheduleCreateTransaction, ScheduleInfoQuery, ScheduleSignTransaction, TransferTransaction
+    AccountCreateTransaction, AccountDeleteTransaction, AccountId, AccountInfoQuery, Client, Hbar, PrivateKey, ScheduleCreateTransaction, ScheduleInfoQuery, ScheduleSignTransaction, TransferTransaction
 };
 
 #[derive(Parser, Debug)]
@@ -73,13 +73,14 @@ async fn main() -> anyhow::Result<()> {
     );
     println!("Bob's ID: {}", bobs_id.to_string_with_checksum(&client)?);
 
-    let bobs_initial_balance = AccountBalanceQuery::new()
+    let bobs_initial_balance = AccountInfoQuery::new()
         .account_id(bobs_id)
         .execute(&client)
-        .await?;
+        .await?
+        .balance;
 
     println!("Bob's initial balance:");
-    println!("{bobs_initial_balance:?}");
+    println!("{bobs_initial_balance}");
 
     let mut transfer_to_schedule = TransferTransaction::new();
 
@@ -119,13 +120,14 @@ async fn main() -> anyhow::Result<()> {
 
     // Bob's balance should be unchanged.  The transfer has been scheduled, but it hasn't been executed yet
     // because it requires Bob's signature.
-    let bobs_balance_after_schedule = AccountBalanceQuery::new()
+    let bobs_balance_after_schedule = AccountInfoQuery::new()
         .account_id(bobs_id)
         .execute(&client)
-        .await?;
+        .await?
+        .balance;
 
     println!("Bob's balance after scheduling the transfer (should be unchanged):");
-    println!("{bobs_balance_after_schedule:?}");
+    println!("{bobs_balance_after_schedule}");
 
     // Once Alice has communicated the scheduleId to Bob, Bob can query for information about the
     // scheduled transaction.
@@ -158,13 +160,14 @@ async fn main() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    let balance_after_signing = AccountBalanceQuery::new()
+    let balance_after_signing = AccountInfoQuery::new()
         .account_id(bobs_id)
         .execute(&client)
-        .await?;
+        .await?
+        .balance;
 
     println!("Bob's balance after signing the scheduled transaction:");
-    println!("{balance_after_signing:?}");
+    println!("{balance_after_signing}");
 
     let post_transaction_info = ScheduleInfoQuery::new()
         .schedule_id(schedule_id)
