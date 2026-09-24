@@ -2,7 +2,7 @@
 
 use clap::Parser;
 use hiero_sdk::{
-    AccountBalanceQuery, AccountCreateTransaction, AccountId, BatchTransaction, Client, Hbar, PrivateKey, TransferTransaction
+    AccountCreateTransaction, AccountId, AccountInfoQuery, BatchTransaction, Client, Hbar, PrivateKey, TransferTransaction
 };
 
 #[derive(Parser, Debug)]
@@ -71,7 +71,8 @@ async fn main() -> anyhow::Result<()> {
     bob_transfer.set_batch_key(batch_key.public_key().into());
     bob_transfer.batchify(&client, batch_key.public_key().into())?;
 
-    // Step 4: Get balances before batch execution
+    // Step 4: Get balances before batch execution (the operator pays for the queries)
+    client.set_operator(args.operator_account_id, args.operator_key.clone());
     println!("\nBalances before batch execution:");
     print_balance(&client, "Alice", alice).await?;
     print_balance(&client, "Bob", bob).await?;
@@ -80,7 +81,6 @@ async fn main() -> anyhow::Result<()> {
     // Step 5: Create and execute the batch transaction
     println!("\nExecuting batch transaction...");
 
-    client.set_operator(args.operator_account_id, args.operator_key.clone());
     let mut batch = BatchTransaction::new();
     batch.add_inner_transaction(alice_transfer.into())?;
     batch.add_inner_transaction(bob_transfer.into())?;
@@ -139,10 +139,10 @@ async fn print_balance(
     name: &str,
     account_id: AccountId,
 ) -> hiero_sdk::Result<()> {
-    let balance = AccountBalanceQuery::new()
+    let info = AccountInfoQuery::new()
         .account_id(account_id)
         .execute(client)
         .await?;
-    println!("{}: {} HBAR", name, balance.hbars);
+    println!("{}: {} HBAR", name, info.balance);
     Ok(())
 }
