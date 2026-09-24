@@ -1,5 +1,4 @@
 use hiero_sdk::{
-    AccountBalanceQuery,
     AccountCreateTransaction,
     Client,
     CustomFixedFee,
@@ -16,6 +15,7 @@ use hiero_sdk::{
 };
 
 use crate::common::{
+    account_balance,
     setup_nonfree,
     TestEnvironment,
 };
@@ -379,9 +379,10 @@ async fn charges_hbar_fee_with_limits_applied() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    client.set_operator(op.account_id, PrivateKey::generate_ecdsa());
+    // `AccountInfoQuery` is paid, so the operator must be able to sign the payment.
+    client.set_operator(op.account_id, op.private_key.clone());
 
-    let account_info = AccountBalanceQuery::new().account_id(account_id).execute(&client).await?;
+    let account_info = account_balance(&client, account_id).await?;
 
     assert!(account_info.hbars.to_tinybars() < (hbar_amount / 2) as i64);
 
@@ -440,10 +441,10 @@ async fn exempts_fee_exempt_keys_from_hbar_fees() -> anyhow::Result<()> {
         .get_receipt(&client)
         .await?;
 
-    client.set_operator(payer_account_id, PrivateKey::generate_ecdsa());
+    // `AccountInfoQuery` is paid, so the operator must be able to sign the payment.
+    client.set_operator(op.account_id, op.private_key.clone());
 
-    let account_info =
-        AccountBalanceQuery::new().account_id(payer_account_id).execute(&client).await?;
+    let account_info = account_balance(&client, payer_account_id).await?;
 
     assert!(account_info.hbars.to_tinybars() > (hbar_amount / 2) as i64);
 
