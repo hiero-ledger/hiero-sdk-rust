@@ -188,6 +188,11 @@ pub enum Error {
     /// Failed to verify a signature.
     #[error("failed to verify a signature: {0}")]
     SignatureVerify(#[source] BoxStdError),
+
+    /// [`AccountBalanceQuery`](crate::AccountBalanceQuery) can no longer be executed,
+    /// the network no longer serves `CryptoService/cryptoGetBalance`.
+    #[error("Deprecated: AccountBalanceQuery is no longer supported. Use MirrorNodeAccountBalanceQuery or the mirror node REST API (GET /api/v1/accounts/{{id}}) to retrieve account balances.")]
+    AccountBalanceQueryDeprecated,
 }
 
 impl Error {

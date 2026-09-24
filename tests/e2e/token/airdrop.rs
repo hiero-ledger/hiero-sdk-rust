@@ -4,7 +4,6 @@ use anyhow::anyhow;
 use assert_matches::assert_matches;
 use hiero_sdk::{
     AccountAllowanceApproveTransaction,
-    AccountBalanceQuery,
     AccountCreateTransaction,
     FixedFee,
     FixedFeeData,
@@ -22,6 +21,7 @@ use hiero_sdk::{
 
 use crate::account::Account;
 use crate::common::{
+    account_balance,
     setup_nonfree,
     Config,
     TestEnvironment,
@@ -83,8 +83,7 @@ async fn airdrop_associated_tokens() -> anyhow::Result<()> {
         .await?;
 
     // Verify the receiver holds the tokens via query
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(receiver_account.id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, receiver_account.id).await?;
 
     assert_eq!(
         receiver_account_balance.tokens.get(&token.id).as_deref(),
@@ -93,8 +92,7 @@ async fn airdrop_associated_tokens() -> anyhow::Result<()> {
     assert_eq!(receiver_account_balance.tokens.get(&nft.id).as_deref(), Some(&(2 as u64)));
 
     // Verify the operator does not hold the tokens
-    let operator_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let operator_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(operator_balance.tokens.get(&token.id), Some(&(999_900 as u64)));
     assert_eq!(operator_balance.tokens.get(&nft.id), Some(&(8 as u64)));
@@ -154,15 +152,13 @@ async fn airdrop_non_associated_tokens() -> anyhow::Result<()> {
     assert_eq!(record.pending_airdrop_records.is_empty(), false);
 
     // Verify the receiver holds the tokens via query
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(receiver_account.id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, receiver_account.id).await?;
 
     assert_eq!(receiver_account_balance.tokens.get(&token.id).as_deref(), None,);
     assert_eq!(receiver_account_balance.tokens.get(&nft.id).as_deref(), None);
 
     // Verify the operator does not hold the tokens
-    let operator_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let operator_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(operator_balance.tokens.get(&token.id), Some(TEST_FUNGIBLE_INITIAL_BALANCE));
     assert_eq!(operator_balance.tokens.get(&nft.id), Some(&(10 as u64)));
@@ -221,8 +217,7 @@ async fn airdrop_to_alias() -> anyhow::Result<()> {
         .await?;
 
     // Verify the receiver holds the tokens via query
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(alias_account_id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, alias_account_id).await?;
 
     assert_eq!(
         receiver_account_balance.tokens.get(&token.id).as_deref(),
@@ -231,8 +226,7 @@ async fn airdrop_to_alias() -> anyhow::Result<()> {
     assert_eq!(receiver_account_balance.tokens.get(&nft.id).as_deref(), Some(&(2 as u64)));
 
     // Verify the operator does not hold the tokens
-    let operator_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let operator_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(operator_balance.tokens.get(&token.id), Some(&(999_900 as u64)));
     assert_eq!(operator_balance.tokens.get(&nft.id), Some(&(8 as u64)));
@@ -328,23 +322,20 @@ async fn airdrop_with_custom_fees() -> anyhow::Result<()> {
         .await?;
 
     // Verify the custom fee has been paid by the sender to collector
-    let receiver_account_balance =
-        AccountBalanceQuery::new().account_id(receiver_account.id).execute(&client).await?;
+    let receiver_account_balance = account_balance(&client, receiver_account.id).await?;
 
     assert_eq!(
         receiver_account_balance.tokens.get(&token_id).as_deref(),
         Some(&(TEST_AMOUNT as u64))
     );
 
-    let sender_account_balance =
-        AccountBalanceQuery::new().account_id(sender_account.id).execute(&client).await?;
+    let sender_account_balance = account_balance(&client, sender_account.id).await?;
 
     assert_eq!(sender_account_balance.tokens.get(&token_id).as_deref(), Some(&(0 as u64)));
     assert_eq!(sender_account_balance.tokens.get(&custom_fee_token.id), Some(&(99 as u64)));
 
     // Verify the operator does not hold the tokens
-    let operator_balance =
-        AccountBalanceQuery::new().account_id(operator_account.id).execute(&client).await?;
+    let operator_balance = account_balance(&client, operator_account.id).await?;
 
     assert_eq!(operator_balance.tokens.get(&token_id), Some(&(999_900 as u64)));
     assert_eq!(operator_balance.tokens.get(&custom_fee_token.id), Some(&(999_901 as u64)));

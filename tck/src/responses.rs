@@ -47,12 +47,9 @@ pub struct ScheduleResponse {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountBalanceResponse {
-    pub hbars: String,
-    #[serde(default)]
-    pub token_balances: HashMap<String, String>,
-    #[serde(default)]
-    pub token_decimals: HashMap<String, u32>,
+pub struct DeprecatedAccountBalanceQueryResponse {
+    pub construction_warning: Option<String>,
+    pub execution_error: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

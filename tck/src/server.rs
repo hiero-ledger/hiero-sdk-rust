@@ -26,13 +26,13 @@ use crate::methods::token::TokenRpcServer;
 use crate::methods::topic::TopicRpcServer;
 use crate::methods::utility::UtilityRpcServer;
 use crate::responses::{
-    AccountBalanceResponse,
     AccountCreateResponse,
     AccountUpdateResponse,
     ContractByteCodeResponse,
     ContractCallResponse,
     ContractInfoResponse,
     ContractResponse,
+    DeprecatedAccountBalanceQueryResponse,
     EthereumResponse,
     FileContentsResponse,
     FileInfoResponse,
@@ -156,22 +156,6 @@ impl AccountRpcServer for RpcServerImpl {
         .await
     }
 
-    async fn get_account_balance(
-        &self,
-        account_id: Option<String>,
-        contract_id: Option<String>,
-        common_transaction_params: Option<HashMap<String, Value>>,
-    ) -> Result<AccountBalanceResponse, ErrorObjectOwned> {
-        let client = crate::methods::utility::get_client()?;
-        crate::methods::account::get_account_balance(
-            &client,
-            account_id,
-            contract_id,
-            common_transaction_params,
-        )
-        .await
-    }
-
     async fn delete_account(
         &self,
         delete_account_id: Option<String>,
@@ -224,6 +208,31 @@ impl AccountRpcServer for RpcServerImpl {
     ) -> Result<crate::responses::AccountInfoResponse, ErrorObjectOwned> {
         let client = crate::methods::utility::get_client()?;
         crate::methods::account::get_account_info(&client, account_id).await
+    }
+
+    async fn execute_deprecated_account_balance_query(
+        &self,
+        account_id: String,
+        operation: Option<String>,
+    ) -> Result<DeprecatedAccountBalanceQueryResponse, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::account::execute_deprecated_account_balance_query(
+            &client, account_id, operation,
+        )
+        .await
+    }
+
+    async fn ping(
+        &self,
+        node_account_id: String,
+    ) -> Result<HashMap<String, String>, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::account::ping(&client, node_account_id).await
+    }
+
+    async fn ping_all(&self) -> Result<HashMap<String, String>, ErrorObjectOwned> {
+        let client = crate::methods::utility::get_client()?;
+        crate::methods::account::ping_all(&client).await
     }
 }
 

@@ -1,18 +1,17 @@
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::sync::mpsc;
 
 use base64::Engine;
 use hiero_sdk::{
     AccountAllowanceApproveTransaction,
     AccountAllowanceDeleteTransaction,
-    AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountId,
     AccountInfoQuery,
     AccountUpdateTransaction,
     Client,
-    ContractId,
     EvmAddress,
     Hbar,
     NftId,
@@ -20,7 +19,10 @@ use hiero_sdk::{
     TransferTransaction,
 };
 use jsonrpsee::proc_macros::rpc;
-use jsonrpsee::types::error::INTERNAL_ERROR_CODE;
+use jsonrpsee::types::error::{
+    INTERNAL_ERROR_CODE,
+    INVALID_PARAMS_CODE,
+};
 use jsonrpsee::types::{
     ErrorObject,
     ErrorObjectOwned,
@@ -30,6 +32,15 @@ use time::{
     Duration,
     OffsetDateTime,
 };
+use tracing::field::{
+    Field,
+    Visit,
+};
+use tracing_subscriber::layer::{
+    Context,
+    SubscriberExt,
+};
+use tracing_subscriber::Layer;
 
 use crate::common::{
     internal_error,
@@ -41,10 +52,10 @@ use crate::helpers::{
     get_hedera_key,
 };
 use crate::responses::{
-    AccountBalanceResponse,
     AccountCreateResponse,
     AccountInfoResponse,
     AccountUpdateResponse,
+    DeprecatedAccountBalanceQueryResponse,
 };
 
 #[rpc(server, client)]
@@ -89,18 +100,6 @@ pub trait AccountRpc {
         common_transaction_params: Option<HashMap<String, Value>>,
     ) -> Result<AccountUpdateResponse, ErrorObjectOwned>;
 
-    /*
-    / Specification:
-    / https://github.com/hiero-ledger/hiero-sdk-tck/blob/main/test-specifications/crypto-service/accountBalanceQuery.md#getAccountBalance
-    */
-    #[method(name = "getAccountBalance")]
-    async fn get_account_balance(
-        &self,
-        account_id: Option<String>,
-        contract_id: Option<String>,
-        common_transaction_params: Option<HashMap<String, Value>>,
-    ) -> Result<AccountBalanceResponse, ErrorObjectOwned>;
-
     #[method(name = "deleteAccount")]
     async fn delete_account(
         &self,
@@ -135,6 +134,30 @@ pub trait AccountRpc {
         &self,
         account_id: Option<String>,
     ) -> Result<crate::responses::AccountInfoResponse, ErrorObjectOwned>;
+
+    /*
+    / Specification:
+    / https://github.com/hiero-ledger/hiero-sdk-tck/blob/main/docs/test-specifications/crypto-service/AccountBalanceQuery.md
+    */
+    #[method(name = "executeDeprecatedAccountBalanceQuery")]
+    async fn execute_deprecated_account_balance_query(
+        &self,
+        account_id: String,
+        operation: Option<String>,
+    ) -> Result<DeprecatedAccountBalanceQueryResponse, ErrorObjectOwned>;
+
+    /*
+    / Specification:
+    / https://github.com/hiero-ledger/hiero-sdk-tck/blob/main/docs/test-specifications/crypto-service/ClientPing.md
+    */
+    #[method(name = "ping")]
+    async fn ping(
+        &self,
+        node_account_id: String,
+    ) -> Result<HashMap<String, String>, ErrorObjectOwned>;
+
+    #[method(name = "pingAll")]
+    async fn ping_all(&self) -> Result<HashMap<String, String>, ErrorObjectOwned>;
 }
 
 pub async fn create_account(
@@ -292,43 +315,103 @@ pub async fn update_account(
     Ok(AccountUpdateResponse { status: tx_receipt.status.as_str_name().to_string() })
 }
 
-pub async fn get_account_balance(
+pub async fn execute_deprecated_account_balance_query(
     client: &Client,
-    account_id: Option<String>,
-    contract_id: Option<String>,
-    common_transaction_params: Option<HashMap<String, Value>>,
-) -> Result<AccountBalanceResponse, ErrorObjectOwned> {
-    let _ = common_transaction_params;
+    account_id: String,
+    operation: Option<String>,
+) -> Result<DeprecatedAccountBalanceQueryResponse, ErrorObjectOwned> {
+    let invalid_params = |msg: String| ErrorObject::owned(INVALID_PARAMS_CODE, msg, None::<()>);
 
-    let mut query = AccountBalanceQuery::new();
-
-    if let Some(account_id) = account_id {
-        query.account_id(AccountId::from_str(&account_id).map_err(internal_error)?);
-    }
-
-    if let Some(contract_id) = contract_id {
-        query.contract_id(ContractId::from_str(&contract_id).map_err(internal_error)?);
-    }
-
-    let tx_response = query.execute(client).await.map_err(|e| from_hedera_error(e))?;
-
-    let mut token_balances = HashMap::new();
-    for (token_id, amount) in tx_response.tokens {
-        token_balances.insert(token_id.to_string(), amount.to_string());
-    }
+    let account_id = AccountId::from_str(&account_id).map_err(|e| invalid_params(e.to_string()))?;
+    let get_cost = match operation.as_deref() {
+        None | Some("execute") => false,
+        Some("getCost") => true,
+        Some(other) => return Err(invalid_params(format!("unknown operation: {other}"))),
+    };
 
     #[allow(deprecated)]
-    let mut token_decimals = HashMap::new();
-    #[allow(deprecated)]
-    for (token_id, decimals) in tx_response.token_decimals {
-        token_decimals.insert(token_id.to_string(), decimals);
-    }
+    let (mut query, construction_warning) =
+        capture_log_messages(hiero_sdk::AccountBalanceQuery::new);
+    query.account_id(account_id);
 
-    Ok(AccountBalanceResponse {
-        hbars: tx_response.hbars.to_tinybars().to_string(),
-        token_balances,
-        token_decimals,
+    let execution_error = if get_cost {
+        query.get_cost(client).await.err()
+    } else {
+        query.execute(client).await.err()
+    };
+
+    Ok(DeprecatedAccountBalanceQueryResponse {
+        construction_warning,
+        execution_error: execution_error.map(|e| e.to_string()),
     })
+}
+
+/// Runs `f` and returns what it logged through the SDK's `log` channel.
+///
+/// `main` installs the `log` -> `tracing` bridge; this swaps in a capturing subscriber for
+/// the current thread only while `f` runs, so the capture ends when `f` returns. The captured
+/// messages are then logged again so they still show up in the server log.
+fn capture_log_messages<T>(f: impl FnOnce() -> T) -> (T, Option<String>) {
+    let (tx, rx) = mpsc::channel();
+    let value =
+        tracing::subscriber::with_default(tracing_subscriber::registry().with(Capture(tx)), f);
+
+    let messages: Vec<String> = rx.try_iter().collect();
+    for message in &messages {
+        tracing::warn!("{message}");
+    }
+    (value, (!messages.is_empty()).then(|| messages.join("\n")))
+}
+
+struct Capture(mpsc::Sender<String>);
+
+impl<S: tracing::Subscriber> Layer<S> for Capture {
+    fn on_event(&self, event: &tracing::Event<'_>, _ctx: Context<'_, S>) {
+        let mut visitor = MessageVisitor(None);
+        event.record(&mut visitor);
+        if let Some(message) = visitor.0 {
+            let _ = self.0.send(message);
+        }
+    }
+}
+
+struct MessageVisitor(Option<String>);
+
+impl Visit for MessageVisitor {
+    fn record_str(&mut self, field: &Field, value: &str) {
+        if field.name() == "message" {
+            self.0 = Some(value.to_owned());
+        }
+    }
+
+    fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+        if field.name() == "message" {
+            self.0 = Some(format!("{value:?}"));
+        }
+    }
+}
+
+pub async fn ping(
+    client: &Client,
+    node_account_id: String,
+) -> Result<HashMap<String, String>, ErrorObjectOwned> {
+    let node_account_id = AccountId::from_str(&node_account_id).map_err(internal_error)?;
+
+    client.ping(node_account_id).await.map_err(from_hedera_error)?;
+
+    Ok(HashMap::from([
+        ("status".to_string(), "SUCCESS".to_string()),
+        ("message".to_string(), format!("Successfully pinged node {node_account_id}.")),
+    ]))
+}
+
+pub async fn ping_all(client: &Client) -> Result<HashMap<String, String>, ErrorObjectOwned> {
+    client.ping_all().await.map_err(from_hedera_error)?;
+
+    Ok(HashMap::from([
+        ("status".to_string(), "SUCCESS".to_string()),
+        ("message".to_string(), "Successfully pinged all nodes.".to_string()),
+    ]))
 }
 
 // Helper function used in schedule creation
@@ -1067,4 +1150,22 @@ pub async fn get_account_info(
         ethereum_nonce: response.ethereum_nonce.to_string(),
         staking_info,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::capture_log_messages;
+
+    #[test]
+    fn capture_log_messages_returns_the_construction_warning_once() {
+        // the same `log` -> `tracing` bridge `main` installs.
+        let _ = tracing_subscriber::fmt().try_init();
+
+        #[allow(deprecated)]
+        let (_, warning) = capture_log_messages(hiero_sdk::AccountBalanceQuery::new);
+        assert_eq!(warning, Some(hiero_sdk::Error::AccountBalanceQueryDeprecated.to_string()));
+
+        let ((), nothing) = capture_log_messages(|| ());
+        assert_eq!(nothing, None);
+    }
 }

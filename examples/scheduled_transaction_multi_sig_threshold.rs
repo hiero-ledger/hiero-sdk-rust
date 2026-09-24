@@ -2,7 +2,7 @@
 
 use clap::Parser;
 use hiero_sdk::{
-    AccountBalanceQuery, AccountCreateTransaction, AccountId, Client, Hbar, Key, KeyList, PrivateKey, ScheduleInfoQuery, ScheduleSignTransaction, TransactionRecordQuery, TransferTransaction
+    AccountCreateTransaction, AccountId, AccountInfoQuery, Client, Hbar, Key, KeyList, PrivateKey, ScheduleInfoQuery, ScheduleSignTransaction, TransactionRecordQuery, TransferTransaction
 };
 
 #[derive(Parser, Debug)]
@@ -57,14 +57,14 @@ async fn main() -> anyhow::Result<()> {
 
     println!("3-of-4 multi-sig account ID: {multi_sig_account_id}");
 
-    let balance = AccountBalanceQuery::new()
+    let info = AccountInfoQuery::new()
         .account_id(multi_sig_account_id)
         .execute(&client)
         .await?;
 
     println!(
         "Balance of account {multi_sig_account_id}: {}.",
-        balance.hbars
+        info.balance
     );
 
     // schedule crypto transfer from multi-sig account to operator account

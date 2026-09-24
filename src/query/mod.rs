@@ -187,6 +187,8 @@ where
         client: &Client,
         timeout: Option<std::time::Duration>,
     ) -> crate::Result<Hbar> {
+        self.data.check_supported()?;
+
         if !self.data.is_payment_required() {
             return Ok(Hbar::ZERO);
         }
@@ -233,6 +235,8 @@ where
                     .await;
             })
         }
+
+        self.data.check_supported()?;
 
         // hack: this is a TransactionRecordQuery, which means we need to run the receipt first.
         if let Some(transaction_id) = self.data.transaction_id() {

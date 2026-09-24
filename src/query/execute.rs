@@ -55,6 +55,14 @@ pub trait QueryExecute:
         None
     }
 
+    /// Returns an error if this query can no longer be executed.
+    ///
+    /// Checked before any network request, including the cost request.
+    #[allow(clippy::result_large_err)]
+    fn check_supported(&self) -> crate::Result<()> {
+        Ok(())
+    }
+
     fn make_response(
         &self,
         response: services::response::Response,

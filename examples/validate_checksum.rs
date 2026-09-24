@@ -3,10 +3,16 @@
 use std::io::Write;
 
 use clap::Parser;
-use hiero_sdk::{AccountBalanceQuery, AccountId, Client};
+use hiero_sdk::{AccountId, AccountInfoQuery, Client, PrivateKey};
 
 #[derive(Parser, Debug)]
 struct Args {
+    #[clap(long, env)]
+    operator_account_id: AccountId,
+
+    #[clap(long, env)]
+    operator_key: PrivateKey,
+
     #[clap(long, env, default_value = "testnet")]
     hedera_network: String,
 }
@@ -17,6 +23,8 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let client = Client::for_name(&args.hedera_network)?;
+
+    client.set_operator(args.operator_account_id, args.operator_key);
 
     // we need to return _something_ to say if stdin has been EOFed on us.
     if manual_checksum_validation(&client).await?.is_none() {
@@ -64,12 +72,13 @@ async fn manual_checksum_validation(client: &Client) -> anyhow::Result<Option<Ac
         break account_id;
     };
 
-    let balance = AccountBalanceQuery::new()
+    let balance = AccountInfoQuery::new()
         .account_id(account_id)
         .execute(client)
-        .await?;
+        .await?
+        .balance;
 
-    println!("Balance for account {account_id}: {balance:?}");
+    println!("Balance for account {account_id}: {balance}");
 
     Ok(Some(account_id))
 }
@@ -83,12 +92,13 @@ async fn automatic_checksum_validation(client: &Client) -> anyhow::Result<Option
         return Ok(None);
     };
 
-    let balance = AccountBalanceQuery::new()
+    let balance = AccountInfoQuery::new()
         .account_id(account_id)
         .execute(client)
-        .await?;
+        .await?
+        .balance;
 
-    println!("Balance for account {account_id}: {balance:?}");
+    println!("Balance for account {account_id}: {balance}");
 
     Ok(Some(account_id))
 }
