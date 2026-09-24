@@ -276,6 +276,13 @@ impl QueryExecute for AnyQueryData {
         }
     }
 
+    fn check_supported(&self) -> crate::Result<()> {
+        match self {
+            Self::AccountBalance(query) => query.check_supported(),
+            _ => Ok(()),
+        }
+    }
+
     fn make_response(
         &self,
         response: services::response::Response,

@@ -159,12 +159,13 @@ mod transaction_response;
 mod transfer;
 mod transfer_transaction;
 
+#[allow(deprecated)]
+pub use account::AccountBalanceQuery;
 pub use account::{
     account_info_flow,
     AccountAllowanceApproveTransaction,
     AccountAllowanceDeleteTransaction,
     AccountBalance,
-    AccountBalanceQuery,
     AccountCreateTransaction,
     AccountDeleteTransaction,
     AccountId,
