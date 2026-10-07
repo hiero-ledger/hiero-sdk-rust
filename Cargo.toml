@@ -84,7 +84,7 @@ default-features = false
 features = ["ecdsa", "precomputed-tables", "std"]
 
 [dependencies.pkcs8]
-version = "0.10.0"
+version = "0.11.0"
 default-features = false
 features = ["encryption"]
 
